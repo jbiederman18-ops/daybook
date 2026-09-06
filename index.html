@@ -1,0 +1,849 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Daybook</title>
+<meta name="theme-color" content="#1E1822">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Daybook">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231E1822'/%3E%3Crect x='10' y='27' width='30' height='10' rx='5' fill='%23E9B44C'/%3E%3Crect x='42' y='27' width='12' height='10' rx='5' fill='%237FB069'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400..800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#1E1822;
+  --surface:#282031;
+  --surface-2:#332A3E;
+  --line:#3E3449;
+  --ink:#F2EDE6;
+  --ink-dim:#A79BB0;
+  --ink-faint:#7B6E86;
+  --breakfast:#E9B44C;
+  --lunch:#7FB069;
+  --dinner:#5B8FB9;
+  --snacks:#B47EB3;
+  --over:#E2574C;
+  --radius:14px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:Inter,system-ui,-apple-system,sans-serif;
+  font-size:15px;
+  line-height:1.45;
+  padding:0 0 96px;
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:560px;margin:0 auto;padding:0 18px}
+button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;padding:0}
+input,select{font:inherit;color:var(--ink);background:var(--surface-2);border:1px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
+input:focus,select:focus,button:focus-visible{outline:2px solid var(--breakfast);outline-offset:2px}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23A79BB0' stroke-width='1.6' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.num{font-family:'Bricolage Grotesque',Inter,sans-serif;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+
+/* ---------- header ---------- */
+header{padding:max(18px,env(safe-area-inset-top)) 0 4px}
+.topline{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.datenav{display:flex;align-items:center;gap:10px}
+.datenav h1{font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:600;margin:0;letter-spacing:-0.01em}
+.arrow{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;color:var(--ink-dim);border:1px solid var(--line)}
+.arrow:disabled{opacity:.28}
+.gear{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;color:var(--ink-dim);border:1px solid var(--line)}
+
+/* ---------- hero ---------- */
+.hero{margin:22px 0 8px}
+.remain{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.remain .big{font-family:'Bricolage Grotesque',sans-serif;font-size:56px;font-weight:700;line-height:1;letter-spacing:-0.035em}
+.remain .cap{color:var(--ink-dim);font-size:14px}
+.remain.over .big{color:var(--over)}
+.bar{display:flex;height:16px;border-radius:8px;overflow:hidden;background:var(--surface-2);margin:16px 0 10px;box-shadow:inset 0 0 0 1px var(--line)}
+.seg{transition:width .35s cubic-bezier(.4,0,.2,1)}
+.mathline{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;color:var(--ink-faint)}
+.mathline b{color:var(--ink-dim);font-weight:500}
+.mathline button{color:var(--ink-dim);border-bottom:1px dashed var(--ink-faint)}
+
+/* ---------- meals ---------- */
+.meal{border-top:1px solid var(--line);padding:16px 0 6px}
+.meal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.meal-name{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px}
+.dot{width:9px;height:9px;border-radius:3px}
+.meal-total{font-family:'Bricolage Grotesque',sans-serif;font-variant-numeric:tabular-nums;color:var(--ink-dim);font-size:15px}
+.entry{display:flex;align-items:center;gap:10px;padding:8px 0}
+.entry .txt{flex:1;min-width:0}
+.entry .nm{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14.5px}
+.entry .sub{display:block;font-size:12.5px;color:var(--ink-faint);margin-top:1px}
+.entry .kc{font-family:'Bricolage Grotesque',sans-serif;font-variant-numeric:tabular-nums;font-size:14.5px}
+.iconbtn{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:var(--ink-faint);flex:none}
+.iconbtn.on{color:var(--breakfast)}
+.addbtn{display:flex;align-items:center;gap:8px;color:var(--ink-dim);font-size:14px;padding:9px 0 4px}
+.addbtn span.plus{width:20px;height:20px;border-radius:50%;border:1px dashed var(--ink-faint);display:grid;place-items:center;font-size:14px;line-height:1}
+
+/* ---------- trend ---------- */
+.trend{border-top:1px solid var(--line);margin-top:20px;padding-top:18px}
+.trend h2{font-family:'Bricolage Grotesque',sans-serif;font-size:14px;font-weight:600;margin:0 0 14px;color:var(--ink-dim)}
+.bars{display:flex;align-items:stretch;gap:8px;height:118px;padding-bottom:22px;position:relative}
+.tcol{flex:1;display:flex;flex-direction:column;justify-content:flex-end;position:relative}
+.tbar{width:100%;border-radius:5px 5px 2px 2px;background:var(--surface-2);min-height:3px;transition:height .3s}
+.tlab{position:absolute;bottom:-19px;left:0;right:0;text-align:center;font-size:11px;color:var(--ink-faint)}
+.tline{position:absolute;left:0;right:0;border-top:1px dashed var(--ink-faint);opacity:.65;pointer-events:none}
+.tline b{position:absolute;right:0;top:-8px;background:var(--bg);padding-left:6px;font-size:10.5px;color:var(--ink-faint);font-weight:400}
+.tsum{display:flex;justify-content:space-between;font-size:13px;color:var(--ink-faint);margin-top:12px}
+.tsum b{color:var(--ink-dim);font-weight:500;font-variant-numeric:tabular-nums}
+
+/* ---------- sheet ---------- */
+.scrim{position:fixed;inset:0;background:rgba(10,7,13,.62);opacity:0;pointer-events:none;transition:opacity .22s;z-index:40}
+.scrim.open{opacity:1;pointer-events:auto}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--surface);border-radius:20px 20px 0 0;transform:translateY(102%);transition:transform .28s cubic-bezier(.32,.72,0,1);max-height:92vh;display:flex;flex-direction:column;border-top:1px solid var(--line)}
+.sheet.open{transform:translateY(0)}
+.sheet-in{max-width:560px;width:100%;margin:0 auto;padding:0 18px calc(20px + env(safe-area-inset-bottom));overflow-y:auto;-webkit-overflow-scrolling:touch}
+.grip{width:36px;height:4px;border-radius:2px;background:var(--line);margin:9px auto 4px;flex:none}
+.sheet-head{display:flex;align-items:center;justify-content:space-between;padding:8px 0 14px;position:sticky;top:0;background:var(--surface);z-index:2}
+.sheet-head h2{font-family:'Bricolage Grotesque',sans-serif;font-size:19px;margin:0;font-weight:600;letter-spacing:-0.015em}
+.tabs{display:flex;gap:6px;margin-bottom:14px;background:var(--bg);padding:4px;border-radius:11px}
+.tab{flex:1;padding:8px 4px;border-radius:8px;font-size:13px;color:var(--ink-dim);text-align:center}
+.tab.on{background:var(--surface-2);color:var(--ink);font-weight:500}
+.res{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line);width:100%;text-align:left}
+.res:last-child{border-bottom:none}
+.res .txt{flex:1;min-width:0}
+.res .nm{font-size:14.5px;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.res .sub{font-size:12px;color:var(--ink-faint);display:block;margin-top:2px}
+.res .kc{font-family:'Bricolage Grotesque',sans-serif;font-variant-numeric:tabular-nums;color:var(--ink-dim);font-size:14px;flex:none}
+.row{display:flex;gap:10px;align-items:center}
+.row>*{flex:1}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12.5px;color:var(--ink-dim);margin-bottom:6px}
+.cta{width:100%;background:var(--ink);color:var(--bg);font-weight:600;padding:14px;border-radius:12px;margin-top:6px;font-size:15px}
+.cta.ghost{background:none;color:var(--ink-dim);border:1px solid var(--line);font-weight:500}
+.note{font-size:12.5px;color:var(--ink-faint);line-height:1.55;margin:10px 0 0}
+.note code{background:var(--bg);padding:1px 5px;border-radius:5px;font-size:11.5px;word-break:break-all}
+.warn{background:rgba(226,87,76,.11);border:1px solid rgba(226,87,76,.3);color:#F0A9A2;font-size:13px;padding:11px 12px;border-radius:10px;margin:10px 0;line-height:1.5}
+.empty{color:var(--ink-faint);font-size:13.5px;padding:22px 0;text-align:center;line-height:1.6}
+.spin{display:block;width:20px;height:20px;border:2px solid var(--line);border-top-color:var(--ink-dim);border-radius:50%;margin:26px auto;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0 12px}
+.chip{padding:8px 12px;border-radius:9px;border:1px solid var(--line);font-size:13px;color:var(--ink-dim)}
+.chip.on{border-color:var(--ink);color:var(--ink);background:var(--surface-2)}
+.divider{border-top:1px solid var(--line);margin:20px 0 16px}
+.divider h3{font-family:'Bricolage Grotesque',sans-serif;font-size:13.5px;font-weight:600;color:var(--ink-dim);margin:16px 0 12px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,80px);background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:11px;font-size:14px;font-weight:500;z-index:80;opacity:0;transition:all .25s;pointer-events:none}
+.toast.on{transform:translate(-50%,0);opacity:1}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="topline">
+      <div class="datenav">
+        <button class="arrow" id="prevDay" aria-label="Previous day">&#8249;</button>
+        <h1 id="dateLabel">Today</h1>
+        <button class="arrow" id="nextDay" aria-label="Next day">&#8250;</button>
+      </div>
+      <button class="gear" id="openSettings" aria-label="Settings">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09A1.65 1.65 0 008 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H2a2 2 0 110-4h.09A1.65 1.65 0 004.6 8a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06A1.65 1.65 0 009 3.68 1.65 1.65 0 0010 2.17V2a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06A1.65 1.65 0 0020.32 8c.06.24.09.49.09.74"/></svg>
+      </button>
+    </div>
+
+    <div class="hero">
+      <div class="remain" id="remainBox">
+        <span class="big num" id="remainNum">—</span>
+        <span class="cap" id="remainCap">left</span>
+      </div>
+      <div class="bar" id="bar"></div>
+      <div class="mathline">
+        <span><b class="num" id="baseNum">—</b> base</span>
+        <span>+ <button id="editActive"><b class="num" id="activeNum">0</b> moved</button></span>
+        <span>− <b class="num" id="eatenNum">0</b> eaten</span>
+      </div>
+    </div>
+  </header>
+
+  <main id="meals"></main>
+
+  <section class="trend">
+    <h2>Last 7 days</h2>
+    <div class="bars" id="bars"></div>
+    <div class="tsum">
+      <span>Daily average <b id="avg7">—</b></span>
+      <span id="vsTarget"></span>
+    </div>
+  </section>
+</div>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true">
+  <div class="grip"></div>
+  <div class="sheet-in" id="sheetBody"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+"use strict";
+
+/* ============================================================
+   Storage — works both on your own site (localStorage) and
+   inside a Claude artifact preview (window.storage).
+   ============================================================ */
+const Store = {
+  async get(k){
+    if (window.storage){ try { const r = await window.storage.get(k); return r ? r.value : null; } catch(e){ return null; } }
+    try { return localStorage.getItem(k); } catch(e){ return null; }
+  },
+  async set(k,v){
+    if (window.storage){ try { await window.storage.set(k,v); } catch(e){} return; }
+    try { localStorage.setItem(k,v); } catch(e){}
+  }
+};
+
+const MEALS = [
+  {id:'breakfast', name:'Breakfast', color:'var(--breakfast)'},
+  {id:'lunch',     name:'Lunch',     color:'var(--lunch)'},
+  {id:'dinner',    name:'Dinner',    color:'var(--dinner)'},
+  {id:'snacks',    name:'Snacks',    color:'var(--snacks)'}
+];
+
+const DEFAULTS = {
+  sex:'male', age:35, heightCm:178, weightKg:80,
+  goalDelta:-500,            // kcal/day adjustment
+  usdaKey:'', anthropicKey:'',
+  model:'claude-haiku-4-5-20251001',
+  proxy:'',                  // optional CORS proxy prefix
+  units:'metric'
+};
+
+let S = { settings:{...DEFAULTS}, days:{}, saved:[] };
+let viewDate = todayKey();
+let sheetState = null;
+
+/* ---------- dates ---------- */
+function todayKey(d){
+  const x = d ? new Date(d) : new Date();
+  return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');
+}
+function shiftKey(key, delta){
+  const [y,m,d] = key.split('-').map(Number);
+  const x = new Date(y, m-1, d + delta);
+  return todayKey(x);
+}
+function prettyDate(key){
+  if (key === todayKey()) return 'Today';
+  if (key === shiftKey(todayKey(),-1)) return 'Yesterday';
+  const [y,m,d] = key.split('-').map(Number);
+  return new Date(y,m-1,d).toLocaleDateString(undefined,{weekday:'short', month:'short', day:'numeric'});
+}
+
+/* ---------- day accessors ---------- */
+function day(key){
+  if (!S.days[key]) S.days[key] = { active:0, meals:{breakfast:[],lunch:[],dinner:[],snacks:[]} };
+  const d = S.days[key];
+  MEALS.forEach(m => { if(!d.meals[m.id]) d.meals[m.id] = []; });
+  return d;
+}
+function mealTotal(key, mid){ return day(key).meals[mid].reduce((a,e)=>a+(e.cal||0),0); }
+function eaten(key){ return MEALS.reduce((a,m)=>a+mealTotal(key,m.id),0); }
+
+/* ---------- energy budget ---------- */
+function bmr(){
+  const s = S.settings;
+  const base = 10*Number(s.weightKg) + 6.25*Number(s.heightCm) - 5*Number(s.age);
+  return s.sex === 'female' ? base - 161 : base + 5;
+}
+// Sedentary multiplier only (1.2). Apple Health's Active Energy is added
+// on top, so applying a real activity factor here would double-count it.
+function baseTarget(){ return Math.round(bmr()*1.2 + Number(S.settings.goalDelta||0)); }
+function target(key){ return baseTarget() + Math.round(day(key).active||0); }
+
+/* ---------- persistence ---------- */
+let saveTimer = null;
+function save(){
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(()=>Store.set('daybook', JSON.stringify(S)), 180);
+}
+async function load(){
+  const raw = await Store.get('daybook');
+  if (raw){
+    try {
+      const p = JSON.parse(raw);
+      S.settings = {...DEFAULTS, ...(p.settings||{})};
+      S.days = p.days || {};
+      S.saved = p.saved || [];
+    } catch(e){}
+  }
+}
+
+/* ============================================================
+   Apple Shortcut hand-off:  yoursite.github.io/?active=512
+   ============================================================ */
+function readURL(){
+  const q = new URLSearchParams(location.search);
+  const a = q.get('active') ?? q.get('activeEnergy') ?? q.get('ae');
+  const dk = q.get('date');
+  let hit = false;
+  if (a !== null && a !== ''){
+    const n = Math.max(0, Math.round(parseFloat(String(a).replace(/[^\d.]/g,''))));
+    if (!isNaN(n)){
+      const key = dk && /^\d{4}-\d{2}-\d{2}$/.test(dk) ? dk : todayKey();
+      day(key).active = n;
+      hit = true;
+      setTimeout(()=>toast(n.toLocaleString()+' active kcal added'), 400);
+    }
+  }
+  if (hit){ save(); history.replaceState({}, '', location.pathname); }
+}
+
+/* ============================================================
+   Render
+   ============================================================ */
+function render(){
+  document.getElementById('dateLabel').textContent = prettyDate(viewDate);
+  document.getElementById('nextDay').disabled = viewDate >= todayKey();
+
+  const tgt = target(viewDate), ate = eaten(viewDate), left = tgt - ate;
+  const box = document.getElementById('remainBox');
+  box.classList.toggle('over', left < 0);
+  document.getElementById('remainNum').textContent = Math.abs(left).toLocaleString();
+  document.getElementById('remainCap').textContent = left < 0 ? 'over budget' : 'left of '+tgt.toLocaleString();
+  document.getElementById('baseNum').textContent = baseTarget().toLocaleString();
+  document.getElementById('activeNum').textContent = Math.round(day(viewDate).active||0).toLocaleString();
+  document.getElementById('eatenNum').textContent = ate.toLocaleString();
+
+  // segmented budget bar
+  const bar = document.getElementById('bar');
+  bar.innerHTML = '';
+  const denom = Math.max(tgt, ate, 1);
+  MEALS.forEach(m=>{
+    const v = mealTotal(viewDate, m.id);
+    if (v <= 0) return;
+    const seg = document.createElement('div');
+    seg.className = 'seg';
+    seg.style.width = (v/denom*100)+'%';
+    seg.style.background = left < 0 ? 'var(--over)' : m.color;
+    seg.title = m.name+' '+v;
+    bar.appendChild(seg);
+  });
+
+  // meals
+  const host = document.getElementById('meals');
+  host.innerHTML = '';
+  MEALS.forEach(m=>{
+    const sec = document.createElement('section');
+    sec.className = 'meal';
+    const items = day(viewDate).meals[m.id];
+    sec.innerHTML =
+      '<div class="meal-head"><div class="meal-name"><span class="dot" style="background:'+m.color+'"></span>'+m.name+'</div>'+
+      '<div class="meal-total">'+(mealTotal(viewDate,m.id)||'').toLocaleString()+'</div></div>';
+
+    items.forEach((e,i)=>{
+      const row = document.createElement('div');
+      row.className = 'entry';
+      row.innerHTML =
+        '<div class="txt"><span class="nm"></span><span class="sub"></span></div>'+
+        '<span class="kc">'+e.cal.toLocaleString()+'</span>'+
+        '<button class="iconbtn star" aria-label="Save as favourite"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 3l2.6 5.6 6 .8-4.4 4.2 1.1 6.1L12 16.8 6.7 19.7l1.1-6.1L3.4 9.4l6-.8z"/></svg></button>'+
+        '<button class="iconbtn del" aria-label="Remove"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+      row.querySelector('.nm').textContent = e.name;
+      row.querySelector('.sub').textContent = [e.portion, e.src].filter(Boolean).join(' · ');
+      const star = row.querySelector('.star');
+      if (isSaved(e.name)) star.classList.add('on');
+      star.onclick = ()=>{ toggleSave(e); render(); };
+      row.querySelector('.del').onclick = ()=>{ items.splice(i,1); save(); render(); };
+      sec.appendChild(row);
+    });
+
+    const add = document.createElement('button');
+    add.className = 'addbtn';
+    add.innerHTML = '<span class="plus">+</span> Add food';
+    add.onclick = ()=>openAdd(m);
+    sec.appendChild(add);
+    host.appendChild(sec);
+  });
+
+  renderTrend();
+}
+
+function renderTrend(){
+  const host = document.getElementById('bars');
+  host.innerHTML = '';
+  const keys = [];
+  for (let i=6;i>=0;i--) keys.push(shiftKey(viewDate,-i));
+  const vals = keys.map(k=>eaten(k));
+  const tgt = baseTarget();
+  const peak = Math.max(...vals, tgt, 1) * 1.12;
+
+  const ZONE = 96; // bar area height in px (.bars 118px minus 22px label row)
+  const line = document.createElement('div');
+  line.className = 'tline';
+  line.style.bottom = (22 + Math.min(ZONE, tgt/peak*ZONE)) + 'px';
+  line.innerHTML = '<b>'+tgt.toLocaleString()+'</b>';
+  host.appendChild(line);
+
+  keys.forEach((k,i)=>{
+    const col = document.createElement('div');
+    col.className = 'tcol';
+    const v = vals[i];
+    const over = v > target(k);
+    const [,, dd] = k.split('-');
+    const dObj = new Date(k.split('-')[0], k.split('-')[1]-1, dd);
+    col.innerHTML =
+      '<div class="tbar" style="height:'+Math.max(2, v/peak*100)+'%;background:'+
+        (v===0 ? 'var(--surface-2)' : over ? 'var(--over)' : 'var(--lunch)')+'"></div>'+
+      '<div class="tlab">'+dObj.toLocaleDateString(undefined,{weekday:'narrow'})+'</div>';
+    col.title = prettyDate(k)+': '+v.toLocaleString();
+    host.appendChild(col);
+  });
+
+  const logged = vals.filter(v=>v>0);
+  const avg = logged.length ? Math.round(logged.reduce((a,b)=>a+b,0)/logged.length) : 0;
+  document.getElementById('avg7').textContent = logged.length ? avg.toLocaleString() : '—';
+  const diff = avg - tgt;
+  document.getElementById('vsTarget').innerHTML = logged.length
+    ? (diff >= 0 ? '<b>+'+diff.toLocaleString()+'</b> vs base' : '<b>'+diff.toLocaleString()+'</b> vs base')
+    : '';
+}
+
+/* ---------- saved meals ---------- */
+function isSaved(name){ return S.saved.some(s=>s.name === name); }
+function toggleSave(e){
+  const i = S.saved.findIndex(s=>s.name === e.name);
+  if (i > -1){ S.saved.splice(i,1); toast('Removed from saved'); }
+  else { S.saved.unshift({name:e.name, cal:e.cal, portion:e.portion, src:e.src, uses:1}); toast('Saved'); }
+  save();
+}
+function bumpUse(name){
+  const s = S.saved.find(x=>x.name === name);
+  if (s){ s.uses = (s.uses||0)+1; S.saved.sort((a,b)=>(b.uses||0)-(a.uses||0)); save(); }
+}
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('on'), 1900);
+}
+
+/* ============================================================
+   Sheet
+   ============================================================ */
+function openSheet(html){
+  document.getElementById('sheetBody').innerHTML = html;
+  document.getElementById('sheet').classList.add('open');
+  document.getElementById('scrim').classList.add('open');
+}
+function closeSheet(){
+  document.getElementById('sheet').classList.remove('open');
+  document.getElementById('scrim').classList.remove('open');
+  sheetState = null;
+}
+document.getElementById('scrim').onclick = closeSheet;
+
+function sheetHead(title){
+  return '<div class="sheet-head"><h2>'+title+'</h2>'+
+    '<button class="iconbtn" onclick="closeSheet()" aria-label="Close">'+
+    '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
+}
+
+/* ---------- add food ---------- */
+function openAdd(meal){
+  sheetState = { meal, tab:'search' };
+  drawAdd();
+}
+function drawAdd(){
+  const t = sheetState.tab;
+  openSheet(
+    sheetHead('Add to '+sheetState.meal.name) +
+    '<div class="tabs">'+
+      ['search','saved','estimate','custom'].map(k=>
+        '<button class="tab'+(t===k?' on':'')+'" data-tab="'+k+'">'+
+        ({search:'Search',saved:'Saved',estimate:'Estimate',custom:'Custom'})[k]+'</button>').join('')+
+    '</div><div id="tabBody"></div>'
+  );
+  document.querySelectorAll('.tab').forEach(b=>{
+    b.onclick = ()=>{ sheetState.tab = b.dataset.tab; drawAdd(); };
+  });
+  ({search:tabSearch, saved:tabSaved, estimate:tabEstimate, custom:tabCustom})[t]();
+}
+const body = ()=>document.getElementById('tabBody');
+
+/* ---------- USDA search ---------- */
+function usdaURL(path){
+  const p = S.settings.proxy ? S.settings.proxy : '';
+  return p + 'https://api.nal.usda.gov/fdc/v1/' + path;
+}
+function tabSearch(){
+  if (!S.settings.usdaKey){
+    body().innerHTML = '<div class="empty">Add your free USDA FoodData Central key in Settings to search the database.<br><br>'+
+      '<button class="cta ghost" onclick="closeSheet();openSettings()">Open settings</button></div>';
+    return;
+  }
+  body().innerHTML =
+    '<div class="field"><input id="q" placeholder="Search foods — e.g. greek yogurt" autocomplete="off" enterkeyhint="search"></div>'+
+    '<div id="results"><div class="empty">Type to search 300,000+ USDA foods.</div></div>';
+  const q = document.getElementById('q');
+  q.focus();
+  let t;
+  q.oninput = ()=>{ clearTimeout(t); t = setTimeout(()=>runSearch(q.value.trim()), 320); };
+  q.onkeydown = e=>{ if (e.key === 'Enter'){ clearTimeout(t); runSearch(q.value.trim()); } };
+}
+
+function kcalOf(food){
+  const ns = food.foodNutrients || [];
+  for (const n of ns){
+    const num = n.nutrientNumber || (n.nutrient && n.nutrient.number);
+    const unit = (n.unitName || (n.nutrient && n.nutrient.unitName) || '').toUpperCase();
+    const val = n.value != null ? n.value : n.amount;
+    if ((num === '208' || num === 208) && unit === 'KCAL' && val != null) return val;
+  }
+  for (const n of ns){
+    const nm = (n.nutrientName || (n.nutrient && n.nutrient.name) || '').toLowerCase();
+    const unit = (n.unitName || (n.nutrient && n.nutrient.unitName) || '').toUpperCase();
+    const val = n.value != null ? n.value : n.amount;
+    if (nm.includes('energy') && unit === 'KCAL' && val != null) return val;
+  }
+  return null;
+}
+
+async function runSearch(q){
+  const out = document.getElementById('results');
+  if (!q){ out.innerHTML = '<div class="empty">Type to search 300,000+ USDA foods.</div>'; return; }
+  out.innerHTML = '<span class="spin"></span>';
+  const url = usdaURL('foods/search?api_key='+encodeURIComponent(S.settings.usdaKey)+
+    '&query='+encodeURIComponent(q)+'&pageSize=25'+
+    '&dataType='+encodeURIComponent('Foundation,SR Legacy,Survey (FNDDS),Branded'));
+  try {
+    const r = await fetch(url);
+    if (!r.ok) throw new Error('HTTP '+r.status);
+    const d = await r.json();
+    const foods = (d.foods||[]).filter(f=>kcalOf(f) != null);
+    if (!foods.length){ out.innerHTML = '<div class="empty">No matches. Try the Estimate tab.</div>'; return; }
+    out.innerHTML = '';
+    foods.forEach(f=>{
+      const per100 = kcalOf(f);
+      const btn = document.createElement('button');
+      btn.className = 'res';
+      btn.innerHTML = '<div class="txt"><span class="nm"></span><span class="sub"></span></div>'+
+                      '<span class="kc">'+Math.round(per100)+'<span style="font-size:11px;color:var(--ink-faint)"> /100g</span></span>';
+      btn.querySelector('.nm').textContent = titleCase(f.description);
+      btn.querySelector('.sub').textContent = [f.brandOwner||f.brandName, f.dataType].filter(Boolean).join(' · ');
+      btn.onclick = ()=>openPortion(f, per100);
+      out.appendChild(btn);
+    });
+  } catch(err){
+    out.innerHTML = '<div class="warn"><b>Couldn\u2019t reach the USDA database.</b><br>'+
+      'This is almost always the browser blocking the request (CORS), not a bad key. '+
+      'You can set a proxy prefix in Settings, or use the Estimate tab instead.</div>';
+  }
+}
+function titleCase(s){
+  return String(s||'').toLowerCase().replace(/(^|[\s,(\/-])([a-z])/g,(m,a,b)=>a+b.toUpperCase());
+}
+
+/* ---------- portion picker ---------- */
+async function openPortion(food, per100){
+  const name = titleCase(food.description);
+  openSheet(sheetHead('Portion')+
+    '<p style="margin:0 0 16px;font-size:15px">'+escapeHTML(name)+'</p>'+
+    '<div id="portions"><span class="spin"></span></div>');
+
+  let options = [{label:'100 g', grams:100}];
+  if (food.servingSize && food.servingSizeUnit && /g|ml/i.test(food.servingSizeUnit)){
+    options.unshift({
+      label: (food.householdServingFullText || (food.servingSize+' '+food.servingSizeUnit)),
+      grams: Number(food.servingSize)
+    });
+  }
+  try {
+    const r = await fetch(usdaURL('food/'+food.fdcId+'?api_key='+encodeURIComponent(S.settings.usdaKey)));
+    if (r.ok){
+      const d = await r.json();
+      (d.foodPortions||[]).forEach(p=>{
+        const lab = [p.amount, p.measureUnit && p.measureUnit.name !== 'undetermined' ? p.measureUnit.name : '', p.modifier||'']
+          .filter(Boolean).join(' ').trim();
+        if (p.gramWeight) options.push({label: lab || (p.gramWeight+' g'), grams: p.gramWeight});
+      });
+    }
+  } catch(e){ /* portions are a bonus; grams always work */ }
+
+  const seen = new Set();
+  options = options.filter(o=>{ const k=o.label+o.grams; if(seen.has(k))return false; seen.add(k); return true; }).slice(0,10);
+
+  let pick = 0, qty = 1;
+  const host = document.getElementById('portions');
+  function draw(){
+    const grams = options[pick].grams * qty;
+    const cal = Math.round(per100/100*grams);
+    host.innerHTML =
+      '<div class="chips">'+options.map((o,i)=>
+        '<button class="chip'+(i===pick?' on':'')+'" data-i="'+i+'">'+escapeHTML(o.label)+'</button>').join('')+'</div>'+
+      '<div class="row" style="margin-bottom:14px">'+
+        '<div class="field" style="margin:0"><label>How many</label><input id="qty" type="number" inputmode="decimal" step="0.25" min="0.25" value="'+qty+'"></div>'+
+        '<div class="field" style="margin:0"><label>Grams</label><input id="gr" type="number" inputmode="numeric" value="'+Math.round(grams)+'"></div>'+
+      '</div>'+
+      '<div style="display:flex;align-items:baseline;gap:8px;margin:4px 0 12px">'+
+        '<span class="num" style="font-size:34px;font-weight:700">'+cal.toLocaleString()+'</span>'+
+        '<span style="color:var(--ink-dim);font-size:13px">calories</span></div>'+
+      '<button class="cta" id="doAdd">Add to '+sheetState.meal.name+'</button>';
+
+    host.querySelectorAll('.chip').forEach(c=>c.onclick=()=>{ pick=+c.dataset.i; draw(); });
+    host.querySelector('#qty').oninput = e=>{ qty = Math.max(0, parseFloat(e.target.value)||0); draw2(); };
+    host.querySelector('#gr').oninput = e=>{
+      const g = Math.max(0, parseFloat(e.target.value)||0);
+      qty = g / options[pick].grams; draw2();
+    };
+    function draw2(){
+      const g = options[pick].grams*qty;
+      host.querySelector('.num').textContent = Math.round(per100/100*g).toLocaleString();
+    }
+    host.querySelector('#doAdd').onclick = ()=>{
+      const g = options[pick].grams*qty;
+      addEntry({
+        name, cal: Math.round(per100/100*g),
+        portion: (qty === 1 ? '' : trimNum(qty)+' × ')+options[pick].label,
+        src:'USDA'
+      });
+    };
+  }
+  draw();
+}
+function trimNum(n){ return String(Math.round(n*100)/100); }
+function escapeHTML(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+/* ---------- saved ---------- */
+function tabSaved(){
+  if (!S.saved.length){
+    body().innerHTML = '<div class="empty">Nothing saved yet.<br>Tap the star beside anything you\u2019ve logged to keep it here.</div>';
+    return;
+  }
+  body().innerHTML = '';
+  S.saved.forEach((s,i)=>{
+    const b = document.createElement('button');
+    b.className = 'res';
+    b.innerHTML = '<div class="txt"><span class="nm"></span><span class="sub"></span></div><span class="kc">'+s.cal.toLocaleString()+'</span>';
+    b.querySelector('.nm').textContent = s.name;
+    b.querySelector('.sub').textContent = [s.portion, s.uses>1 ? s.uses+' times' : ''].filter(Boolean).join(' · ');
+    b.onclick = ()=>{ bumpUse(s.name); addEntry({name:s.name, cal:s.cal, portion:s.portion, src:s.src}); };
+    body().appendChild(b);
+  });
+}
+
+/* ---------- AI estimate ---------- */
+function tabEstimate(){
+  if (!S.settings.anthropicKey){
+    body().innerHTML = '<div class="empty">Add your Anthropic API key in Settings to estimate anything the database doesn\u2019t have.<br><br>'+
+      '<button class="cta ghost" onclick="closeSheet();openSettings()">Open settings</button></div>';
+    return;
+  }
+  body().innerHTML =
+    '<div class="field"><label>Describe what you ate</label>'+
+    '<input id="desc" placeholder="two slices of homemade banana bread" autocomplete="off"></div>'+
+    '<button class="cta" id="go">Estimate calories</button>'+
+    '<div id="est"></div>'+
+    '<p class="note">Estimates are a best guess from a description. Anything you can find in the database will be more accurate.</p>';
+  const d = document.getElementById('desc');
+  d.focus();
+  const run = ()=>estimate(d.value.trim());
+  document.getElementById('go').onclick = run;
+  d.onkeydown = e=>{ if(e.key==='Enter') run(); };
+}
+
+async function estimate(desc){
+  if (!desc) return;
+  const out = document.getElementById('est');
+  out.innerHTML = '<span class="spin"></span>';
+  const prompt =
+    'Estimate the calories in this food or meal: "'+desc+'".\n'+
+    'Assume typical preparation and typical restaurant or home portion sizes unless the description says otherwise.\n'+
+    'Respond with ONLY a JSON object, no markdown fences and no other text:\n'+
+    '{"name":"short food name","calories":integer,"portion":"the portion you assumed","basis":"one short sentence on how you got there"}';
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'content-type':'application/json',
+        'x-api-key':S.settings.anthropicKey,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify({
+        model:S.settings.model || DEFAULTS.model,
+        max_tokens:400,
+        messages:[{role:'user', content:prompt}]
+      })
+    });
+    if (!r.ok){
+      const t = await r.text();
+      throw new Error(r.status===401 ? 'Your API key was rejected.' : 'API error '+r.status+'. '+t.slice(0,120));
+    }
+    const d = await r.json();
+    const txt = (d.content||[]).filter(b=>b.type==='text').map(b=>b.text).join('').replace(/```json|```/g,'').trim();
+    const j = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}')+1));
+    const cal = Math.round(Number(j.calories));
+    if (!isFinite(cal)) throw new Error('Could not read a number from the estimate.');
+    out.innerHTML =
+      '<div class="divider"></div>'+
+      '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">'+
+        '<span class="num" style="font-size:34px;font-weight:700">'+cal.toLocaleString()+'</span>'+
+        '<span style="color:var(--ink-dim);font-size:13px">calories</span></div>'+
+      '<p style="margin:0 0 4px;font-size:14.5px">'+escapeHTML(j.name||desc)+'</p>'+
+      '<p class="note" style="margin-top:2px">'+escapeHTML([j.portion, j.basis].filter(Boolean).join(' — '))+'</p>'+
+      '<div class="field" style="margin-top:14px"><label>Adjust if you like</label>'+
+      '<input id="adj" type="number" inputmode="numeric" value="'+cal+'"></div>'+
+      '<button class="cta" id="addEst">Add to '+sheetState.meal.name+'</button>';
+    document.getElementById('addEst').onclick = ()=>{
+      addEntry({
+        name: j.name || desc,
+        cal: Math.round(Number(document.getElementById('adj').value)||cal),
+        portion: j.portion || '',
+        src:'Estimate'
+      });
+    };
+  } catch(err){
+    out.innerHTML = '<div class="warn"><b>Estimate failed.</b><br>'+escapeHTML(err.message)+'</div>';
+  }
+}
+
+/* ---------- custom ---------- */
+function tabCustom(){
+  body().innerHTML =
+    '<div class="field"><label>Name</label><input id="cn" placeholder="Mr. Friend\u2019s birthday cake" autocomplete="off"></div>'+
+    '<div class="field"><label>Calories</label><input id="cc" type="number" inputmode="numeric" placeholder="350"></div>'+
+    '<button class="cta" id="cadd">Add to '+sheetState.meal.name+'</button>';
+  document.getElementById('cn').focus();
+  document.getElementById('cadd').onclick = ()=>{
+    const n = document.getElementById('cn').value.trim();
+    const c = Math.round(Number(document.getElementById('cc').value));
+    if (!n || !isFinite(c) || c < 0){ toast('Add a name and a calorie number'); return; }
+    addEntry({name:n, cal:c, portion:'', src:'Custom'});
+  };
+}
+
+function addEntry(e){
+  day(viewDate).meals[sheetState.meal.id].push(e);
+  bumpUse(e.name);
+  save(); render(); closeSheet();
+  toast(e.cal.toLocaleString()+' added to '+sheetState.meal.name.toLowerCase());
+}
+
+/* ---------- active energy ---------- */
+document.getElementById('editActive').onclick = ()=>{
+  openSheet(sheetHead('Active energy')+
+    '<div class="field"><label>Active calories burned on '+prettyDate(viewDate).toLowerCase()+'</label>'+
+    '<input id="ae" type="number" inputmode="numeric" value="'+Math.round(day(viewDate).active||0)+'"></div>'+
+    '<button class="cta" id="aeSave">Save</button>'+
+    '<p class="note">Normally the Apple Shortcut fills this in. Enter it by hand if you haven\u2019t run it yet.</p>');
+  document.getElementById('ae').focus();
+  document.getElementById('aeSave').onclick = ()=>{
+    day(viewDate).active = Math.max(0, Math.round(Number(document.getElementById('ae').value)||0));
+    save(); render(); closeSheet();
+  };
+};
+
+/* ---------- settings ---------- */
+function openSettings(){
+  const s = S.settings;
+  const opt = (v,l,cur)=>'<option value="'+v+'"'+(String(cur)===String(v)?' selected':'')+'>'+l+'</option>';
+  openSheet(sheetHead('Settings')+
+    '<h3 style="font-family:Bricolage Grotesque;font-size:13.5px;color:var(--ink-dim);margin:0 0 12px">You</h3>'+
+    '<div class="row"><div class="field"><label>Sex</label><select id="sex">'+
+      opt('male','Male',s.sex)+opt('female','Female',s.sex)+'</select></div>'+
+    '<div class="field"><label>Age</label><input id="age" type="number" inputmode="numeric" value="'+s.age+'"></div></div>'+
+    '<div class="row"><div class="field"><label>Height (cm)</label><input id="ht" type="number" inputmode="numeric" value="'+s.heightCm+'"></div>'+
+    '<div class="field"><label>Weight (kg)</label><input id="wt" type="number" inputmode="decimal" step="0.1" value="'+s.weightKg+'"></div></div>'+
+    '<div class="field"><label>Goal</label><select id="goal">'+
+      opt(-1000,'Lose 2 lb a week',s.goalDelta)+
+      opt(-750,'Lose 1.5 lb a week',s.goalDelta)+
+      opt(-500,'Lose 1 lb a week',s.goalDelta)+
+      opt(-250,'Lose 0.5 lb a week',s.goalDelta)+
+      opt(0,'Maintain',s.goalDelta)+
+      opt(250,'Gain 0.5 lb a week',s.goalDelta)+
+      opt(500,'Gain 1 lb a week',s.goalDelta)+'</select></div>'+
+    '<p class="note" id="calcNote"></p>'+
+
+    '<div class="divider"><h3>Keys</h3></div>'+
+    '<div class="field"><label>USDA FoodData Central key</label><input id="uk" value="'+escapeHTML(s.usdaKey)+'" placeholder="from fdc.nal.usda.gov/api-key-signup" autocomplete="off"></div>'+
+    '<div class="field"><label>Anthropic API key</label><input id="ak" type="password" value="'+escapeHTML(s.anthropicKey)+'" placeholder="sk-ant-…" autocomplete="off"></div>'+
+    '<div class="field"><label>Model</label><select id="model">'+
+      opt('claude-haiku-4-5-20251001','Haiku 4.5 — fast and cheap',s.model)+
+      opt('claude-sonnet-5','Sonnet 5 — more careful',s.model)+'</select></div>'+
+    '<div class="field"><label>CORS proxy prefix (only if USDA search fails)</label><input id="px" value="'+escapeHTML(s.proxy)+'" placeholder="https://your-proxy/?url=" autocomplete="off"></div>'+
+    '<p class="note">Keys are stored only in this browser and are sent straight to USDA and Anthropic. Nothing goes anywhere else.</p>'+
+
+    '<div class="divider"><h3>Apple Health</h3></div>'+
+    '<p class="note">Build a Shortcut with three steps, then run it each morning or automate it:<br><br>'+
+    '1. <b>Find Health Samples</b> — type Active Energy, today, sum.<br>'+
+    '2. <b>Text</b> — <code>'+escapeHTML(location.origin+location.pathname)+'?active=</code> followed by the result.<br>'+
+    '3. <b>Open URLs</b> — the text from step 2.<br><br>'+
+    'The number lands in today\u2019s allowance and the URL cleans itself up.</p>'+
+
+    '<button class="cta" id="saveSet" style="margin-top:18px">Save settings</button>'+
+    '<button class="cta ghost" id="exportBtn" style="margin-top:8px">Export my data</button>');
+
+  const upd = ()=>{
+    const tmp = {
+      sex:document.getElementById('sex').value,
+      age:+document.getElementById('age').value,
+      heightCm:+document.getElementById('ht').value,
+      weightKg:+document.getElementById('wt').value,
+      goalDelta:+document.getElementById('goal').value
+    };
+    const old = {...S.settings};
+    Object.assign(S.settings, tmp);
+    document.getElementById('calcNote').innerHTML =
+      'Resting burn '+Math.round(bmr()).toLocaleString()+' · daily base <b style="color:var(--ink)">'+baseTarget().toLocaleString()+'</b>. '+
+      'Active calories from Health are added on top of this, so your workouts are never counted twice.';
+    Object.assign(S.settings, old);
+  };
+  ['sex','age','ht','wt','goal'].forEach(id=>{
+    const el = document.getElementById(id);
+    el.oninput = upd; el.onchange = upd;
+  });
+  upd();
+
+  document.getElementById('saveSet').onclick = ()=>{
+    Object.assign(S.settings,{
+      sex:document.getElementById('sex').value,
+      age:+document.getElementById('age').value,
+      heightCm:+document.getElementById('ht').value,
+      weightKg:+document.getElementById('wt').value,
+      goalDelta:+document.getElementById('goal').value,
+      usdaKey:document.getElementById('uk').value.trim(),
+      anthropicKey:document.getElementById('ak').value.trim(),
+      model:document.getElementById('model').value,
+      proxy:document.getElementById('px').value.trim()
+    });
+    save(); render(); closeSheet(); toast('Settings saved');
+  };
+  document.getElementById('exportBtn').onclick = ()=>{
+    const blob = new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'daybook-'+todayKey()+'.json';
+    a.click();
+  };
+}
+document.getElementById('openSettings').onclick = openSettings;
+
+/* ---------- nav ---------- */
+document.getElementById('prevDay').onclick = ()=>{ viewDate = shiftKey(viewDate,-1); render(); };
+document.getElementById('nextDay').onclick = ()=>{ if (viewDate < todayKey()){ viewDate = shiftKey(viewDate,1); render(); } };
+document.addEventListener('keydown', e=>{ if (e.key === 'Escape') closeSheet(); });
+
+/* ---------- boot ---------- */
+(async function(){
+  await load();
+  readURL();
+  render();
+  if (!S.settings.usdaKey && !S.settings.anthropicKey && !Object.keys(S.days).length){
+    setTimeout(openSettings, 500);
+  }
+})();
+</script>
+</body>
+</html>
