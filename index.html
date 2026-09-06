@@ -646,14 +646,57 @@ function tabMeals(){
 }
 
 /* ---------- USDA search ---------- */
-function usdaURL(path){
-  const target = 'https://api.nal.usda.gov/fdc/v1/' + path;
+/* Builds both routes to USDA so we can fall back between them. */
+function fdcURLs(path){
+  const direct = 'https://api.nal.usda.gov/fdc/v1/' + path;
   const p = (S.settings.proxy || '').trim();
-  if (!p) return target;
-  // Two prefix styles. Ending in "=" means the proxy takes the target as a
-  // query parameter, so it has to be encoded or USDA's own &params get eaten.
-  // Ending in "/" means a straight passthrough, so append it raw.
-  return p.endsWith('=') ? p + encodeURIComponent(target) : p + target;
+  if (!p) return [['direct', direct]];
+  // Ending in "=" means the proxy takes the target as a query parameter and
+  // it must be encoded. Ending in "/" means a raw passthrough.
+  const viaProxy = p.endsWith('=') ? p + encodeURIComponent(direct) : p + direct;
+  // Try the proxy first, but fall back to the direct call — USDA sends
+  // Access-Control-Allow-Origin:* and our GETs don't trigger a preflight,
+  // so direct usually works on its own.
+  return [['proxy', viaProxy], ['direct', direct]];
+}
+
+/* Throws a structured error so the UI can say what actually went wrong. */
+async function fdcFetch(path){
+  let last = null;
+  for (const [route, url] of fdcURLs(path)){
+    try {
+      const r = await fetch(url, { headers:{ 'Accept':'application/json' } });
+      if (!r.ok){
+        let detail = '';
+        try { detail = (await r.text()).slice(0, 300); } catch(e){}
+        last = { kind:'http', status:r.status, route, detail };
+        continue;
+      }
+      return await r.json();
+    } catch(err){
+      last = { kind:'network', route, message:String(err && err.message || err) };
+    }
+  }
+  throw last || { kind:'network', route:'direct', message:'unknown' };
+}
+
+/* Turns that into something readable instead of always blaming CORS. */
+function fdcErrorHTML(e){
+  const via = e.route === 'proxy' ? 'through your Cloudflare Worker' : 'calling USDA directly';
+  if (e.kind === 'http'){
+    if (e.status === 429) return '<div class="warn"><b>USDA is rate limiting you.</b><br>'+
+      'Their limit is 1,000 requests an hour per key. It resets on the hour. '+
+      'If this keeps happening quickly, the shared Cloudflare IP may be throttled — try clearing the proxy field in Settings.</div>';
+    if (e.status === 403 || e.status === 401) return '<div class="warn"><b>USDA rejected the key.</b><br>'+
+      'Check the key in Settings for stray spaces. Detail: '+escapeHTML(e.detail || '')+'</div>';
+    if (e.status >= 500) return '<div class="warn"><b>Error '+e.status+' '+via+'.</b><br>'+
+      (e.route === 'proxy' ? 'Your Worker returned an error. Check its logs in the Cloudflare dashboard, or clear the proxy field to go direct.' : 'USDA\u2019s server is having trouble. Try again shortly.')+
+      (e.detail ? '<br><br>'+escapeHTML(e.detail) : '')+'</div>';
+    return '<div class="warn"><b>Error '+e.status+' '+via+'.</b>'+
+      (e.detail ? '<br><br>'+escapeHTML(e.detail) : '')+'</div>';
+  }
+  return '<div class="warn"><b>Couldn\u2019t reach USDA '+via+'.</b><br>'+
+    'Either you\u2019re offline or the request was blocked. '+escapeHTML(e.message||'')+'</div>';
 }
 function tabSearch(){
   if (!S.settings.usdaKey){
@@ -667,7 +710,7 @@ function tabSearch(){
   const q = document.getElementById('q');
   q.focus();
   let t;
-  q.oninput = ()=>{ clearTimeout(t); t = setTimeout(()=>runSearch(q.value.trim()), 320); };
+  q.oninput = ()=>{ clearTimeout(t); t = setTimeout(()=>runSearch(q.value.trim()), 450); };
   q.onkeydown = e=>{ if (e.key === 'Enter'){ clearTimeout(t); runSearch(q.value.trim()); } };
 }
 
@@ -688,17 +731,24 @@ function kcalOf(food){
   return null;
 }
 
+const searchCache = new Map();
+
 async function runSearch(q){
   const out = document.getElementById('results');
   if (!q){ out.innerHTML = '<div class="empty">Type to search 300,000+ USDA foods.</div>'; return; }
   out.innerHTML = '<span class="spin"></span>';
-  const url = usdaURL('foods/search?api_key='+encodeURIComponent(S.settings.usdaKey)+
+
+  const path = 'foods/search?api_key='+encodeURIComponent(S.settings.usdaKey)+
     '&query='+encodeURIComponent(q)+'&pageSize=25'+
-    '&dataType='+encodeURIComponent('Foundation,SR Legacy,Survey (FNDDS),Branded'));
+    '&dataType='+encodeURIComponent('Foundation,SR Legacy,Survey (FNDDS),Branded');
+
   try {
-    const r = await fetch(url);
-    if (!r.ok) throw new Error('HTTP '+r.status);
-    const d = await r.json();
+    let d = searchCache.get(q);
+    if (!d){
+      d = await fdcFetch(path);
+      searchCache.set(q, d);
+      if (searchCache.size > 60) searchCache.delete(searchCache.keys().next().value);
+    }
     const foods = (d.foods||[]).filter(f=>kcalOf(f) != null);
     if (!foods.length){ out.innerHTML = '<div class="empty">No matches. Try the Estimate tab.</div>'; return; }
     out.innerHTML = '';
@@ -714,9 +764,10 @@ async function runSearch(q){
       out.appendChild(btn);
     });
   } catch(err){
-    out.innerHTML = '<div class="warn"><b>Couldn\u2019t reach the USDA database.</b><br>'+
-      'This is almost always the browser blocking the request (CORS), not a bad key. '+
-      'You can set a proxy prefix in Settings, or use the Estimate tab instead.</div>';
+    out.innerHTML = fdcErrorHTML(err) +
+      '<button class="cta ghost" id="retry" style="margin-top:4px">Try again</button>';
+    const r = document.getElementById('retry');
+    if (r) r.onclick = ()=>runSearch(q);
   }
 }
 function titleCase(s){
@@ -738,15 +789,12 @@ async function openPortion(food, per100){
     });
   }
   try {
-    const r = await fetch(usdaURL('food/'+food.fdcId+'?api_key='+encodeURIComponent(S.settings.usdaKey)));
-    if (r.ok){
-      const d = await r.json();
-      (d.foodPortions||[]).forEach(p=>{
-        const lab = [p.amount, p.measureUnit && p.measureUnit.name !== 'undetermined' ? p.measureUnit.name : '', p.modifier||'']
-          .filter(Boolean).join(' ').trim();
-        if (p.gramWeight) options.push({label: lab || (p.gramWeight+' g'), grams: p.gramWeight});
-      });
-    }
+    const d = await fdcFetch('food/'+food.fdcId+'?api_key='+encodeURIComponent(S.settings.usdaKey));
+    (d.foodPortions||[]).forEach(p=>{
+      const lab = [p.amount, p.measureUnit && p.measureUnit.name !== 'undetermined' ? p.measureUnit.name : '', p.modifier||'']
+        .filter(Boolean).join(' ').trim();
+      if (p.gramWeight) options.push({label: lab || (p.gramWeight+' g'), grams: p.gramWeight});
+    });
   } catch(e){ /* portions are a bonus; grams always work */ }
 
   const seen = new Set();
