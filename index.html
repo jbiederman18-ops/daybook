@@ -165,7 +165,7 @@ header{padding:max(18px,env(safe-area-inset-top)) 0 4px}
       </div>
       <div class="bar" id="bar"></div>
       <div class="mathline">
-        <span><b class="num" id="baseNum">—</b> base</span>
+        <span><button id="editBase"><b class="num" id="baseNum">—</b> base</button></span>
         <span>+ <button id="editActive"><b class="num" id="activeNum">0</b> moved</button></span>
         <span>− <b class="num" id="eatenNum">0</b> eaten</span>
       </div>
@@ -219,6 +219,8 @@ const MEALS = [
 const DEFAULTS = {
   sex:'male', age:35, heightCm:178, weightKg:80,
   goalDelta:-500,            // kcal/day adjustment
+  baseMode:'calculated',     // 'calculated' or 'manual'
+  manualBase:1800,           // used when baseMode is 'manual'
   usdaKey:'', anthropicKey:'',
   model:'claude-haiku-4-5-20251001',
   proxy:'',                  // optional CORS proxy prefix
@@ -265,7 +267,12 @@ function bmr(){
 }
 // Sedentary multiplier only (1.2). Apple Health's Active Energy is added
 // on top, so applying a real activity factor here would double-count it.
-function baseTarget(){ return Math.round(bmr()*1.2 + Number(S.settings.goalDelta||0)); }
+function calcBase(){ return Math.round(bmr()*1.2 + Number(S.settings.goalDelta||0)); }
+function baseTarget(){
+  return S.settings.baseMode === 'manual'
+    ? Math.max(0, Math.round(Number(S.settings.manualBase)||0))
+    : calcBase();
+}
 function target(key){ return baseTarget() + Math.round(day(key).active||0); }
 
 /* ---------- persistence ---------- */
@@ -897,6 +904,60 @@ function addEntry(e){
   toast(e.cal.toLocaleString()+' added to '+sheetState.meal.name.toLowerCase());
 }
 
+/* ---------- daily base ---------- */
+document.getElementById('editBase').onclick = ()=>{
+  const manual = S.settings.baseMode === 'manual';
+  openSheet(sheetHead('Daily base')+
+    '<div class="chips"><button class="chip'+(!manual?' on':'')+'" id="bCalc">Work it out for me</button>'+
+      '<button class="chip'+(manual?' on':'')+'" id="bMan">Set my own</button></div>'+
+    '<div id="baseBody"></div>');
+
+  function draw(){
+    const isMan = S.settings.baseMode === 'manual';
+    document.getElementById('bCalc').classList.toggle('on', !isMan);
+    document.getElementById('bMan').classList.toggle('on', isMan);
+    const host = document.getElementById('baseBody');
+
+    if (!isMan){
+      host.innerHTML =
+        '<div style="display:flex;align-items:baseline;gap:8px;margin:6px 0 10px">'+
+          '<span class="num" style="font-size:38px;font-weight:700">'+calcBase().toLocaleString()+'</span>'+
+          '<span style="color:var(--ink-dim);font-size:13px">calories a day</span></div>'+
+        '<p class="note">From your stats in Settings: resting burn '+Math.round(bmr()).toLocaleString()+
+          ', sedentary baseline, then your goal adjustment. Active calories from Health are added on top of this.</p>'+
+        '<button class="cta" id="bDone" style="margin-top:16px">Done</button>';
+      host.querySelector('#bDone').onclick = ()=>{ save(); render(); closeSheet(); };
+    } else {
+      host.innerHTML =
+        '<div class="field"><label>Calories a day, before activity</label>'+
+        '<input id="mb" type="number" inputmode="numeric" value="'+(S.settings.manualBase||calcBase())+'"></div>'+
+        '<p class="note" id="mbNote"></p>'+
+        '<button class="cta" id="bSave" style="margin-top:12px">Save base</button>';
+      const inp = host.querySelector('#mb');
+      const note = host.querySelector('#mbNote');
+      const upd = ()=>{
+        const v = Number(inp.value)||0;
+        const rest = Math.round(bmr());
+        const diff = v - calcBase();
+        let txt = 'Your calculated figure is '+calcBase().toLocaleString()+
+          (diff ? ' ('+(diff>0?'+':'')+diff.toLocaleString()+')' : '')+'. '+
+          'Health\u2019s active calories still get added on top.';
+        if (v > 0 && v < rest) txt += ' Worth knowing: that\u2019s below your resting burn of '+rest.toLocaleString()+'.';
+        note.textContent = txt;
+      };
+      inp.oninput = upd; upd();
+      inp.focus(); inp.select();
+      host.querySelector('#bSave').onclick = ()=>{
+        S.settings.manualBase = Math.max(0, Math.round(Number(inp.value)||0));
+        save(); render(); closeSheet(); toast('Base set to '+baseTarget().toLocaleString());
+      };
+    }
+  }
+  document.getElementById('bCalc').onclick = ()=>{ S.settings.baseMode='calculated'; save(); render(); draw(); };
+  document.getElementById('bMan').onclick  = ()=>{ S.settings.baseMode='manual'; save(); render(); draw(); };
+  draw();
+};
+
 /* ---------- active energy ---------- */
 document.getElementById('editActive').onclick = ()=>{
   openSheet(sheetHead('Active energy')+
@@ -943,6 +1004,13 @@ function openSettings(){
       opt(0,'Maintain',s.goalDelta)+
       opt(250,'Gain 0.5 lb a week',s.goalDelta)+
       opt(500,'Gain 1 lb a week',s.goalDelta)+'</select></div>'+
+
+    '<div class="divider"><h3>Daily base</h3></div>'+
+    '<div class="chips"><button class="chip'+(s.baseMode!=='manual'?' on':'')+'" id="sCalc">Work it out for me</button>'+
+      '<button class="chip'+(s.baseMode==='manual'?' on':'')+'" id="sMan">Set my own</button></div>'+
+    '<div class="field" id="mbWrap"'+(s.baseMode==='manual'?'':' style="display:none"')+'>'+
+      '<label>Calories a day, before activity</label>'+
+      '<input id="mb" type="number" inputmode="numeric" value="'+(s.manualBase||calcBase())+'"></div>'+
     '<p class="note" id="calcNote"></p>'+
 
     '<div class="divider"><h3>Keys</h3></div>'+
@@ -981,20 +1049,46 @@ function openSettings(){
       age: +el('age').value,
       heightCm: imp ? ftInToCm(el('ft').value||0, el('inch').value||0) : +el('ht').value,
       weightKg: imp ? lbToKg(el('wt').value||0) : +el('wt').value,
-      goalDelta: +el('goal').value
+      goalDelta: +el('goal').value,
+      manualBase: Math.max(0, Math.round(+el('mb').value||0))
     };
   }
   function commitBody(){ Object.assign(S.settings, readBody()); }
 
+  // base mode toggle
+  const mbWrap = document.getElementById('mbWrap');
+  document.getElementById('sCalc').onclick = ()=>{
+    S.settings.baseMode = 'calculated';
+    document.getElementById('sCalc').classList.add('on');
+    document.getElementById('sMan').classList.remove('on');
+    mbWrap.style.display = 'none';
+    upd();
+  };
+  document.getElementById('sMan').onclick = ()=>{
+    S.settings.baseMode = 'manual';
+    document.getElementById('sMan').classList.add('on');
+    document.getElementById('sCalc').classList.remove('on');
+    mbWrap.style.display = '';
+    upd();
+  };
+
   const upd = ()=>{
     const old = {...S.settings};
     Object.assign(S.settings, readBody());
-    document.getElementById('calcNote').innerHTML =
-      'Resting burn '+Math.round(bmr()).toLocaleString()+' · daily base <b style="color:var(--ink)">'+baseTarget().toLocaleString()+'</b>. '+
-      'Active calories from Health are added on top of this, so your workouts are never counted twice.';
+    const rest = Math.round(bmr());
+    let txt = 'Resting burn '+rest.toLocaleString()+' · calculated base '+calcBase().toLocaleString()+'.';
+    if (S.settings.baseMode === 'manual'){
+      txt = 'Using your own base of <b style="color:var(--ink)">'+baseTarget().toLocaleString()+'</b>. '+
+            'Calculated would be '+calcBase().toLocaleString()+', resting burn '+rest.toLocaleString()+'.'+
+            (baseTarget() > 0 && baseTarget() < rest ? ' That\u2019s below your resting burn.' : '');
+    } else {
+      txt = 'Resting burn '+rest.toLocaleString()+' · daily base <b style="color:var(--ink)">'+calcBase().toLocaleString()+'</b>.';
+    }
+    document.getElementById('calcNote').innerHTML = txt +
+      ' Active calories from Health are added on top, so your workouts are never counted twice.';
     Object.assign(S.settings, old);
   };
-  ['sex','age','ft','inch','ht','wt','goal'].forEach(id=>{
+  ['sex','age','ft','inch','ht','wt','goal','mb'].forEach(id=>{
     const el = document.getElementById(id);
     if (!el) return;
     el.oninput = upd; el.onchange = upd;
