@@ -843,6 +843,9 @@ async function openPortion(food, per100){
   const seen = new Set();
   options = options.filter(o=>{ const k=o.label+o.grams; if(seen.has(k))return false; seen.add(k); return true; }).slice(0,10);
 
+  // You may have closed the sheet while the portion list was loading.
+  if (!sheetState) return;
+
   let pick = 0, qty = 1;
   const host = document.getElementById('portions');
   function draw(){
@@ -994,10 +997,13 @@ function tabCustom(){
 }
 
 function addEntry(e){
-  day(viewDate).meals[sheetState.meal.id].push(e);
-  bumpUse(e.name, sheetState.meal.id);
+  // Hold on to the meal: closeSheet() clears sheetState, and the toast below
+  // still needs the name.
+  const meal = sheetState.meal;
+  day(viewDate).meals[meal.id].push(e);
+  bumpUse(e.name, meal.id);
   save(); render(); closeSheet();
-  toast(e.cal.toLocaleString()+' added to '+sheetState.meal.name.toLowerCase());
+  toast(e.cal.toLocaleString()+' added to '+meal.name.toLowerCase());
 }
 
 /* ---------- daily base ---------- */
