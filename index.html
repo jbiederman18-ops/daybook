@@ -83,6 +83,13 @@ header{padding:max(18px,env(safe-area-inset-top)) 0 4px}
 .iconbtn.on{color:var(--breakfast)}
 .addbtn{display:flex;align-items:center;gap:8px;color:var(--ink-dim);font-size:14px;padding:9px 0 4px}
 .addbtn span.plus{width:20px;height:20px;border-radius:50%;border:1px dashed var(--ink-faint);display:grid;place-items:center;font-size:14px;line-height:1}
+.savemeal{font-size:12px;color:var(--ink-faint);border:1px solid var(--line);border-radius:7px;padding:4px 9px}
+.quick{display:flex;flex-wrap:wrap;gap:7px;padding:8px 0 2px}
+.qchip{display:flex;align-items:baseline;gap:7px;border:1px solid var(--line);background:var(--surface);border-radius:9px;padding:7px 11px;font-size:13px;max-width:100%}
+.qchip.combo{border-color:var(--ink-faint)}
+.qchip .qn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+.qchip .qc{font-family:'Bricolage Grotesque',sans-serif;font-variant-numeric:tabular-nums;color:var(--ink-faint);font-size:12px;flex:none}
+.unitcap{font-size:11.5px;color:var(--ink-faint);text-align:center}
 
 /* ---------- trend ---------- */
 .trend{border-top:1px solid var(--line);margin-top:20px;padding-top:18px}
@@ -215,10 +222,11 @@ const DEFAULTS = {
   usdaKey:'', anthropicKey:'',
   model:'claude-haiku-4-5-20251001',
   proxy:'',                  // optional CORS proxy prefix
-  units:'metric'
+  unitSystem:'imperial',     // 'imperial' (ft/in/lb) or 'metric'
+  syncUrl:'', syncToken:''   // optional, powers the iOS widget
 };
 
-let S = { settings:{...DEFAULTS}, days:{}, saved:[] };
+let S = { settings:{...DEFAULTS}, days:{}, saved:[], combos:[] };
 let viewDate = todayKey();
 let sheetState = null;
 
@@ -261,10 +269,42 @@ function baseTarget(){ return Math.round(bmr()*1.2 + Number(S.settings.goalDelta
 function target(key){ return baseTarget() + Math.round(day(key).active||0); }
 
 /* ---------- persistence ---------- */
-let saveTimer = null;
+let saveTimer = null, syncTimer = null;
 function save(){
   clearTimeout(saveTimer);
   saveTimer = setTimeout(()=>Store.set('daybook', JSON.stringify(S)), 180);
+  queueSync();
+}
+
+/* Pushes a small summary of TODAY to your Apps Script endpoint.
+   Fire-and-forget — the app never waits on it and never breaks if it fails. */
+function queueSync(){
+  if (!S.settings.syncUrl) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(pushSync, 1200);
+}
+async function pushSync(){
+  const k = todayKey();
+  const payload = {
+    token: S.settings.syncToken || '',
+    date: k,
+    target: target(k),
+    eaten: eaten(k),
+    remaining: target(k) - eaten(k),
+    active: Math.round(day(k).active||0),
+    base: baseTarget(),
+    meals: MEALS.map(m=>({name:m.name, cal:mealTotal(k,m.id)})),
+    updated: new Date().toISOString()
+  };
+  try {
+    // text/plain keeps this a "simple" request, which avoids the CORS
+    // preflight that Apps Script web apps don't answer.
+    await fetch(S.settings.syncUrl, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+  } catch(e){ /* offline or misconfigured — the app carries on regardless */ }
 }
 async function load(){
   const raw = await Store.get('daybook');
@@ -274,9 +314,22 @@ async function load(){
       S.settings = {...DEFAULTS, ...(p.settings||{})};
       S.days = p.days || {};
       S.saved = p.saved || [];
+      S.combos = p.combos || [];
     } catch(e){}
   }
 }
+
+/* ---------- units ---------- */
+const LB_PER_KG = 2.20462262, CM_PER_IN = 2.54;
+function kgToLb(kg){ return Math.round(Number(kg)*LB_PER_KG*10)/10; }
+function lbToKg(lb){ return Number(lb)/LB_PER_KG; }
+function cmToFtIn(cm){
+  const totalIn = Number(cm)/CM_PER_IN;
+  let ft = Math.floor(totalIn/12), inch = Math.round(totalIn - ft*12);
+  if (inch === 12){ ft += 1; inch = 0; }
+  return {ft, inch};
+}
+function ftInToCm(ft, inch){ return (Number(ft)*12 + Number(inch))*CM_PER_IN; }
 
 /* ============================================================
    Apple Shortcut hand-off:  yoursite.github.io/?active=512
@@ -338,7 +391,12 @@ function render(){
     const items = day(viewDate).meals[m.id];
     sec.innerHTML =
       '<div class="meal-head"><div class="meal-name"><span class="dot" style="background:'+m.color+'"></span>'+m.name+'</div>'+
-      '<div class="meal-total">'+(mealTotal(viewDate,m.id)||'').toLocaleString()+'</div></div>';
+      '<div style="display:flex;align-items:center;gap:10px">'+
+      (items.length ? '<button class="savemeal" data-m="'+m.id+'">Save meal</button>' : '')+
+      '<div class="meal-total">'+(mealTotal(viewDate,m.id)||'').toLocaleString()+'</div></div></div>';
+
+    const sm = sec.querySelector('.savemeal');
+    if (sm) sm.onclick = ()=>saveCombo(m);
 
     items.forEach((e,i)=>{
       const row = document.createElement('div');
@@ -352,10 +410,30 @@ function render(){
       row.querySelector('.sub').textContent = [e.portion, e.src].filter(Boolean).join(' · ');
       const star = row.querySelector('.star');
       if (isSaved(e.name)) star.classList.add('on');
-      star.onclick = ()=>{ toggleSave(e); render(); };
+      star.onclick = ()=>{ toggleSave(e, m.id); render(); };
       row.querySelector('.del').onclick = ()=>{ items.splice(i,1); save(); render(); };
       sec.appendChild(row);
     });
+
+    // one-tap repeats: whatever you log most often at this time of day
+    const quick = quickPicks(m.id);
+    if (quick.length){
+      const strip = document.createElement('div');
+      strip.className = 'quick';
+      quick.forEach(q=>{
+        const c = document.createElement('button');
+        c.className = 'qchip'+(q.type==='combo'?' combo':'');
+        c.innerHTML = '<span class="qn"></span><span class="qc">'+q.cal.toLocaleString()+'</span>';
+        c.querySelector('.qn').textContent = q.name;
+        c.onclick = ()=>{
+          if (q.type === 'combo') logCombo(q.ref, m);
+          else { day(viewDate).meals[m.id].push({name:q.ref.name, cal:q.ref.cal, portion:q.ref.portion, src:q.ref.src});
+                 bumpUse(q.ref.name); save(); render(); toast(q.cal.toLocaleString()+' added'); }
+        };
+        strip.appendChild(c);
+      });
+      sec.appendChild(strip);
+    }
 
     const add = document.createElement('button');
     add.className = 'addbtn';
@@ -408,17 +486,71 @@ function renderTrend(){
     : '';
 }
 
-/* ---------- saved meals ---------- */
+/* ---------- saved foods ---------- */
 function isSaved(name){ return S.saved.some(s=>s.name === name); }
-function toggleSave(e){
+function toggleSave(e, mealId){
   const i = S.saved.findIndex(s=>s.name === e.name);
   if (i > -1){ S.saved.splice(i,1); toast('Removed from saved'); }
-  else { S.saved.unshift({name:e.name, cal:e.cal, portion:e.portion, src:e.src, uses:1}); toast('Saved'); }
+  else { S.saved.unshift({name:e.name, cal:e.cal, portion:e.portion, src:e.src, uses:1, meal:mealId||''}); toast('Saved'); }
   save();
 }
-function bumpUse(name){
+function bumpUse(name, mealId){
   const s = S.saved.find(x=>x.name === name);
-  if (s){ s.uses = (s.uses||0)+1; S.saved.sort((a,b)=>(b.uses||0)-(a.uses||0)); save(); }
+  if (s){
+    s.uses = (s.uses||0)+1;
+    if (mealId) s.meal = mealId;
+    S.saved.sort((a,b)=>(b.uses||0)-(a.uses||0));
+    save();
+  }
+}
+
+/* ---------- saved meals (combos) ---------- */
+function comboCal(c){ return c.items.reduce((a,i)=>a+(i.cal||0),0); }
+function saveCombo(meal){
+  const items = day(viewDate).meals[meal.id].map(e=>({name:e.name, cal:e.cal, portion:e.portion, src:e.src}));
+  if (!items.length) return;
+  const suggested = items.length === 1 ? items[0].name : items[0].name+' + '+(items.length-1)+' more';
+  openSheet(sheetHead('Save this meal')+
+    '<div class="field"><label>Call it</label><input id="cbn" value="'+escapeHTML(suggested)+'" autocomplete="off"></div>'+
+    '<div style="margin:2px 0 16px">'+items.map(i=>
+      '<div class="entry" style="padding:5px 0"><div class="txt"><span class="nm">'+escapeHTML(i.name)+'</span></div>'+
+      '<span class="kc">'+i.cal.toLocaleString()+'</span></div>').join('')+
+      '<div class="entry" style="padding:8px 0 0;border-top:1px solid var(--line);margin-top:6px">'+
+      '<div class="txt"><span class="nm" style="color:var(--ink-dim)">Total</span></div>'+
+      '<span class="kc">'+items.reduce((a,i)=>a+i.cal,0).toLocaleString()+'</span></div></div>'+
+    '<button class="cta" id="cbSave">Save meal</button>'+
+    '<p class="note">Saved meals show up as a one-tap button under '+meal.name+'.</p>');
+  const inp = document.getElementById('cbn');
+  inp.focus(); inp.select();
+  document.getElementById('cbSave').onclick = ()=>{
+    const nm = inp.value.trim();
+    if (!nm){ toast('Give it a name'); return; }
+    S.combos = S.combos.filter(c=>!(c.name === nm && c.meal === meal.id));
+    S.combos.unshift({id:'c'+Date.now(), name:nm, meal:meal.id, items, uses:1});
+    save(); render(); closeSheet(); toast('Meal saved');
+  };
+}
+function logCombo(combo, meal){
+  combo.items.forEach(i=>day(viewDate).meals[meal.id].push({...i}));
+  combo.uses = (combo.uses||0)+1;
+  S.combos.sort((a,b)=>(b.uses||0)-(a.uses||0));
+  save(); render();
+  if (sheetState) closeSheet();
+  toast(comboCal(combo).toLocaleString()+' added to '+meal.name.toLowerCase());
+}
+function deleteCombo(id){
+  S.combos = S.combos.filter(c=>c.id !== id);
+  save(); render();
+}
+
+/* Top repeats for a meal slot: saved meals first, then single foods. */
+function quickPicks(mealId){
+  const out = [];
+  S.combos.filter(c=>c.meal === mealId).slice(0,2)
+    .forEach(c=>out.push({type:'combo', name:c.name, cal:comboCal(c), ref:c}));
+  S.saved.filter(s=>s.meal === mealId && (s.uses||0) > 1).slice(0, 3-out.length)
+    .forEach(s=>out.push({type:'food', name:s.name, cal:s.cal, ref:s}));
+  return out.slice(0,3);
 }
 
 /* ---------- toast ---------- */
@@ -460,17 +592,51 @@ function drawAdd(){
   openSheet(
     sheetHead('Add to '+sheetState.meal.name) +
     '<div class="tabs">'+
-      ['search','saved','estimate','custom'].map(k=>
+      ['search','meals','saved','estimate','custom'].map(k=>
         '<button class="tab'+(t===k?' on':'')+'" data-tab="'+k+'">'+
-        ({search:'Search',saved:'Saved',estimate:'Estimate',custom:'Custom'})[k]+'</button>').join('')+
+        ({search:'Search',meals:'Meals',saved:'Foods',estimate:'Estimate',custom:'Custom'})[k]+'</button>').join('')+
     '</div><div id="tabBody"></div>'
   );
   document.querySelectorAll('.tab').forEach(b=>{
     b.onclick = ()=>{ sheetState.tab = b.dataset.tab; drawAdd(); };
   });
-  ({search:tabSearch, saved:tabSaved, estimate:tabEstimate, custom:tabCustom})[t]();
+  ({search:tabSearch, meals:tabMeals, saved:tabSaved, estimate:tabEstimate, custom:tabCustom})[t]();
 }
 const body = ()=>document.getElementById('tabBody');
+
+/* ---------- saved meals tab ---------- */
+function tabMeals(){
+  const mine = S.combos.filter(c=>c.meal === sheetState.meal.id);
+  const others = S.combos.filter(c=>c.meal !== sheetState.meal.id);
+  if (!S.combos.length){
+    body().innerHTML = '<div class="empty">No saved meals yet.<br>Log a meal you eat often, then tap <b>Save meal</b> beside its heading.</div>';
+    return;
+  }
+  body().innerHTML = '';
+  const draw = (list, heading)=>{
+    if (!list.length) return;
+    if (heading){
+      const h = document.createElement('div');
+      h.className = 'divider'; h.innerHTML = '<h3>'+heading+'</h3>';
+      body().appendChild(h);
+    }
+    list.forEach(c=>{
+      const row = document.createElement('div');
+      row.className = 'res';
+      row.innerHTML =
+        '<button class="txt" style="text-align:left"><span class="nm"></span><span class="sub"></span></button>'+
+        '<span class="kc">'+comboCal(c).toLocaleString()+'</span>'+
+        '<button class="iconbtn del" aria-label="Delete saved meal"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+      row.querySelector('.nm').textContent = c.name;
+      row.querySelector('.sub').textContent = c.items.map(i=>i.name).join(', ');
+      row.querySelector('.txt').onclick = ()=>logCombo(c, sheetState.meal);
+      row.querySelector('.del').onclick = ()=>{ deleteCombo(c.id); tabMeals(); toast('Saved meal deleted'); };
+      body().appendChild(row);
+    });
+  };
+  draw(mine, '');
+  draw(others, mine.length ? 'From other meals' : '');
+}
 
 /* ---------- USDA search ---------- */
 function usdaURL(path){
@@ -628,7 +794,7 @@ function tabSaved(){
     b.innerHTML = '<div class="txt"><span class="nm"></span><span class="sub"></span></div><span class="kc">'+s.cal.toLocaleString()+'</span>';
     b.querySelector('.nm').textContent = s.name;
     b.querySelector('.sub').textContent = [s.portion, s.uses>1 ? s.uses+' times' : ''].filter(Boolean).join(' · ');
-    b.onclick = ()=>{ bumpUse(s.name); addEntry({name:s.name, cal:s.cal, portion:s.portion, src:s.src}); };
+    b.onclick = ()=>{ bumpUse(s.name, sheetState.meal.id); addEntry({name:s.name, cal:s.cal, portion:s.portion, src:s.src}); };
     body().appendChild(b);
   });
 }
@@ -726,7 +892,7 @@ function tabCustom(){
 
 function addEntry(e){
   day(viewDate).meals[sheetState.meal.id].push(e);
-  bumpUse(e.name);
+  bumpUse(e.name, sheetState.meal.id);
   save(); render(); closeSheet();
   toast(e.cal.toLocaleString()+' added to '+sheetState.meal.name.toLowerCase());
 }
@@ -749,13 +915,26 @@ document.getElementById('editActive').onclick = ()=>{
 function openSettings(){
   const s = S.settings;
   const opt = (v,l,cur)=>'<option value="'+v+'"'+(String(cur)===String(v)?' selected':'')+'>'+l+'</option>';
+  const imp = s.unitSystem !== 'metric';
+  const {ft, inch} = cmToFtIn(s.heightCm);
+
+  const bodyFields = imp
+    ? '<div class="row"><div class="field"><label>Height</label>'+
+        '<div class="row" style="gap:8px"><input id="ft" type="number" inputmode="numeric" value="'+ft+'" aria-label="Feet">'+
+        '<input id="inch" type="number" inputmode="numeric" value="'+inch+'" aria-label="Inches"></div>'+
+        '<div class="row" style="gap:8px;margin-top:4px"><span class="unitcap">feet</span><span class="unitcap">inches</span></div></div>'+
+      '<div class="field"><label>Weight (lb)</label><input id="wt" type="number" inputmode="decimal" step="0.5" value="'+kgToLb(s.weightKg)+'"></div></div>'
+    : '<div class="row"><div class="field"><label>Height (cm)</label><input id="ht" type="number" inputmode="numeric" value="'+Math.round(s.heightCm)+'"></div>'+
+      '<div class="field"><label>Weight (kg)</label><input id="wt" type="number" inputmode="decimal" step="0.1" value="'+(Math.round(s.weightKg*10)/10)+'"></div></div>';
+
   openSheet(sheetHead('Settings')+
-    '<h3 style="font-family:Bricolage Grotesque;font-size:13.5px;color:var(--ink-dim);margin:0 0 12px">You</h3>'+
+    '<div class="divider" style="border:none;margin:0"><h3 style="margin-top:0">You</h3></div>'+
+    '<div class="chips"><button class="chip'+(imp?' on':'')+'" id="uImp">Feet &amp; pounds</button>'+
+      '<button class="chip'+(!imp?' on':'')+'" id="uMet">Centimetres &amp; kilos</button></div>'+
     '<div class="row"><div class="field"><label>Sex</label><select id="sex">'+
       opt('male','Male',s.sex)+opt('female','Female',s.sex)+'</select></div>'+
     '<div class="field"><label>Age</label><input id="age" type="number" inputmode="numeric" value="'+s.age+'"></div></div>'+
-    '<div class="row"><div class="field"><label>Height (cm)</label><input id="ht" type="number" inputmode="numeric" value="'+s.heightCm+'"></div>'+
-    '<div class="field"><label>Weight (kg)</label><input id="wt" type="number" inputmode="decimal" step="0.1" value="'+s.weightKg+'"></div></div>'+
+    bodyFields+
     '<div class="field"><label>Goal</label><select id="goal">'+
       opt(-1000,'Lose 2 lb a week',s.goalDelta)+
       opt(-750,'Lose 1.5 lb a week',s.goalDelta)+
@@ -775,6 +954,12 @@ function openSettings(){
     '<div class="field"><label>CORS proxy prefix (only if USDA search fails)</label><input id="px" value="'+escapeHTML(s.proxy)+'" placeholder="https://your-proxy/?url=" autocomplete="off"></div>'+
     '<p class="note">Keys are stored only in this browser and are sent straight to USDA and Anthropic. Nothing goes anywhere else.</p>'+
 
+    '<div class="divider"><h3>Home screen widget</h3></div>'+
+    '<div class="field"><label>Apps Script web app URL</label><input id="su" value="'+escapeHTML(s.syncUrl)+'" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off"></div>'+
+    '<div class="field"><label>Shared secret</label><input id="st" value="'+escapeHTML(s.syncToken)+'" placeholder="any word you also put in the script" autocomplete="off"></div>'+
+    '<p class="note">Leave both blank and everything still works — you just won\u2019t get the widget. Setup is in <b>widget-setup.md</b>.</p>'+
+    (s.syncUrl ? '<button class="cta ghost" id="testSync" style="margin-top:6px">Send today\u2019s numbers now</button>' : '')+
+
     '<div class="divider"><h3>Apple Health</h3></div>'+
     '<p class="note">Build a Shortcut with three steps, then run it each morning or automate it:<br><br>'+
     '1. <b>Find Health Samples</b> — type Active Energy, today, sum.<br>'+
@@ -785,38 +970,48 @@ function openSettings(){
     '<button class="cta" id="saveSet" style="margin-top:18px">Save settings</button>'+
     '<button class="cta ghost" id="exportBtn" style="margin-top:8px">Export my data</button>');
 
-  const upd = ()=>{
-    const tmp = {
-      sex:document.getElementById('sex').value,
-      age:+document.getElementById('age').value,
-      heightCm:+document.getElementById('ht').value,
-      weightKg:+document.getElementById('wt').value,
-      goalDelta:+document.getElementById('goal').value
+  // Switching units re-renders the sheet, keeping whatever is typed so far.
+  document.getElementById('uImp').onclick = ()=>{ commitBody(); S.settings.unitSystem='imperial'; save(); openSettings(); };
+  document.getElementById('uMet').onclick = ()=>{ commitBody(); S.settings.unitSystem='metric'; save(); openSettings(); };
+
+  function readBody(){
+    const el = id=>document.getElementById(id);
+    return {
+      sex: el('sex').value,
+      age: +el('age').value,
+      heightCm: imp ? ftInToCm(el('ft').value||0, el('inch').value||0) : +el('ht').value,
+      weightKg: imp ? lbToKg(el('wt').value||0) : +el('wt').value,
+      goalDelta: +el('goal').value
     };
+  }
+  function commitBody(){ Object.assign(S.settings, readBody()); }
+
+  const upd = ()=>{
     const old = {...S.settings};
-    Object.assign(S.settings, tmp);
+    Object.assign(S.settings, readBody());
     document.getElementById('calcNote').innerHTML =
       'Resting burn '+Math.round(bmr()).toLocaleString()+' · daily base <b style="color:var(--ink)">'+baseTarget().toLocaleString()+'</b>. '+
       'Active calories from Health are added on top of this, so your workouts are never counted twice.';
     Object.assign(S.settings, old);
   };
-  ['sex','age','ht','wt','goal'].forEach(id=>{
+  ['sex','age','ft','inch','ht','wt','goal'].forEach(id=>{
     const el = document.getElementById(id);
+    if (!el) return;
     el.oninput = upd; el.onchange = upd;
   });
   upd();
 
+  const test = document.getElementById('testSync');
+  if (test) test.onclick = async ()=>{ await pushSync(); toast('Sent to your widget endpoint'); };
+
   document.getElementById('saveSet').onclick = ()=>{
-    Object.assign(S.settings,{
-      sex:document.getElementById('sex').value,
-      age:+document.getElementById('age').value,
-      heightCm:+document.getElementById('ht').value,
-      weightKg:+document.getElementById('wt').value,
-      goalDelta:+document.getElementById('goal').value,
+    Object.assign(S.settings, readBody(), {
       usdaKey:document.getElementById('uk').value.trim(),
       anthropicKey:document.getElementById('ak').value.trim(),
       model:document.getElementById('model').value,
-      proxy:document.getElementById('px').value.trim()
+      proxy:document.getElementById('px').value.trim(),
+      syncUrl:document.getElementById('su').value.trim(),
+      syncToken:document.getElementById('st').value.trim()
     });
     save(); render(); closeSheet(); toast('Settings saved');
   };
