@@ -647,8 +647,13 @@ function tabMeals(){
 
 /* ---------- USDA search ---------- */
 function usdaURL(path){
-  const p = S.settings.proxy ? S.settings.proxy : '';
-  return p + 'https://api.nal.usda.gov/fdc/v1/' + path;
+  const target = 'https://api.nal.usda.gov/fdc/v1/' + path;
+  const p = (S.settings.proxy || '').trim();
+  if (!p) return target;
+  // Two prefix styles. Ending in "=" means the proxy takes the target as a
+  // query parameter, so it has to be encoded or USDA's own &params get eaten.
+  // Ending in "/" means a straight passthrough, so append it raw.
+  return p.endsWith('=') ? p + encodeURIComponent(target) : p + target;
 }
 function tabSearch(){
   if (!S.settings.usdaKey){
@@ -1019,7 +1024,8 @@ function openSettings(){
     '<div class="field"><label>Model</label><select id="model">'+
       opt('claude-haiku-4-5-20251001','Haiku 4.5 — fast and cheap',s.model)+
       opt('claude-sonnet-5','Sonnet 5 — more careful',s.model)+'</select></div>'+
-    '<div class="field"><label>CORS proxy prefix (only if USDA search fails)</label><input id="px" value="'+escapeHTML(s.proxy)+'" placeholder="https://your-proxy/?url=" autocomplete="off"></div>'+
+    '<div class="field"><label>CORS proxy prefix (leave blank unless USDA search fails)</label><input id="px" value="'+escapeHTML(s.proxy)+'" placeholder="https://your-worker.workers.dev/?url=" autocomplete="off"></div>'+
+    '<p class="note">The USDA search URL gets appended to whatever you put here. End the prefix with <code>=</code> and it will be URL-encoded for you; end it with <code>/</code> and it is passed through raw.</p>'+
     '<p class="note">Keys are stored only in this browser and are sent straight to USDA and Anthropic. Nothing goes anywhere else.</p>'+
 
     '<div class="divider"><h3>Home screen widget</h3></div>'+
