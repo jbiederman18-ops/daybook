@@ -958,6 +958,8 @@ async function estimate(desc){
     const j = JSON.parse(txt.slice(txt.indexOf('{'), txt.lastIndexOf('}')+1));
     const cal = Math.round(Number(j.calories));
     if (!isFinite(cal)) throw new Error('Could not read a number from the estimate.');
+    // You may have closed the sheet while the estimate was in flight.
+    if (!sheetState) return;
     out.innerHTML =
       '<div class="divider"></div>'+
       '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:6px">'+
