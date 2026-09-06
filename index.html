@@ -271,7 +271,17 @@ const DEFAULTS = {
   syncUrl:'', syncToken:''   // optional, powers the iOS widget
 };
 
-let S = { settings:{...DEFAULTS}, days:{}, saved:[], combos:[] };
+let S = { settings:{...DEFAULTS}, days:{}, saved:[], combos:[],
+           graves:{},                      // id -> {up, kind}, so deletes travel between devices
+           sync:{lastPull:0, lastPush:0, at:0, err:''} };
+
+/* Body stats sync between devices. Keys and the proxy stay local on purpose:
+   they're per-device secrets and the relay is only guarded by a shared word. */
+const PROFILE_KEYS = ['sex','age','heightCm','weightKg','goalDelta','baseMode','manualBase','unitSystem'];
+function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
+function stampNew(e){ return {...e, id:uid(), up:Date.now()}; }
+function bury(rec, kind){ if (rec && rec.id) S.graves[rec.id] = {up:Date.now(), kind:kind||'entry'}; }
+function touchProfile(){ S.settings.profileUp = Date.now(); }
 let viewDate = todayKey();
 let sheetState = null;
 
@@ -320,9 +330,12 @@ function target(key){ return baseTarget() + Math.round(day(key).active||0); }
 
 /* ---------- persistence ---------- */
 let saveTimer = null, syncTimer = null;
-function save(){
+function persist(){
   clearTimeout(saveTimer);
   saveTimer = setTimeout(()=>Store.set('daybook', JSON.stringify(S)), 180);
+}
+function save(){
+  persist();
   queueSync();
 }
 
@@ -333,18 +346,63 @@ function queueSync(){
   clearTimeout(syncTimer);
   syncTimer = setTimeout(pushSync, 1200);
 }
-async function pushSync(){
+/* Everything that changed since `since`. Deletes ride along as tombstones,
+   which is what lets one device's deletion survive another's stale copy. */
+function collectChanges(since){
+  const entries = [], days = [], library = [];
+  Object.keys(S.days).forEach(dk=>{
+    const d = S.days[dk];
+    if ((d.activeUp||0) > since) days.push({date:dk, active:Math.round(d.active||0), updated:d.activeUp});
+    MEALS.forEach(m=>(d.meals[m.id]||[]).forEach(e=>{
+      if ((e.up||0) > since) entries.push({
+        id:e.id, date:dk, meal:m.id, name:e.name, cal:e.cal,
+        portion:e.portion||'', src:e.src||'', updated:e.up, deleted:0
+      });
+    }));
+  });
+  S.saved.forEach(f=>{ if ((f.up||0) > since) library.push({
+    id:f.id, kind:'food', name:f.name, cal:f.cal, portion:f.portion||'', src:f.src||'',
+    meal:f.meal||'', uses:f.uses||1, items:'', updated:f.up, deleted:0 }); });
+  S.combos.forEach(c=>{ if ((c.up||0) > since) library.push({
+    id:c.id, kind:'combo', name:c.name, cal:comboCal(c), portion:'', src:'',
+    meal:c.meal||'', uses:c.uses||1, items:JSON.stringify(c.items||[]), updated:c.up, deleted:0 }); });
+
+  Object.keys(S.graves).forEach(id=>{
+    const g = S.graves[id];
+    if (!g || (g.up||0) <= since) return;
+    const row = {id, updated:g.up, deleted:1};
+    if (g.kind === 'entry') entries.push(row); else library.push({...row, kind:g.kind});
+  });
+
+  let profile = null;
+  if ((S.settings.profileUp||0) > since){
+    profile = {updated:S.settings.profileUp};
+    PROFILE_KEYS.forEach(k=>profile[k] = S.settings[k]);
+  }
+  return {entries, days, library, profile};
+}
+
+/* Pushes changes plus the widget's summary. Fire-and-forget: the app never
+   waits on it and never breaks if it fails. */
+async function pushSync(full){
+  if (!S.settings.syncUrl) return;
   const k = todayKey();
+  const at = Date.now();
+  const ch = collectChanges(full ? 0 : (S.sync.lastPush||0));
   const payload = {
     token: S.settings.syncToken || '',
-    date: k,
-    target: target(k),
-    eaten: eaten(k),
-    remaining: target(k) - eaten(k),
-    active: Math.round(day(k).active||0),
-    base: baseTarget(),
-    meals: MEALS.map(m=>({name:m.name, cal:mealTotal(k,m.id)})),
-    updated: new Date().toISOString()
+    op: 'push',
+    entries: ch.entries, days: ch.days, library: ch.library, profile: ch.profile,
+    summary: {
+      date: k,
+      target: target(k),
+      eaten: eaten(k),
+      remaining: target(k) - eaten(k),
+      active: Math.round(day(k).active||0),
+      base: baseTarget(),
+      meals: MEALS.map(m=>({name:m.name, cal:mealTotal(k,m.id)})),
+      updated: new Date().toISOString()
+    }
   };
   try {
     // text/plain keeps this a "simple" request, which avoids the CORS
@@ -354,8 +412,157 @@ async function pushSync(){
       headers:{'Content-Type':'text/plain;charset=utf-8'},
       body: JSON.stringify(payload)
     });
-  } catch(e){ /* offline or misconfigured — the app carries on regardless */ }
+    // We can't reliably read a cross-origin POST response, so this is
+    // optimistic. "Re-send everything" in Settings is the repair tool.
+    S.sync.lastPush = at;
+    S.sync.at = at;
+    S.sync.err = '';
+    persist();
+  } catch(e){
+    S.sync.err = 'Could not reach the relay';
+  }
 }
+
+/* ---------- pull ---------- */
+/* Same two-route trick as the USDA calls: straight at Apps Script first,
+   then through your proxy if the browser blocks it. */
+function syncURLs(qs){
+  const direct = S.settings.syncUrl + (S.settings.syncUrl.includes('?') ? '&' : '?') + qs;
+  const px = (S.settings.proxy||'').trim();
+  if (!px) return [direct];
+  return [direct, px.endsWith('=') ? px + encodeURIComponent(direct) : px + direct];
+}
+async function pullSync(){
+  if (!S.settings.syncUrl) return false;
+  const qs = 'token='+encodeURIComponent(S.settings.syncToken||'')+
+             '&op=pull&since='+(S.sync.lastPull||0);
+  let data = null, err = 'Could not reach the relay';
+  for (const url of syncURLs(qs)){
+    try {
+      const r = await fetch(url, {headers:{'Accept':'application/json'}});
+      if (!r.ok){ err = 'Relay returned '+r.status; continue; }
+      data = await r.json();
+      break;
+    } catch(e){ /* try the next route */ }
+  }
+  if (!data){ S.sync.err = err; persist(); return false; }
+  if (data.ok === false){ S.sync.err = data.error || 'Relay refused'; persist(); return false; }
+
+  mergeRemote(data);
+  // Rewind the cursor a couple of seconds: the relay may have been mid-write
+  // when it answered, and merging the same row twice costs nothing.
+  S.sync.lastPull = Math.max(0, (data.now || Date.now()) - 2000);
+  S.sync.at = Date.now();
+  S.sync.err = '';
+  persist();
+  render();
+  return true;
+}
+
+/* Last write wins, per record rather than per day, so two devices adding
+   different food to the same lunch both keep their entries. */
+function findEntry(id){
+  for (const dk of Object.keys(S.days)){
+    for (const m of MEALS){
+      const arr = S.days[dk].meals[m.id] || [];
+      const i = arr.findIndex(e=>e.id === id);
+      if (i > -1) return {arr, i, e:arr[i]};
+    }
+  }
+  return null;
+}
+function mergeRemote(d){
+  const touched = new Set();
+
+  (d.entries||[]).forEach(r=>{
+    const up = +r.updated || 0;
+    if (!r.id || !up) return;
+    const grave = S.graves[r.id];
+    const found = findEntry(r.id);
+
+    if (+r.deleted === 1){
+      if (found) found.arr.splice(found.i, 1);
+      if (!grave || grave.up < up) S.graves[r.id] = {up, kind:'entry'};
+      return;
+    }
+    if (grave && grave.up >= up) return;          // we deleted it more recently
+    if (found){
+      if ((found.e.up||0) >= up) return;          // our copy is newer
+      found.arr.splice(found.i, 1);
+    }
+    if (!MEALS.some(m=>m.id === r.meal)) return;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(r.date||''))) return;
+    day(r.date).meals[r.meal].push({
+      id:r.id, name:r.name, cal:+r.cal||0,
+      portion:r.portion||'', src:r.src||'', up
+    });
+    touched.add(r.date+'|'+r.meal);
+  });
+  touched.forEach(key=>{
+    const [dk, mid] = key.split('|');
+    day(dk).meals[mid].sort((a,b)=>(a.up||0)-(b.up||0));
+  });
+
+  (d.days||[]).forEach(r=>{
+    const up = +r.updated || 0;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(r.date||''))) return;
+    if (up > (day(r.date).activeUp||0)){
+      day(r.date).active = Math.max(0, Math.round(+r.active||0));
+      day(r.date).activeUp = up;
+    }
+  });
+
+  (d.library||[]).forEach(r=>{
+    const up = +r.updated || 0;
+    if (!r.id || !up) return;
+    const list = r.kind === 'combo' ? S.combos : S.saved;
+    const i = list.findIndex(x=>x.id === r.id);
+    const grave = S.graves[r.id];
+
+    if (+r.deleted === 1){
+      if (i > -1) list.splice(i, 1);
+      if (!grave || grave.up < up) S.graves[r.id] = {up, kind:r.kind || 'food'};
+      return;
+    }
+    if (grave && grave.up >= up) return;
+    if (i > -1 && (list[i].up||0) >= up) return;
+    const rec = r.kind === 'combo'
+      ? {id:r.id, name:r.name, meal:r.meal||'', uses:+r.uses||1, up,
+         items: parseItems(r.items)}
+      : {id:r.id, name:r.name, cal:+r.cal||0, portion:r.portion||'', src:r.src||'',
+         meal:r.meal||'', uses:+r.uses||1, up};
+    if (i > -1) list[i] = rec; else list.unshift(rec);
+  });
+  S.saved.sort((a,b)=>(b.uses||0)-(a.uses||0));
+  S.combos.sort((a,b)=>(b.uses||0)-(a.uses||0));
+
+  const pr = d.profile;
+  if (pr && (+pr.updated||0) > (S.settings.profileUp||0)){
+    PROFILE_KEYS.forEach(k=>{ if (pr[k] !== undefined && pr[k] !== '') S.settings[k] = pr[k]; });
+    S.settings.age = +S.settings.age || DEFAULTS.age;
+    S.settings.heightCm = +S.settings.heightCm || DEFAULTS.heightCm;
+    S.settings.weightKg = +S.settings.weightKg || DEFAULTS.weightKg;
+    S.settings.goalDelta = +S.settings.goalDelta || 0;
+    S.settings.manualBase = +S.settings.manualBase || DEFAULTS.manualBase;
+    S.settings.profileUp = +pr.updated;
+  }
+}
+function parseItems(v){
+  if (Array.isArray(v)) return v;
+  try { const a = JSON.parse(v||'[]'); return Array.isArray(a) ? a : []; } catch(e){ return []; }
+}
+
+/* Pull on open and whenever you come back to the tab, rate limited so
+   flicking between apps doesn't hammer the relay. */
+let lastPullAt = 0;
+function maybePull(force){
+  if (!S.settings.syncUrl) return;
+  if (!force && Date.now() - lastPullAt < 20000) return;
+  lastPullAt = Date.now();
+  pullSync();
+}
+document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) maybePull(); });
+window.addEventListener('focus', ()=>maybePull());
 async function load(){
   const raw = await Store.get('daybook');
   if (raw){
@@ -365,8 +572,35 @@ async function load(){
       S.days = p.days || {};
       S.saved = p.saved || [];
       S.combos = p.combos || [];
+      S.graves = p.graves || {};
+      S.sync = {lastPull:0, lastPush:0, at:0, err:'', ...(p.sync||{})};
     } catch(e){}
   }
+  hydrate();
+}
+
+/* Anything logged before syncing existed has no id or timestamp. Give it
+   one now so it can take part, and drop tombstones nobody needs any more. */
+function hydrate(){
+  let dirty = false;
+  const stamp = 1;   // oldest possible, so any synced edit wins over untracked history
+  Object.keys(S.days).forEach(dk=>{
+    const d = S.days[dk];
+    if (!d.meals) return;
+    MEALS.forEach(m=>(d.meals[m.id]||[]).forEach(e=>{
+      if (!e.id){ e.id = uid(); e.up = e.up || stamp; dirty = true; }
+    }));
+  });
+  S.saved.forEach(f=>{ if (!f.id){ f.id = uid(); f.up = f.up || stamp; dirty = true; } });
+  S.combos.forEach(c=>{ if (!c.id){ c.id = uid(); } if (!c.up){ c.up = stamp; dirty = true; } });
+
+  const cutoff = Date.now() - 60*24*3600*1000;
+  Object.keys(S.graves).forEach(id=>{
+    const g = S.graves[id];
+    if (!g || typeof g !== 'object'){ delete S.graves[id]; dirty = true; return; }
+    if ((g.up||0) < cutoff){ delete S.graves[id]; dirty = true; }
+  });
+  if (dirty) persist();
 }
 
 /* ---------- units ---------- */
@@ -394,6 +628,7 @@ function readURL(){
     if (!isNaN(n)){
       const key = dk && /^\d{4}-\d{2}-\d{2}$/.test(dk) ? dk : todayKey();
       day(key).active = n;
+      day(key).activeUp = Date.now();
       hit = true;
       setTimeout(()=>toast(n.toLocaleString()+' active kcal added'), 400);
     }
@@ -461,7 +696,7 @@ function render(){
       const star = row.querySelector('.star');
       if (isSaved(e.name)) star.classList.add('on');
       star.onclick = ()=>{ toggleSave(e, m.id); render(); };
-      row.querySelector('.del').onclick = ()=>{ items.splice(i,1); save(); render(); };
+      row.querySelector('.del').onclick = ()=>{ bury(items[i],'entry'); items.splice(i,1); save(); render(); };
       sec.appendChild(row);
     });
 
@@ -477,7 +712,7 @@ function render(){
         c.querySelector('.qn').textContent = q.name;
         c.onclick = ()=>{
           if (q.type === 'combo') logCombo(q.ref, m);
-          else { day(viewDate).meals[m.id].push({name:q.ref.name, cal:q.ref.cal, portion:q.ref.portion, src:q.ref.src});
+          else { day(viewDate).meals[m.id].push(stampNew({name:q.ref.name, cal:q.ref.cal, portion:q.ref.portion, src:q.ref.src}));
                  bumpUse(q.ref.name); save(); render(); toast(q.cal.toLocaleString()+' added'); }
         };
         strip.appendChild(c);
@@ -540,14 +775,15 @@ function renderTrend(){
 function isSaved(name){ return S.saved.some(s=>s.name === name); }
 function toggleSave(e, mealId){
   const i = S.saved.findIndex(s=>s.name === e.name);
-  if (i > -1){ S.saved.splice(i,1); toast('Removed from saved'); }
-  else { S.saved.unshift({name:e.name, cal:e.cal, portion:e.portion, src:e.src, uses:1, meal:mealId||''}); toast('Saved'); }
+  if (i > -1){ bury(S.saved[i],'food'); S.saved.splice(i,1); toast('Removed from saved'); }
+  else { S.saved.unshift(stampNew({name:e.name, cal:e.cal, portion:e.portion, src:e.src, uses:1, meal:mealId||''})); toast('Saved'); }
   save();
 }
 function bumpUse(name, mealId){
   const s = S.saved.find(x=>x.name === name);
   if (s){
     s.uses = (s.uses||0)+1;
+    s.up = Date.now();
     if (mealId) s.meal = mealId;
     S.saved.sort((a,b)=>(b.uses||0)-(a.uses||0));
     save();
@@ -575,20 +811,25 @@ function saveCombo(meal){
   document.getElementById('cbSave').onclick = ()=>{
     const nm = inp.value.trim();
     if (!nm){ toast('Give it a name'); return; }
+    S.combos.filter(c=>c.name === nm && c.meal === meal.id).forEach(c=>bury(c,'combo'));
     S.combos = S.combos.filter(c=>!(c.name === nm && c.meal === meal.id));
-    S.combos.unshift({id:'c'+Date.now(), name:nm, meal:meal.id, items, uses:1});
+    S.combos.unshift({id:'c'+uid(), name:nm, meal:meal.id, items, uses:1, up:Date.now()});
     save(); render(); closeSheet(); toast('Meal saved');
   };
 }
 function logCombo(combo, meal){
-  combo.items.forEach(i=>day(viewDate).meals[meal.id].push({...i}));
+  combo.items.forEach(i=>day(viewDate).meals[meal.id].push(stampNew({
+    name:i.name, cal:i.cal, portion:i.portion, src:i.src
+  })));
   combo.uses = (combo.uses||0)+1;
+  combo.up = Date.now();
   S.combos.sort((a,b)=>(b.uses||0)-(a.uses||0));
   save(); render();
   if (sheetState) closeSheet();
   toast(comboCal(combo).toLocaleString()+' added to '+meal.name.toLowerCase());
 }
 function deleteCombo(id){
+  S.combos.filter(c=>c.id === id).forEach(c=>bury(c,'combo'));
   S.combos = S.combos.filter(c=>c.id !== id);
   save(); render();
 }
@@ -1002,7 +1243,7 @@ function addEntry(e){
   // Hold on to the meal: closeSheet() clears sheetState, and the toast below
   // still needs the name.
   const meal = sheetState.meal;
-  day(viewDate).meals[meal.id].push(e);
+  day(viewDate).meals[meal.id].push(stampNew(e));
   bumpUse(e.name, meal.id);
   save(); render(); closeSheet();
   toast(e.cal.toLocaleString()+' added to '+meal.name.toLowerCase());
@@ -1053,12 +1294,12 @@ document.getElementById('editBase').onclick = ()=>{
       inp.focus(); inp.select();
       host.querySelector('#bSave').onclick = ()=>{
         S.settings.manualBase = Math.max(0, Math.round(Number(inp.value)||0));
-        save(); render(); closeSheet(); toast('Base set to '+baseTarget().toLocaleString());
+        touchProfile(); save(); render(); closeSheet(); toast('Base set to '+baseTarget().toLocaleString());
       };
     }
   }
-  document.getElementById('bCalc').onclick = ()=>{ S.settings.baseMode='calculated'; save(); render(); draw(); };
-  document.getElementById('bMan').onclick  = ()=>{ S.settings.baseMode='manual'; save(); render(); draw(); };
+  document.getElementById('bCalc').onclick = ()=>{ S.settings.baseMode='calculated'; touchProfile(); save(); render(); draw(); };
+  document.getElementById('bMan').onclick  = ()=>{ S.settings.baseMode='manual'; touchProfile(); save(); render(); draw(); };
   draw();
 };
 
@@ -1072,6 +1313,7 @@ document.getElementById('editActive').onclick = ()=>{
   document.getElementById('ae').focus();
   document.getElementById('aeSave').onclick = ()=>{
     day(viewDate).active = Math.max(0, Math.round(Number(document.getElementById('ae').value)||0));
+    day(viewDate).activeUp = Date.now();
     save(); render(); closeSheet();
   };
 };
@@ -1131,7 +1373,9 @@ function openSettings(){
     '<div class="field"><label>Apps Script web app URL</label><input id="su" value="'+escapeHTML(s.syncUrl)+'" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off"></div>'+
     '<div class="field"><label>Shared secret</label><input id="st" value="'+escapeHTML(s.syncToken)+'" placeholder="any word you also put in the script" autocomplete="off"></div>'+
     '<p class="note">Leave both blank and everything still works — you just won\u2019t get the widget. Setup is in <b>widget-setup.md</b>.</p>'+
-    (s.syncUrl ? '<button class="cta ghost" id="testSync" style="margin-top:6px">Send today\u2019s numbers now</button>' : '')+
+    (s.syncUrl ? '<p class="note" id="syncNote"></p>'+
+      '<button class="cta ghost" id="testSync" style="margin-top:6px">Sync now</button>'+
+      '<button class="cta ghost" id="fullSync" style="margin-top:8px">Re-send everything</button>' : '')+
 
     '<div class="divider"><h3>Apple Health</h3></div>'+
     '<p class="note">Build a Shortcut with three steps, then run it each morning or automate it:<br><br>'+
@@ -1144,8 +1388,8 @@ function openSettings(){
     '<button class="cta ghost" id="exportBtn" style="margin-top:8px">Export my data</button>');
 
   // Switching units re-renders the sheet, keeping whatever is typed so far.
-  document.getElementById('uImp').onclick = ()=>{ commitBody(); S.settings.unitSystem='imperial'; save(); openSettings(); };
-  document.getElementById('uMet').onclick = ()=>{ commitBody(); S.settings.unitSystem='metric'; save(); openSettings(); };
+  document.getElementById('uImp').onclick = ()=>{ commitBody(); S.settings.unitSystem='imperial'; touchProfile(); save(); openSettings(); };
+  document.getElementById('uMet').onclick = ()=>{ commitBody(); S.settings.unitSystem='metric'; touchProfile(); save(); openSettings(); };
 
   function readBody(){
     const el = id=>document.getElementById(id);
@@ -1201,7 +1445,27 @@ function openSettings(){
   upd();
 
   const test = document.getElementById('testSync');
-  if (test) test.onclick = async ()=>{ await pushSync(); toast('Sent to your widget endpoint'); };
+  if (test){
+    const syncNote = ()=>{
+      const el = document.getElementById('syncNote');
+      if (!el) return;
+      el.innerHTML = S.sync.err
+        ? '<b style="color:var(--over)">'+escapeHTML(S.sync.err)+'</b>'
+        : (S.sync.at ? 'Last synced '+new Date(S.sync.at).toLocaleTimeString()+'.' : 'Not synced yet.')+
+          ' Your log and saved meals travel between devices; API keys stay on this one.';
+    };
+    syncNote();
+    test.onclick = async ()=>{
+      await pushSync(); await pullSync();
+      syncNote(); toast(S.sync.err || 'Synced');
+    };
+    document.getElementById('fullSync').onclick = async ()=>{
+      toast('Sending your whole log\u2026');
+      S.sync.lastPull = 0;
+      await pushSync(true); await pullSync();
+      syncNote(); toast(S.sync.err || 'Everything re-sent');
+    };
+  }
 
   document.getElementById('saveSet').onclick = ()=>{
     Object.assign(S.settings, readBody(), {
@@ -1212,7 +1476,7 @@ function openSettings(){
       syncUrl:document.getElementById('su').value.trim(),
       syncToken:document.getElementById('st').value.trim()
     });
-    save(); render(); closeSheet(); toast('Settings saved');
+    touchProfile(); save(); render(); closeSheet(); toast('Settings saved');
   };
   document.getElementById('exportBtn').onclick = ()=>{
     const blob = new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
@@ -1234,6 +1498,7 @@ document.addEventListener('keydown', e=>{ if (e.key === 'Escape') closeSheet(); 
   await load();
   readURL();
   render();
+  maybePull(true);
   if (!S.settings.usdaKey && !S.settings.anthropicKey && !Object.keys(S.days).length){
     setTimeout(openSettings, 500);
   }
