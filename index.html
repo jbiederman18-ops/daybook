@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Daybook">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23101433'/%3E%3Crect x='9' y='17' width='40' height='8' rx='4' fill='%2300B4F0'/%3E%3Crect x='17' y='28' width='38' height='8' rx='4' fill='%23FFC400'/%3E%3Crect x='9' y='39' width='30' height='8' rx='4' fill='%23FF2D87'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Bungee&display=swap" rel="stylesheet">
@@ -20,7 +21,7 @@
   --line:#BEC9F0;
   --ink:#101433;
   --ink-dim:#4C568F;
-  --ink-faint:#8189BC;
+  --ink-faint:#6A72A4;
   --breakfast:#FFB000;
   --lunch:#22C55E;
   --dinner:#00B4F0;
@@ -31,6 +32,7 @@
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
+body.locked{overflow:hidden}
 html{background:#3B4BE8}
 body{
   background:
@@ -41,8 +43,13 @@ body{
   font-family:Archivo,system-ui,-apple-system,sans-serif;
   font-size:15px;
   line-height:1.45;
-  padding:calc(env(safe-area-inset-top) + 14px) 12px 104px;
+  padding:calc(env(safe-area-inset-top,0px) + 14px)
+          max(12px,env(safe-area-inset-right,0px))
+          calc(104px + env(safe-area-inset-bottom,0px))
+          max(12px,env(safe-area-inset-left,0px));
   min-height:100vh;
+  min-height:100dvh;
+  overscroll-behavior-y:contain;
   -webkit-font-smoothing:antialiased;
 }
 /* the cockpit panel everything sits on */
@@ -58,7 +65,7 @@ body{
   border-bottom:2px solid var(--ink);
 }
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;padding:0}
-input,select{font:inherit;font-weight:500;color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:12px;padding:11px 12px;width:100%}
+input,select{font:inherit;font-size:16px;font-weight:500;color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:12px;padding:11px 12px;width:100%}
 input::placeholder{color:var(--ink-faint);font-weight:400}
 input:focus,select:focus,button:focus-visible{outline:3px solid var(--dinner);outline-offset:2px}
 select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23101433' stroke-width='2.2' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center}
@@ -71,6 +78,8 @@ header{padding:30px 0 4px}
 .datenav h1{font-family:Bungee,Archivo,sans-serif;font-size:15px;font-weight:400;margin:0;letter-spacing:.01em}
 .arrow{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--ink);background:#fff;border:2px solid var(--ink);box-shadow:0 2px 0 var(--ink);font-size:17px;line-height:1}
 .arrow:active{transform:translateY(2px);box-shadow:none}
+.arrow,.gear,.iconbtn{position:relative}
+.arrow::after,.gear::after,.iconbtn::after{content:'';position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%)}
 .arrow:disabled{opacity:.25;box-shadow:none;transform:none}
 .gear{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--ink);background:var(--breakfast);border:2px solid var(--ink);box-shadow:0 2px 0 var(--ink)}
 .gear:active{transform:translateY(2px);box-shadow:none}
@@ -95,7 +104,7 @@ header{padding:30px 0 4px}
 .remain.over .big{color:var(--over)}
 .bar{display:flex;height:18px;border-radius:999px;overflow:hidden;background:rgba(16,20,51,.15);margin:16px 0 10px;box-shadow:inset 0 0 0 2px var(--ink)}
 .seg{transition:width .35s cubic-bezier(.4,0,.2,1);box-shadow:inset 0 4px 0 rgba(255,255,255,.42), inset 0 -4px 0 rgba(16,20,51,.14);border-right:1px solid rgba(16,20,51,.4)}
-.mathline{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;font-weight:600;color:rgba(16,20,51,.62)}
+.mathline{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;font-weight:600;color:rgba(16,20,51,.72)}
 .mathline b{color:var(--ink);font-weight:800}
 .mathline button{color:var(--ink);border-bottom:2px dotted rgba(16,20,51,.55)}
 
@@ -105,7 +114,8 @@ header{padding:30px 0 4px}
 .meal-name{display:flex;align-items:center;gap:9px;font-family:Bungee,Archivo,sans-serif;font-weight:400;font-size:12px;letter-spacing:.03em;text-transform:uppercase}
 .dot{width:12px;height:12px;border-radius:3px;border:2px solid var(--ink);flex:none}
 .meal-total{font-family:Archivo,sans-serif;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink);font-size:15px}
-.entry{display:flex;align-items:center;gap:10px;padding:9px 0}
+.entry{display:flex;align-items:center;gap:14px;padding:11px 0}
+.entry .txt{cursor:pointer}
 .entry .txt{flex:1;min-width:0}
 .entry .nm{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14.5px;font-weight:500}
 .entry .sub{display:block;font-size:12px;color:var(--ink-faint);margin-top:1px;font-weight:500}
@@ -131,7 +141,7 @@ header{padding:30px 0 4px}
 .trend{border-top:3px solid var(--ink);margin-top:22px;padding-top:16px}
 .trend h2{font-family:Bungee,Archivo,sans-serif;font-size:11.5px;font-weight:400;letter-spacing:.04em;text-transform:uppercase;margin:0 0 16px;color:var(--ink)}
 .bars{display:flex;align-items:stretch;gap:8px;height:118px;padding-bottom:22px;position:relative}
-.tcol{flex:1;display:flex;flex-direction:column;justify-content:flex-end;position:relative}
+.tcol{flex:1;display:flex;flex-direction:column;justify-content:flex-end;position:relative;background:none;border:none;padding:0}
 .tbar{width:100%;border-radius:6px 6px 0 0;background:var(--surface-2);min-height:8px;border:2px solid var(--ink);box-shadow:inset 0 4px 0 rgba(255,255,255,.38);transition:height .3s}
 .tlab{position:absolute;bottom:-19px;left:0;right:0;text-align:center;font-size:11px;font-weight:700;color:var(--ink-faint)}
 .tline{position:absolute;left:0;right:0;border-top:2px dashed rgba(16,20,51,.5);pointer-events:none}
@@ -142,15 +152,17 @@ header{padding:30px 0 4px}
 /* ---------- sheet ---------- */
 .scrim{position:fixed;inset:0;background:rgba(16,20,51,.55);opacity:0;pointer-events:none;transition:opacity .22s;z-index:40}
 .scrim.open{opacity:1;pointer-events:auto}
-.sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--surface);border-radius:22px 22px 0 0;transform:translateY(106%);transition:transform .28s cubic-bezier(.32,.72,0,1);max-height:92vh;display:flex;flex-direction:column;border-top:3px solid var(--ink);overflow:hidden;box-shadow:0 -8px 40px rgba(16,20,51,.4)}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--surface);border-radius:22px 22px 0 0;transform:translateY(106%);transition:transform .28s cubic-bezier(.32,.72,0,1);max-height:92vh;max-height:92dvh;display:flex;flex-direction:column;border-top:3px solid var(--ink);overflow:hidden;box-shadow:0 -8px 40px rgba(16,20,51,.4)}
 .sheet::before{content:'';position:absolute;top:0;left:0;right:0;height:12px;background-image:var(--checker);background-size:12px 12px;border-bottom:2px solid var(--ink);z-index:4}
 .sheet.open{transform:translateY(0)}
-.sheet-in{max-width:560px;width:100%;margin:0 auto;padding:0 18px calc(20px + env(safe-area-inset-bottom));overflow-y:auto;-webkit-overflow-scrolling:touch}
-.grip{width:44px;height:5px;border-radius:3px;background:rgba(16,20,51,.28);margin:20px auto 4px;flex:none}
+.sheet-in{max-width:560px;width:100%;margin:0 auto;padding:0 18px calc(20px + env(safe-area-inset-bottom,0px));overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.griparea{flex:none;padding:16px 0 2px;touch-action:none;cursor:grab}
+.grip{width:44px;height:5px;border-radius:3px;background:rgba(16,20,51,.28);margin:0 auto 4px}
+.sheet.dragging{transition:none}
 .sheet-head{display:flex;align-items:center;justify-content:space-between;padding:8px 0 14px;position:sticky;top:0;background:var(--surface);z-index:2}
 .sheet-head h2{font-family:Bungee,Archivo,sans-serif;font-size:15px;margin:0;font-weight:400;letter-spacing:.01em}
 .tabs{display:flex;gap:3px;margin-bottom:14px;background:var(--bg);padding:3px;border-radius:999px;border:2px solid var(--ink)}
-.tab{flex:1;padding:8px 2px;border-radius:999px;font-size:12px;font-weight:700;color:var(--ink-dim);text-align:center}
+.tab{flex:1;padding:8px 2px;border-radius:999px;font-size:12px;font-weight:700;color:var(--ink-dim);text-align:center;white-space:nowrap;min-width:0}
 .tab.on{background:var(--ink);color:#fff}
 .res{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:2px dashed var(--line);width:100%;text-align:left}
 .res:last-child{border-bottom:none}
@@ -162,7 +174,7 @@ header{padding:30px 0 4px}
 .row>*{flex:1}
 .field{margin-bottom:12px}
 .field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-dim);margin-bottom:6px}
-.cta{width:100%;background:linear-gradient(180deg,#FF4A63 0%,#E5001E 100%);color:#fff;font-weight:800;padding:14px;border:2px solid var(--ink);border-radius:14px;box-shadow:0 4px 0 var(--ink);margin-top:8px;font-size:15px}
+.cta{width:100%;background:linear-gradient(180deg,#E51B38 0%,#C4001A 100%);color:#fff;font-weight:800;padding:14px;border:2px solid var(--ink);border-radius:14px;box-shadow:0 4px 0 var(--ink);margin-top:8px;font-size:15px}
 .cta:active{transform:translateY(4px);box-shadow:none}
 .cta.ghost{background:#fff;color:var(--ink);font-weight:700}
 .note{font-size:12.5px;color:var(--ink-dim);line-height:1.55;margin:10px 0 0}
@@ -176,9 +188,14 @@ header{padding:30px 0 4px}
 .chip:active{transform:translateY(2px);box-shadow:none}
 .chip.on{background:var(--snacks);color:#fff}
 .divider{border-top:2px dashed var(--line);margin:20px 0 16px}
+.stickysave{position:sticky;bottom:0;background:linear-gradient(to top,var(--surface) 62%,rgba(255,255,255,0));padding:14px 0 6px;margin-top:18px;z-index:3}
+.stickysave .cta{margin-top:0}
 .divider h3{font-family:Bungee,Archivo,sans-serif;font-size:11.5px;font-weight:400;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);margin:16px 0 12px}
-.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,80px);background:linear-gradient(180deg,#FF4FA3 0%,#E4007A 100%);color:#fff;padding:11px 18px;border:2px solid var(--ink);border-radius:999px;font-size:14px;font-weight:700;z-index:80;opacity:0;transition:all .25s;pointer-events:none;box-shadow:0 4px 0 var(--ink)}
+.toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom,0px));transform:translate(-50%,80px);background:linear-gradient(180deg,#E4007A 0%,#C10067 100%);color:#fff;padding:11px 18px;border:2px solid var(--ink);border-radius:999px;font-size:14px;font-weight:700;z-index:80;opacity:0;transition:all .25s;pointer-events:none;box-shadow:0 4px 0 var(--ink)}
 .toast.on{transform:translate(-50%,0);opacity:1}
+.toast{display:flex;align-items:center;gap:14px;max-width:calc(100vw - 32px)}
+.toast.act{pointer-events:auto}
+.toast button{font-weight:900;color:#fff;text-decoration:underline;flex:none}
 @media (max-width:380px){
   .remain .big{font-size:42px}
   .tab{font-size:11.5px;padding:8px 2px}
@@ -229,7 +246,7 @@ header{padding:30px 0 4px}
 
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true">
-  <div class="grip"></div>
+  <div class="griparea" id="griparea"><div class="grip"></div></div>
   <div class="sheet-in" id="sheetBody"></div>
 </div>
 <div class="toast" id="toast"></div>
@@ -280,6 +297,10 @@ let S = { settings:{...DEFAULTS}, days:{}, saved:[], combos:[],
 const PROFILE_KEYS = ['sex','age','heightCm','weightKg','goalDelta','baseMode','manualBase','unitSystem'];
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function stampNew(e){ return {...e, id:uid(), up:Date.now()}; }
+/* Always move a record's clock forward. A device whose clock runs ahead can
+   hand us a record stamped in the future; a plain Date.now() edit would look
+   older than the thing it edits and quietly lose the next merge. */
+function bumpUp(rec){ rec.up = Math.max(Date.now(), (rec.up||0) + 1); return rec.up; }
 function bury(rec, kind){ if (rec && rec.id) S.graves[rec.id] = {up:Date.now(), kind:kind||'entry'}; }
 function touchProfile(){ S.settings.profileUp = Date.now(); }
 let viewDate = todayKey();
@@ -561,8 +582,20 @@ function maybePull(force){
   lastPullAt = Date.now();
   pullSync();
 }
-document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) maybePull(); });
-window.addEventListener('focus', ()=>maybePull());
+/* Left open past midnight, "Today" used to keep meaning yesterday — and new
+   food went into the wrong day. */
+let bootDay = todayKey();
+function checkRollover(){
+  const now = todayKey();
+  if (now === bootDay) return;
+  const wasOnToday = viewDate === bootDay;
+  bootDay = now;
+  if (wasOnToday) viewDate = now;
+  render();
+}
+setInterval(checkRollover, 60000);
+document.addEventListener('visibilitychange', ()=>{ if (!document.hidden){ checkRollover(); maybePull(); } });
+window.addEventListener('focus', ()=>{ checkRollover(); maybePull(); });
 async function load(){
   const raw = await Store.get('daybook');
   if (raw){
@@ -577,12 +610,20 @@ async function load(){
     } catch(e){}
   }
   hydrate();
+  await loadSeen();
 }
 
 /* Anything logged before syncing existed has no id or timestamp. Give it
    one now so it can take part, and drop tombstones nobody needs any more. */
 function hydrate(){
   let dirty = false;
+  // A key saved before this cleaning existed may still carry a stray newline.
+  ['usdaKey','anthropicKey','proxy','syncUrl'].forEach(k=>{
+    const tidy = cleanKey(S.settings[k]);
+    if (tidy !== S.settings[k]){ S.settings[k] = tidy; dirty = true; }
+  });
+  const token = cleanToken(S.settings.syncToken);
+  if (token !== S.settings.syncToken){ S.settings.syncToken = token; dirty = true; }
   const stamp = 1;   // oldest possible, so any synced edit wins over untracked history
   Object.keys(S.days).forEach(dk=>{
     const d = S.days[dk];
@@ -696,7 +737,18 @@ function render(){
       const star = row.querySelector('.star');
       if (isSaved(e.name)) star.classList.add('on');
       star.onclick = ()=>{ toggleSave(e, m.id); render(); };
-      row.querySelector('.del').onclick = ()=>{ bury(items[i],'entry'); items.splice(i,1); save(); render(); };
+      row.querySelector('.del').onclick = ()=>{
+        const gone = items[i], at = i, list = items;
+        bury(gone,'entry'); list.splice(at,1); save(); render(); buzz(12);
+        toast('Removed '+gone.name, {label:'Undo', run(){
+          // Lift the tombstone as well, or the next pull deletes it again.
+          if (gone.id) delete S.graves[gone.id];
+          bumpUp(gone);
+          list.splice(at, 0, gone);
+          save(); render();
+        }});
+      };
+      row.querySelector('.txt').onclick = ()=>editEntry(m, i);
       sec.appendChild(row);
     });
 
@@ -748,7 +800,7 @@ function renderTrend(){
   host.appendChild(line);
 
   keys.forEach((k,i)=>{
-    const col = document.createElement('div');
+    const col = document.createElement('button');
     col.className = 'tcol';
     const v = vals[i];
     const over = v > target(k);
@@ -759,6 +811,8 @@ function renderTrend(){
         (v===0 ? 'var(--surface-2)' : over ? 'var(--over)' : 'var(--lunch)')+'"></div>'+
       '<div class="tlab">'+dObj.toLocaleDateString(undefined,{weekday:'narrow'})+'</div>';
     col.title = prettyDate(k)+': '+v.toLocaleString();
+    col.setAttribute('aria-label', col.title);
+    col.onclick = ()=>{ viewDate = k; render(); };
     host.appendChild(col);
   });
 
@@ -769,6 +823,27 @@ function renderTrend(){
   document.getElementById('vsTarget').innerHTML = logged.length
     ? (diff >= 0 ? '<b>+'+diff.toLocaleString()+'</b> vs base' : '<b>'+diff.toLocaleString()+'</b> vs base')
     : '';
+}
+
+/* ---------- edit a logged entry ---------- */
+function editEntry(meal, idx){
+  const e = day(viewDate).meals[meal.id][idx];
+  if (!e) return;
+  openSheet(sheetHead('Edit entry')+
+    '<div class="field"><label>Name</label><input id="en" autocomplete="off"></div>'+
+    '<div class="field"><label>Calories</label><input id="ec" type="number" inputmode="numeric"></div>'+
+    '<button class="cta" id="eSave">Save</button>'+
+    (e.portion || e.src ? '<p class="note">Logged as '+escapeHTML([e.portion,e.src].filter(Boolean).join(' \u00b7 '))+'.</p>' : ''));
+  const n = document.getElementById('en'), c = document.getElementById('ec');
+  n.value = e.name; c.value = e.cal;
+  c.focus(); c.select();
+  document.getElementById('eSave').onclick = ()=>{
+    const v = Math.round(Number(c.value));
+    if (!n.value.trim() || !isFinite(v) || v < 0){ toast('Needs a name and a number'); return; }
+    e.name = n.value.trim(); e.cal = v;
+    bumpUp(e);                  // so the change travels to your other devices
+    save(); render(); closeSheet(true); toast('Updated');
+  };
 }
 
 /* ---------- saved foods ---------- */
@@ -783,7 +858,7 @@ function bumpUse(name, mealId){
   const s = S.saved.find(x=>x.name === name);
   if (s){
     s.uses = (s.uses||0)+1;
-    s.up = Date.now();
+    bumpUp(s);
     if (mealId) s.meal = mealId;
     S.saved.sort((a,b)=>(b.uses||0)-(a.uses||0));
     save();
@@ -822,7 +897,7 @@ function logCombo(combo, meal){
     name:i.name, cal:i.cal, portion:i.portion, src:i.src
   })));
   combo.uses = (combo.uses||0)+1;
-  combo.up = Date.now();
+  bumpUp(combo);
   S.combos.sort((a,b)=>(b.uses||0)-(a.uses||0));
   save(); render();
   if (sheetState) closeSheet();
@@ -846,30 +921,80 @@ function quickPicks(mealId){
 
 /* ---------- toast ---------- */
 let toastT;
-function toast(msg){
+function buzz(ms){ try { navigator.vibrate && navigator.vibrate(ms); } catch(e){} }
+function toast(msg, action){
   const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('on');
-  clearTimeout(toastT); toastT = setTimeout(()=>t.classList.remove('on'), 1900);
+  t.innerHTML = '';
+  const sp = document.createElement('span'); sp.textContent = msg; t.appendChild(sp);
+  t.classList.toggle('act', !!action);
+  if (action){
+    const b = document.createElement('button');
+    b.textContent = action.label;
+    b.onclick = ()=>{ t.classList.remove('on','act'); action.run(); };
+    t.appendChild(b);
+  }
+  t.classList.add('on');
+  clearTimeout(toastT);
+  toastT = setTimeout(()=>t.classList.remove('on','act'), action ? 4500 : 1900);
 }
 
 /* ============================================================
    Sheet
    ============================================================ */
+let lastFocus = null, sheetGuard = null;
 function openSheet(html){
+  const sh = document.getElementById('sheet');
+  if (!sh.classList.contains('open')) lastFocus = document.activeElement;
   document.getElementById('sheetBody').innerHTML = html;
-  document.getElementById('sheet').classList.add('open');
+  sh.style.transform = '';
+  sh.classList.add('open');
   document.getElementById('scrim').classList.add('open');
+  document.body.classList.add('locked');
+  document.querySelector('.wrap').setAttribute('aria-hidden','true');
+  document.getElementById('sheetBody').scrollTop = 0;
 }
-function closeSheet(){
-  document.getElementById('sheet').classList.remove('open');
+function closeSheet(force){
+  // Settings registers a guard so a stray tap on the backdrop doesn't throw
+  // away a form you were halfway through.
+  if (!force && sheetGuard && sheetGuard()) return;
+  const sh = document.getElementById('sheet');
+  sh.classList.remove('open');
+  sh.style.transform = '';
   document.getElementById('scrim').classList.remove('open');
-  sheetState = null;
+  document.body.classList.remove('locked');
+  document.querySelector('.wrap').removeAttribute('aria-hidden');
+  sheetState = null; sheetGuard = null;
+  if (lastFocus && lastFocus.focus){ try { lastFocus.focus({preventScroll:true}); } catch(e){} }
+  lastFocus = null;
 }
-document.getElementById('scrim').onclick = closeSheet;
+document.getElementById('scrim').onclick = ()=>closeSheet();
+
+/* Drag the grip down to dismiss — it already looked draggable. */
+(function(){
+  const sh = document.getElementById('sheet'), grip = document.getElementById('griparea');
+  let y0 = null, dy = 0;
+  grip.addEventListener('pointerdown', e=>{
+    y0 = e.clientY; dy = 0;
+    sh.classList.add('dragging');
+    try { grip.setPointerCapture(e.pointerId); } catch(err){}
+  });
+  grip.addEventListener('pointermove', e=>{
+    if (y0 === null) return;
+    dy = Math.max(0, e.clientY - y0);
+    sh.style.transform = 'translateY('+dy+'px)';
+  });
+  const end = ()=>{
+    if (y0 === null) return;
+    sh.classList.remove('dragging'); y0 = null;
+    if (dy > 90) closeSheet(); else sh.style.transform = '';
+  };
+  grip.addEventListener('pointerup', end);
+  grip.addEventListener('pointercancel', end);
+})();
 
 function sheetHead(title){
   return '<div class="sheet-head"><h2>'+title+'</h2>'+
-    '<button class="iconbtn" onclick="closeSheet()" aria-label="Close">'+
+    '<button class="iconbtn" onclick="closeSheet(true)" aria-label="Close">'+
     '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>';
 }
 
@@ -929,6 +1054,135 @@ function tabMeals(){
   draw(others, mine.length ? 'From other meals' : '');
 }
 
+/* ============================================================
+   Offline
+   ============================================================ */
+const PACK_URL = 'foods.json';
+const SEEN_KEY = 'daybook-foods';
+const TYPE_NAMES = ['Foundation', 'SR Legacy', 'Survey (FNDDS)'];
+
+let PACK = null;                 // the bundled generic foods
+let PACK_INFO = {};
+let packState = 'idle';          // idle | loading | ready | missing
+let SEEN = [];                   // branded and anything else you've searched
+
+function online(){ return navigator.onLine !== false; }
+
+/* Pasting a long key on a phone routinely drags in a line break, a
+   non-breaking space from a web page, a zero-width character, or the quotes
+   around it. None of those are legal in a key, URL or proxy prefix, so strip
+   the lot rather than only trimming the ends. */
+const INVISIBLE = /[\s\u00A0\u180E\u200B-\u200D\u2060\uFEFF]+/g;
+function cleanKey(v){
+  return String(v == null ? '' : v)
+    .replace(INVISIBLE, '')
+    .replace(/^['"\u2018\u2019\u201C\u201D]+|['"\u2018\u2019\u201C\u201D]+$/g, '');
+}
+/* A shared secret is a word you chose, so it may legitimately contain a
+   space. Only the ends and the invisibles come off. */
+function cleanToken(v){
+  return String(v == null ? '' : v)
+    .replace(/[\u00A0\u180E\u200B-\u200D\u2060\uFEFF]/g, '')
+    .replace(/^['"\u2018\u2019\u201C\u201D]+|['"\u2018\u2019\u201C\u201D]+$/g, '')
+    .trim();
+}
+
+/* The pack is fetched once and then lives in the service worker cache, so
+   this is nearly free on later loads and works with no connection at all. */
+async function loadPack(force){
+  if (packState === 'loading') return;
+  if (PACK && !force) return;
+  packState = 'loading';
+  try {
+    const r = await fetch(PACK_URL + (force ? '?refresh=1' : ''));
+    if (!r.ok) throw new Error('no pack');
+    const d = await r.json();
+    if (!Array.isArray(d.foods) || !d.foods.length) throw new Error('empty pack');
+    PACK = d.foods.map(f=>({
+      id:f[0], name:f[1], kcal:f[2], type:TYPE_NAMES[f[3]] || '',
+      portions:f[4] || [], key:String(f[1]).toLowerCase()
+    }));
+    PACK_INFO = {built:d.built||'', count:PACK.length, sources:d.sources||[]};
+    packState = 'ready';
+  } catch(e){
+    packState = 'missing';
+  }
+}
+
+async function loadSeen(){
+  try { SEEN = JSON.parse(await Store.get(SEEN_KEY) || '[]') || []; }
+  catch(e){ SEEN = []; }
+}
+/* Everything you look up online is kept, so your own vocabulary — including
+   branded food, which is far too large to bundle — is there when you're not. */
+function rememberFoods(list){
+  list.forEach(f=>{
+    if (!f || f.kcal == null) return;
+    const i = SEEN.findIndex(x=>x.id === f.id);
+    if (i > -1) f.portions = f.portions && f.portions.length ? f.portions : SEEN[i].portions;
+    if (i > -1) SEEN.splice(i, 1);
+    SEEN.unshift(f);
+  });
+  if (SEEN.length > 800) SEEN.length = 800;
+  Store.set(SEEN_KEY, JSON.stringify(SEEN));
+}
+function rememberPortions(id, portions){
+  const f = SEEN.find(x=>x.id === id);
+  if (!f || !portions.length) return;
+  f.portions = portions.slice(0, 8);
+  Store.set(SEEN_KEY, JSON.stringify(SEEN));
+}
+
+/* Every search term has to appear somewhere in the name. Ranked by how early
+   the matches land and how short the name is, so "milk" finds Milk before
+   Buttermilk Pancake Mix. */
+function searchLocal(q, limit){
+  const terms = String(q).toLowerCase().split(/\s+/).filter(Boolean);
+  if (!terms.length) return [];
+  const hits = [], taken = new Set();
+
+  const scan = list => {
+    for (const f of list){
+      if (taken.has(f.id)) continue;
+      const key = f.key || (f.key = String(f.name).toLowerCase());
+      let score = 0, ok = true;
+      for (const t of terms){
+        const at = key.indexOf(t);
+        if (at < 0){ ok = false; break; }
+        score += at;
+      }
+      if (!ok) continue;
+      taken.add(f.id);
+      hits.push({f, score: score + key.length / 40});
+    }
+  };
+  scan(SEEN);            // your own history first
+  scan(PACK || []);
+  hits.sort((a,b)=>a.score - b.score);
+  return hits.slice(0, limit).map(h=>h.f);
+}
+
+/* A local record dressed up to look like a USDA API result, so the portion
+   picker and everything downstream of it need no special cases. */
+function asFood(f){
+  return {
+    fdcId: f.id,
+    description: f.name,
+    dataType: f.type || '',
+    brandOwner: f.brand || '',
+    _local: true,
+    _portions: f.portions || []
+  };
+}
+
+window.addEventListener('online', ()=>{
+  toast('Back online');
+  maybePull(true);
+  pushSync();
+  if (packState === 'missing') loadPack();
+});
+window.addEventListener('offline', ()=>toast('Offline \u2014 logging still works'));
+
 /* ---------- USDA search ---------- */
 /* Builds both routes to USDA so we can fall back between them. */
 function fdcURLs(path){
@@ -982,15 +1236,25 @@ function fdcErrorHTML(e){
   return '<div class="warn"><b>Couldn\u2019t reach USDA '+via+'.</b><br>'+
     'Either you\u2019re offline or the request was blocked. '+escapeHTML(e.message||'')+'</div>';
 }
+function searchHint(){
+  const local = (PACK ? PACK.length : 0) + SEEN.length;
+  if (!online()) return local
+    ? 'Offline. Searching '+local.toLocaleString()+' foods stored on this device.'
+    : 'Offline, and nothing stored on this device yet.';
+  if (!S.settings.usdaKey) return local
+    ? 'Searching '+local.toLocaleString()+' foods stored on this device. Add a USDA key in Settings for the full database.'
+    : 'Add your free USDA FoodData Central key in Settings to search the database.';
+  return 'Type to search 300,000+ USDA foods.';
+}
 function tabSearch(){
-  if (!S.settings.usdaKey){
+  if (!S.settings.usdaKey && !PACK && !SEEN.length){
     body().innerHTML = '<div class="empty">Add your free USDA FoodData Central key in Settings to search the database.<br><br>'+
-      '<button class="cta ghost" onclick="closeSheet();openSettings()">Open settings</button></div>';
+      '<button class="cta ghost" onclick="closeSheet(true);openSettings()">Open settings</button></div>';
     return;
   }
   body().innerHTML =
     '<div class="field"><input id="q" placeholder="Search foods — e.g. greek yogurt" autocomplete="off" enterkeyhint="search"></div>'+
-    '<div id="results"><div class="empty">Type to search 300,000+ USDA foods.</div></div>';
+    '<div id="results"><div class="empty">'+escapeHTML(searchHint())+'</div></div>';
   const q = document.getElementById('q');
   q.focus();
   let t;
@@ -1016,11 +1280,43 @@ function kcalOf(food){
 }
 
 const searchCache = new Map();
+let searchSeq = 0;
+
+/* Renders local records into the same rows USDA results use. */
+function showLocal(out, q, lead){
+  const found = searchLocal(q, 25);
+  if (!found.length){
+    out.innerHTML = (lead||'') + '<div class="empty">Nothing on this device matches.'+
+      (online() ? '' : '<br>Try the Custom tab and type the number in.')+'</div>';
+    return;
+  }
+  out.innerHTML = lead || '';
+  found.forEach(f=>{
+    const btn = document.createElement('button');
+    btn.className = 'res';
+    btn.innerHTML = '<div class="txt"><span class="nm"></span><span class="sub"></span></div>'+
+      '<span class="kc">'+Math.round(f.kcal)+'<span style="font-size:11px;color:var(--ink-faint)"> /100g</span></span>';
+    btn.querySelector('.nm').textContent = titleCase(f.name);
+    btn.querySelector('.sub').textContent = [f.brand, f.type, 'on this device'].filter(Boolean).join(' · ');
+    btn.onclick = ()=>openPortion(asFood(f), f.kcal);
+    out.appendChild(btn);
+  });
+}
 
 async function runSearch(q){
   const out = document.getElementById('results');
-  if (!q){ out.innerHTML = '<div class="empty">Type to search 300,000+ USDA foods.</div>'; return; }
+  if (!q){ out.innerHTML = '<div class="empty">'+escapeHTML(searchHint())+'</div>'; return; }
+
+  // No connection, or no key: the copy on this device is all there is.
+  if (!online() || !S.settings.usdaKey){
+    showLocal(out, q, !online()
+      ? '<div class="warn">Offline \u2014 showing foods stored on this device.</div>' : '');
+    return;
+  }
+
   out.innerHTML = '<span class="spin"></span>';
+  const seq = ++searchSeq;
+  const alive = ()=> seq === searchSeq && document.body.contains(out);
 
   const path = 'foods/search?api_key='+encodeURIComponent(S.settings.usdaKey)+
     '&query='+encodeURIComponent(q)+'&pageSize=25'+
@@ -1033,8 +1329,17 @@ async function runSearch(q){
       searchCache.set(q, d);
       if (searchCache.size > 60) searchCache.delete(searchCache.keys().next().value);
     }
+    if (!alive()) return;
     const foods = (d.foods||[]).filter(f=>kcalOf(f) != null);
     if (!foods.length){ out.innerHTML = '<div class="empty">No matches. Try the Estimate tab.</div>'; return; }
+    rememberFoods(foods.map(f=>({
+      id: f.fdcId,
+      name: titleCase(f.description),
+      kcal: kcalOf(f),
+      type: f.dataType || '',
+      brand: f.brandOwner || f.brandName || '',
+      portions: []
+    })));
     out.innerHTML = '';
     foods.forEach(f=>{
       const per100 = kcalOf(f);
@@ -1048,10 +1353,16 @@ async function runSearch(q){
       out.appendChild(btn);
     });
   } catch(err){
-    out.innerHTML = fdcErrorHTML(err) +
-      '<button class="cta ghost" id="retry" style="margin-top:4px">Try again</button>';
-    const r = document.getElementById('retry');
-    if (r) r.onclick = ()=>runSearch(q);
+    if (!alive()) return;
+    // USDA is unreachable or unhappy — fall back to what's on the device
+    // rather than leaving you with nothing to log.
+    showLocal(out, q, fdcErrorHTML(err));
+    const retry = document.createElement('button');
+    retry.className = 'cta ghost';
+    retry.style.marginTop = '10px';
+    retry.textContent = 'Try USDA again';
+    retry.onclick = ()=>runSearch(q);
+    out.appendChild(retry);
   }
 }
 function titleCase(s){
@@ -1067,19 +1378,35 @@ async function openPortion(food, per100){
 
   let options = [{label:'100 g', grams:100}];
   if (food.servingSize && food.servingSizeUnit && /g|ml/i.test(food.servingSizeUnit)){
-    options.unshift({
+    const g0 = Number(food.servingSize);
+    if (isFinite(g0) && g0 > 0) options.unshift({
       label: (food.householdServingFullText || (food.servingSize+' '+food.servingSizeUnit)),
-      grams: Number(food.servingSize)
+      grams: g0
     });
   }
-  try {
-    const d = await fdcFetch('food/'+food.fdcId+'?api_key='+encodeURIComponent(S.settings.usdaKey));
-    (d.foodPortions||[]).forEach(p=>{
-      const lab = [p.amount, p.measureUnit && p.measureUnit.name !== 'undetermined' ? p.measureUnit.name : '', p.modifier||'']
-        .filter(Boolean).join(' ').trim();
-      if (p.gramWeight) options.push({label: lab || (p.gramWeight+' g'), grams: p.gramWeight});
-    });
-  } catch(e){ /* portions are a bonus; grams always work */ }
+  if (food._local){
+    // Portions came down with the pack, or were kept from a previous lookup.
+    // They go in front of the plain 100 g so the useful one is the default.
+    options = (food._portions||[])
+      .map(p=>({label:p[0], grams:Number(p[1])}))
+      .filter(o=>o.label && isFinite(o.grams) && o.grams > 0)
+      .concat(options);
+  } else if (online() && S.settings.usdaKey){
+    try {
+      const d = await fdcFetch('food/'+food.fdcId+'?api_key='+encodeURIComponent(S.settings.usdaKey));
+      const got = [];
+      (d.foodPortions||[]).forEach(p=>{
+        const lab = [p.amount, p.measureUnit && p.measureUnit.name !== 'undetermined' ? p.measureUnit.name : '', p.modifier||'']
+          .filter(Boolean).join(' ').trim();
+        const gw = Number(p.gramWeight);
+        if (isFinite(gw) && gw > 0){
+          options.push({label: lab || (gw+' g'), grams: gw});
+          got.push([lab || (gw+' g'), gw]);
+        }
+      });
+      rememberPortions(food.fdcId, got);   // so this food works offline next time
+    } catch(e){ /* portions are a bonus; grams always work */ }
+  }
 
   const seen = new Set();
   options = options.filter(o=>{ const k=o.label+o.grams; if(seen.has(k))return false; seen.add(k); return true; }).slice(0,10);
@@ -1108,7 +1435,7 @@ async function openPortion(food, per100){
     host.querySelector('#qty').oninput = e=>{ qty = Math.max(0, parseFloat(e.target.value)||0); draw2(); };
     host.querySelector('#gr').oninput = e=>{
       const g = Math.max(0, parseFloat(e.target.value)||0);
-      qty = g / options[pick].grams; draw2();
+      qty = g / (options[pick].grams || 100); draw2();
     };
     function draw2(){
       const g = options[pick].grams*qty;
@@ -1148,9 +1475,14 @@ function tabSaved(){
 
 /* ---------- AI estimate ---------- */
 function tabEstimate(){
+  if (!online()){
+    body().innerHTML = '<div class="empty">Estimating asks Claude, which needs a connection.<br><br>'+
+      'Search still works from the copy on this device, or type a number into Custom.</div>';
+    return;
+  }
   if (!S.settings.anthropicKey){
     body().innerHTML = '<div class="empty">Add your Anthropic API key in Settings to estimate anything the database doesn\u2019t have.<br><br>'+
-      '<button class="cta ghost" onclick="closeSheet();openSettings()">Open settings</button></div>';
+      '<button class="cta ghost" onclick="closeSheet(true);openSettings()">Open settings</button></div>';
     return;
   }
   body().innerHTML =
@@ -1240,12 +1572,16 @@ function tabCustom(){
 }
 
 function addEntry(e){
+  if (!sheetState || !sheetState.meal) return;
+  if (!isFinite(e.cal)){ toast('That came out as an invalid number'); return; }
+  e.cal = Math.max(0, Math.round(e.cal));
   // Hold on to the meal: closeSheet() clears sheetState, and the toast below
   // still needs the name.
   const meal = sheetState.meal;
   day(viewDate).meals[meal.id].push(stampNew(e));
+  buzz(10);
   bumpUse(e.name, meal.id);
-  save(); render(); closeSheet();
+  save(); render(); closeSheet(true);
   toast(e.cal.toLocaleString()+' added to '+meal.name.toLowerCase());
 }
 
@@ -1377,6 +1713,10 @@ function openSettings(){
       '<button class="cta ghost" id="testSync" style="margin-top:6px">Sync now</button>'+
       '<button class="cta ghost" id="fullSync" style="margin-top:8px">Re-send everything</button>' : '')+
 
+    '<div class="divider"><h3>Offline</h3></div>'+
+    '<p class="note" id="packNote"></p>'+
+    '<button class="cta ghost" id="packBtn" style="margin-top:6px">Update food pack</button>'+
+
     '<div class="divider"><h3>Apple Health</h3></div>'+
     '<p class="note">Build a Shortcut with three steps, then run it each morning or automate it:<br><br>'+
     '1. <b>Find Health Samples</b> — type Active Energy, today, sum.<br>'+
@@ -1384,12 +1724,17 @@ function openSettings(){
     '3. <b>Open URLs</b> — the text from step 2.<br><br>'+
     'The number lands in today\u2019s allowance and the URL cleans itself up.</p>'+
 
-    '<button class="cta" id="saveSet" style="margin-top:18px">Save settings</button>'+
-    '<button class="cta ghost" id="exportBtn" style="margin-top:8px">Export my data</button>');
+    '<button class="cta ghost" id="exportBtn" style="margin-top:18px">Export my data</button>'+
+    '<div class="stickysave"><button class="cta" id="saveSet">Save settings</button></div>');
+
+  // A stray tap on the backdrop used to discard everything typed here.
+  let dirty = false;
+  document.getElementById('sheetBody').addEventListener('input', ()=>{ dirty = true; }, true);
+  sheetGuard = ()=> dirty && !confirm('Discard unsaved settings?');
 
   // Switching units re-renders the sheet, keeping whatever is typed so far.
-  document.getElementById('uImp').onclick = ()=>{ commitBody(); S.settings.unitSystem='imperial'; touchProfile(); save(); openSettings(); };
-  document.getElementById('uMet').onclick = ()=>{ commitBody(); S.settings.unitSystem='metric'; touchProfile(); save(); openSettings(); };
+  document.getElementById('uImp').onclick = ()=>{ commitBody(); S.settings.unitSystem='imperial'; touchProfile(); save(); sheetGuard=null; openSettings(); };
+  document.getElementById('uMet').onclick = ()=>{ commitBody(); S.settings.unitSystem='metric'; touchProfile(); save(); sheetGuard=null; openSettings(); };
 
   function readBody(){
     const el = id=>document.getElementById(id);
@@ -1444,6 +1789,32 @@ function openSettings(){
   });
   upd();
 
+  const packNote = ()=>{
+    const el = document.getElementById('packNote');
+    if (!el) return;
+    const seen = SEEN.length;
+    let txt;
+    if (packState === 'ready'){
+      txt = PACK.length.toLocaleString()+' generic foods stored on this device'+
+            (PACK_INFO.built ? ', built '+escapeHTML(PACK_INFO.built) : '')+'.';
+    } else if (packState === 'loading'){
+      txt = 'Fetching the food pack\u2026';
+    } else {
+      txt = 'No food pack on this device. It needs <code>foods.json</code> deployed next to the app \u2014 see <b>offline-setup.md</b>.';
+    }
+    txt += seen ? ' Plus '+seen.toLocaleString()+' food'+(seen===1?'':'s')+' kept from your own searches.' : '';
+    txt += online() ? '' : ' You are offline right now.';
+    el.innerHTML = txt;
+  };
+  packNote();
+  document.getElementById('packBtn').onclick = async ()=>{
+    if (!online()){ toast('Need a connection for that'); return; }
+    packState = 'idle'; packNote();
+    await loadPack(true);
+    packNote();
+    toast(packState === 'ready' ? 'Food pack updated' : 'No food pack found');
+  };
+
   const test = document.getElementById('testSync');
   if (test){
     const syncNote = ()=>{
@@ -1467,16 +1838,35 @@ function openSettings(){
     };
   }
 
+  /* Tidy each field the moment it's pasted, and say what came out, so you can
+     see the key is clean instead of finding out from a failed request. */
+  [['uk','key',cleanKey], ['ak','key',cleanKey], ['px','prefix',cleanKey],
+   ['su','URL',cleanKey], ['st','secret',cleanToken]].forEach(([id,noun,fn])=>{
+    const el = document.getElementById(id);
+    if (!el) return;
+    const tidy = ()=>{
+      const before = el.value;
+      const after = fn(before);
+      if (after === before) return;
+      el.value = after;
+      const gone = before.length - after.length;
+      toast('Tidied the '+noun+' \u2014 removed '+gone+' stray character'+(gone===1?'':'s'));
+    };
+    el.addEventListener('paste', ()=>setTimeout(tidy, 0));
+    el.addEventListener('blur', tidy);
+  });
+
   document.getElementById('saveSet').onclick = ()=>{
     Object.assign(S.settings, readBody(), {
-      usdaKey:document.getElementById('uk').value.trim(),
-      anthropicKey:document.getElementById('ak').value.trim(),
+      usdaKey:cleanKey(document.getElementById('uk').value),
+      anthropicKey:cleanKey(document.getElementById('ak').value),
       model:document.getElementById('model').value,
-      proxy:document.getElementById('px').value.trim(),
-      syncUrl:document.getElementById('su').value.trim(),
-      syncToken:document.getElementById('st').value.trim()
+      proxy:cleanKey(document.getElementById('px').value),
+      syncUrl:cleanKey(document.getElementById('su').value),
+      syncToken:cleanToken(document.getElementById('st').value)
     });
-    touchProfile(); save(); render(); closeSheet(); toast('Settings saved');
+    dirty = false;
+    touchProfile(); save(); render(); closeSheet(true); toast('Settings saved');
   };
   document.getElementById('exportBtn').onclick = ()=>{
     const blob = new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
@@ -1499,6 +1889,10 @@ document.addEventListener('keydown', e=>{ if (e.key === 'Escape') closeSheet(); 
   readURL();
   render();
   maybePull(true);
+  loadPack();
+  if ('serviceWorker' in navigator && location.protocol.startsWith('http')){
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  }
   if (!S.settings.usdaKey && !S.settings.anthropicKey && !Object.keys(S.days).length){
     setTimeout(openSettings, 500);
   }
