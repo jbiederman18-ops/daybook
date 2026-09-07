@@ -374,6 +374,19 @@ header{padding:30px 0 4px}
 .toast{display:flex;align-items:center;gap:14px;max-width:calc(100vw - 32px)}
 .toast.act{pointer-events:auto}
 .toast button{font-weight:900;color:var(--toast-ink);text-decoration:underline;flex:none}
+/* ---------- photo logging ---------- */
+.searchrow{display:flex;gap:8px;align-items:stretch;margin-bottom:14px}
+.camera{flex:none;width:46px;border:var(--border-w) solid var(--ink);border-radius:var(--radius);
+  background:var(--raised);color:var(--ink);display:grid;place-items:center;box-shadow:var(--lift)}
+.camera:active{transform:translateY(2px);box-shadow:none}
+.shot{display:block;width:100%;max-height:200px;object-fit:cover;border:var(--border-w) solid var(--ink);
+  border-radius:var(--radius);background:var(--bg)}
+.conf{font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;
+  padding:3px 8px;border-radius:var(--pill);border:1px solid currentColor;margin-left:auto}
+.conf.high{color:var(--lunch)}
+.conf.medium{color:var(--breakfast)}
+.conf.low{color:var(--over)}
+
 /* ---------- theme picker ---------- */
 .themegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 12px}
 .themecard{display:flex;flex-direction:column;gap:6px;text-align:left;padding:11px;border:var(--border-w) solid var(--line);border-radius:var(--radius);background:var(--raised);box-shadow:none}
@@ -1760,8 +1773,18 @@ function tabSearch(){
     return;
   }
   body().innerHTML =
-    '<div class="field"><input id="q" placeholder="Search foods — e.g. greek yogurt" autocomplete="off" enterkeyhint="search"></div>'+
+    '<div class="searchrow">'+
+      '<div class="field" style="flex:1;margin:0"><input id="q" placeholder="Search foods — e.g. greek yogurt" autocomplete="off" enterkeyhint="search"></div>'+
+      '<button class="camera" id="cam" aria-label="Estimate from a photo" title="Estimate from a photo">'+
+        '<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">'+
+        '<path d="M3 8.5h3.2l1.6-2.2h8.4l1.6 2.2H21v11H3z"/><circle cx="12" cy="13.6" r="3.4"/></svg>'+
+      '</button>'+
+      // No `capture` attribute on purpose: with it, iOS forces the camera and
+      // removes the option of picking a photo you already took.
+      '<input type="file" id="camFile" accept="image/*" style="display:none">'+
+    '</div>'+
     '<div id="results"></div>';
+  wireCamera();
   showRecents(document.getElementById('results'));
   const q = document.getElementById('q');
   /* Don't steal focus on the way in any more. The keyboard used to cover the
@@ -1771,6 +1794,156 @@ function tabSearch(){
   let t;
   q.oninput = ()=>{ clearTimeout(t); t = setTimeout(()=>runSearch(q.value.trim()), 450); };
   q.onkeydown = e=>{ if (e.key === 'Enter'){ clearTimeout(t); runSearch(q.value.trim()); } };
+}
+
+/* ============================================================
+   Photo logging
+   Point the camera at a plate, get one combined estimate back, correct the
+   number if it looks wrong, log it. The photo is never stored: it goes to
+   the API and is dropped. A thumbnail would bloat localStorage and the sync
+   sheet for something with no value once the entry exists.
+   ============================================================ */
+const PHOTO_EDGE = 1024;      // long edge sent to the API
+const PHOTO_Q    = 0.8;       // JPEG quality
+
+function wireCamera(){
+  const btn = document.getElementById('cam');
+  const file = document.getElementById('camFile');
+  if (!btn || !file) return;
+  btn.onclick = ()=>{
+    if (!S.settings.anthropicKey){
+      toast('Add an Anthropic API key in Settings first');
+      return;
+    }
+    file.value = '';        // so picking the same photo twice still fires
+    file.click();
+  };
+  file.onchange = ()=>{ if (file.files && file.files[0]) photoEstimate(file.files[0]); };
+}
+
+/* A 12MP phone photo is about 5.5MB once base64'd — slow, expensive, and for
+   no gain, since the model reads a 1024px image just as well. Going through a
+   canvas also normalises HEIC, which iOS decodes natively and re-encodes here
+   as JPEG the API will accept. */
+function shrinkImage(file){
+  return new Promise((resolve, reject)=>{
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = ()=>{
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, PHOTO_EDGE / Math.max(img.width, img.height));
+      const w = Math.max(1, Math.round(img.width * scale));
+      const h = Math.max(1, Math.round(img.height * scale));
+      const c = document.createElement('canvas');
+      c.width = w; c.height = h;
+      const ctx = c.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      let data;
+      try { data = c.toDataURL('image/jpeg', PHOTO_Q); }
+      catch(e){ reject(new Error('That image could not be read.')); return; }
+      const comma = data.indexOf(',');
+      resolve({ preview: data, b64: data.slice(comma+1), w: w, h: h });
+    };
+    img.onerror = ()=>{
+      URL.revokeObjectURL(url);
+      reject(new Error('That file is not an image this browser can open.'));
+    };
+    img.src = url;
+  });
+}
+
+async function photoEstimate(file){
+  const out = document.getElementById('results');
+  if (!out) return;
+  const meal = sheetState && sheetState.meal;
+  if (!meal) return;
+
+  out.innerHTML = '<div class="divider" style="margin-top:4px"><h3>From your photo</h3></div>'+
+    '<div style="text-align:center;padding:22px 0"><span class="spin"></span>'+
+    '<p class="note" style="margin-top:10px">Reading the photo\u2026</p></div>';
+
+  let shot;
+  try { shot = await shrinkImage(file); }
+  catch(err){ return photoFailed(out, err.message, file); }
+
+  if (!sheetState) return;    // sheet closed while the file was decoding
+  out.innerHTML =
+    '<div class="divider" style="margin-top:4px"><h3>From your photo</h3></div>'+
+    '<img class="shot" src="'+shot.preview+'" alt="">'+
+    '<div style="text-align:center;padding:16px 0"><span class="spin"></span>'+
+    '<p class="note" style="margin-top:10px">Estimating\u2026</p></div>';
+
+  const unit = S.settings.foodUnit === 'oz' ? 'ounces' : 'grams';
+  const prompt = [
+    { type:'image', source:{ type:'base64', media_type:'image/jpeg', data: shot.b64 } },
+    { type:'text', text:
+      'This is a photo of food about to be eaten, logged as '+meal.name.toLowerCase()+'.\n'+
+      'Give ONE combined estimate for everything edible on the plate, not a per-item breakdown.\n'+
+      'Judge portion size from visual cues \u2014 plate and cutlery size, bowl depth, how full it is.\n'+
+      'Give weights in '+unit+'.\n'+
+      'Be honest about confidence: "high" only when the food and the portion are both clear, '+
+      '"low" when the portion is hard to judge from this angle or an ingredient is hidden.\n'+
+      'If there is no food in the photo, set calories to 0 and say so in basis.\n'+
+      'Respond with ONLY a JSON object, no markdown fences and no other text:\n'+
+      '{"name":"short name for the whole plate","calories":integer,"portion":"the portion you assumed",'+
+      '"confidence":"high|medium|low","basis":"one short sentence on what you saw and how you got there"}'
+    }
+  ];
+
+  let j;
+  try { j = await askClaude(prompt); }
+  catch(err){ return photoFailed(out, err.message, file); }
+  if (!sheetState) return;
+
+  const cal = Math.round(Number(j.calories));
+  if (!isFinite(cal)) return photoFailed(out, 'Could not read a number from the estimate.', file);
+  if (cal <= 0){
+    return photoFailed(out, j.basis || 'No food found in that photo.', file);
+  }
+
+  const conf = String(j.confidence||'').toLowerCase();
+  const name = j.name || 'Photo estimate';
+  out.innerHTML =
+    '<div class="divider" style="margin-top:4px"><h3>From your photo</h3></div>'+
+    '<img class="shot" src="'+shot.preview+'" alt="">'+
+    '<div style="display:flex;align-items:baseline;gap:8px;margin:12px 0 6px">'+
+      '<span class="num" style="font-size:34px;font-weight:700">'+cal.toLocaleString()+'</span>'+
+      '<span style="color:var(--ink-dim);font-size:13px">calories</span>'+
+      (conf ? '<span class="conf '+conf+'">'+escapeHTML(conf)+' confidence</span>' : '')+
+    '</div>'+
+    '<p style="margin:0 0 4px;font-size:14.5px">'+escapeHTML(name)+'</p>'+
+    '<p class="note" style="margin-top:2px">'+escapeHTML([j.portion, j.basis].filter(Boolean).join(' \u2014 '))+'</p>'+
+    (conf === 'low'
+      ? '<div class="warn" style="margin-top:10px">Portion was hard to judge from this angle. '+
+        'Worth correcting the number before you log it.</div>'
+      : '')+
+    '<div class="field" style="margin-top:14px"><label>Adjust if you like</label>'+
+      '<input id="padj" type="number" inputmode="numeric" value="'+cal+'"></div>'+
+    '<button class="cta" id="paddBtn">'+escapeHTML(T('addTo', meal.name))+'</button>'+
+    '<button class="cta ghost" id="pretry">Try another photo</button>';
+
+  document.getElementById('paddBtn').onclick = ()=>{
+    addEntry({
+      name: name,
+      cal: Math.round(Number(document.getElementById('padj').value) || cal),
+      portion: j.portion || '',
+      src: 'Photo'
+    });
+  };
+  document.getElementById('pretry').onclick = ()=>{
+    const f = document.getElementById('camFile');
+    if (f){ f.value = ''; f.click(); }
+  };
+}
+
+function photoFailed(out, msg, file){
+  out.innerHTML =
+    '<div class="divider" style="margin-top:4px"><h3>From your photo</h3></div>'+
+    '<div class="warn"><b>Could not estimate that.</b><br>'+escapeHTML(msg)+'</div>'+
+    '<button class="cta ghost" id="pretry2">Try again</button>';
+  document.getElementById('pretry2').onclick = ()=>{
+    if (file) photoEstimate(file);
+  };
 }
 
 /* One tap logs it: the portion is already known, so there is nothing left
@@ -2085,6 +2258,8 @@ async function askClaude(prompt, tools){
   const payload = {
     model: S.settings.model || DEFAULTS.model,
     max_tokens: 900,
+    // A string is the common case; an array is a content block list, which is
+    // how a photo gets attached alongside its instructions.
     messages: [{role:'user', content: prompt}]
   };
   if (tools) payload.tools = tools;
