@@ -12,35 +12,212 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Bungee&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Bungee&family=Cinzel:wght@500;700;900&family=Anton&display=swap" rel="stylesheet">
 <style>
+/* ============================================================
+   Themes
+   Every colour, font and texture the app draws with lives here.
+   Nothing below this block hardcodes a colour, so a theme is a
+   self-contained swap rather than a hunt through the stylesheet.
+   ============================================================ */
 :root{
+  --radius:14px;
+  --strip-h:14px;
+  --panel-radius:20px;
+  --pill:999px;
+  --body-font:Archivo,system-ui,-apple-system,sans-serif;
+}
+
+/* ---------- Speed Racer (default) ---------- */
+[data-theme="speed"]{
   --bg:#EDF1FF;            /* recessed track colour (inputs, tab rails) */
   --surface:#FFFFFF;
   --surface-2:#DFE6FF;
+  --raised:#FFFFFF;        /* buttons and chips that sit above the surface */
   --line:#BEC9F0;
   --ink:#101433;
+  --ink-on:#FFFFFF;        /* text that sits on top of --ink */
   --ink-dim:#4C568F;
   --ink-faint:#6A72A4;
   --breakfast:#FFB000;
   --lunch:#22C55E;
   --dinner:#00B4F0;
   --snacks:#FF2D87;
+  --accent:#FF2D87;
   --over:#EE1B24;
-  --radius:14px;
-  --checker:repeating-conic-gradient(#101433 0% 25%, #ffffff 0% 50%);
+  --page:#3B4BE8;
+  --page-bg:
+    repeating-linear-gradient(102deg, rgba(255,255,255,.14) 0 26px, rgba(255,255,255,0) 26px 62px),
+    linear-gradient(158deg,#00D0F5 0%,#3B6BFF 34%,#8A3CFF 66%,#FF2D87 100%);
+  --strip:repeating-conic-gradient(#101433 0% 25%, #ffffff 0% 50%);
+  --strip-size:14px 14px;
+  --hero:linear-gradient(104deg,#FFD84D 0%,#FFC400 44%,#FF9E00 100%);
+  --hero-ink:#101433;
+  --hero-streak:repeating-linear-gradient(100deg, rgba(255,255,255,.6) 0 3px, rgba(255,255,255,0) 3px 21px);
+  --big-shadow:2px 3px 0 #fff, 5px 6px 0 rgba(16,20,51,.22);
+  --cta:linear-gradient(180deg,#E51B38 0%,#C4001A 100%);
+  --cta-ink:#FFFFFF;
+  --toast:linear-gradient(180deg,#E4007A 0%,#C10067 100%);
+  --toast-ink:#FFFFFF;
+  --warn-bg:#FFF0F1;
+  --warn-ink:#8E0710;
+  --combo-bg:#FFF0F7;
+  --display:Bungee,Archivo,sans-serif;
+  --display-weight:400;
+  --display-track:.01em;
+  --border-w:2px;
+  --panel-border:3px;
+  --lift:0 3px 0 var(--ink);
+  --panel-lift:0 7px 0 rgba(16,20,51,.55);
+  --scrim:rgba(16,20,51,.55);
+}
+
+/* ---------- Dune ---------- */
+/* Sand, spice and shadow. Monumental rather than bouncy: wide tracked
+   capitals, deep desert night, no gloss and no hard candy shadows. */
+[data-theme="dune"]{
+  --bg:#1B1710;
+  --surface:#231E16;
+  --surface-2:#332B20;
+  --raised:#2E2819;
+  --line:#4A3F2C;
+  --ink:#E8D8B4;
+  --ink-on:#17130C;
+  --ink-dim:#B49F76;
+  --ink-faint:#8A7854;
+  --breakfast:#E0A542;
+  --lunch:#8C9A5B;
+  --dinner:#5B8CA8;
+  --snacks:#C2683A;
+  --accent:#E0A542;
+  --over:#D2452B;
+  --page:#0C0A07;
+  --page-bg:
+    repeating-linear-gradient(96deg, rgba(232,216,180,.05) 0 40px, rgba(232,216,180,0) 40px 96px),
+    linear-gradient(168deg,#0C0A07 0%,#241C10 40%,#5A3E1C 78%,#9A6427 100%);
+  --strip:linear-gradient(90deg,#5A3E1C 0%,#C08A3E 50%,#5A3E1C 100%);
+  --strip-size:100% 100%;
+  --hero:linear-gradient(104deg,#8A5A22 0%,#C08A3E 46%,#E0A542 100%);
+  --hero-ink:#17130C;
+  --hero-streak:repeating-linear-gradient(180deg, rgba(23,19,12,.12) 0 2px, rgba(23,19,12,0) 2px 14px);
+  --big-shadow:0 2px 14px rgba(23,19,12,.4);
+  --cta:linear-gradient(180deg,#C2683A 0%,#8E4520 100%);
+  --cta-ink:#F6ECD6;
+  --toast:linear-gradient(180deg,#3A2F1E 0%,#241C10 100%);
+  --toast-ink:#E8D8B4;
+  --warn-bg:#3A1E16;
+  --warn-ink:#F0A88E;
+  --combo-bg:#332617;
+  --display:Archivo,system-ui,sans-serif;
+  --display-weight:900;
+  --display-track:.22em;
+  --border-w:1px;
+  --panel-border:1px;
+  --lift:0 0 0 rgba(0,0,0,0);
+  --panel-lift:0 0 0 rgba(0,0,0,0);
+  --scrim:rgba(6,5,3,.78);
+}
+
+/* ---------- John Wick ---------- */
+/* The Continental after hours: black marble, gold leaf, one red accent.
+   Thin rules, engraved serif capitals, nothing that bounces. */
+[data-theme="wick"]{
+  --bg:#101012;
+  --surface:#17171A;
+  --surface-2:#232327;
+  --raised:#1E1E22;
+  --line:#38383E;
+  --ink:#EDE9E2;
+  --ink-on:#0B0B0D;
+  --ink-dim:#9A968E;
+  --ink-faint:#6E6A64;
+  --breakfast:#C9A227;
+  --lunch:#6E8B6B;
+  --dinner:#5A7A93;
+  --snacks:#8E2F3A;
+  --accent:#C9A227;
+  --over:#9B1B24;
+  --page:#000000;
+  --page-bg:
+    repeating-linear-gradient(115deg, rgba(201,162,39,.05) 0 1px, rgba(201,162,39,0) 1px 34px),
+    linear-gradient(162deg,#000000 0%,#111114 48%,#1C1C22 100%);
+  --strip:linear-gradient(90deg,#8A6E1A 0%,#E3C766 48%,#8A6E1A 100%);
+  --strip-size:100% 100%;
+  --hero:linear-gradient(104deg,#17171A 0%,#232327 52%,#2C2C32 100%);
+  --hero-ink:#EDE9E2;
+  --hero-streak:repeating-linear-gradient(100deg, rgba(201,162,39,.16) 0 1px, rgba(201,162,39,0) 1px 26px);
+  --big-shadow:0 0 22px rgba(201,162,39,.28);
+  --cta:linear-gradient(180deg,#9B1B24 0%,#6B0F16 100%);
+  --cta-ink:#F4EFE4;
+  --toast:linear-gradient(180deg,#232327 0%,#131316 100%);
+  --toast-ink:#E3C766;
+  --warn-bg:#2A1214;
+  --warn-ink:#E9909A;
+  --combo-bg:#241E10;
+  --display:Cinzel,Georgia,serif;
+  --display-weight:700;
+  --display-track:.14em;
+  --border-w:1px;
+  --panel-border:1px;
+  --lift:0 0 0 rgba(0,0,0,0);
+  --panel-lift:0 0 0 rgba(0,0,0,0);
+  --scrim:rgba(0,0,0,.8);
+}
+
+/* ---------- WrestleMania ---------- */
+/* Championship gold on arena purple, everything oversized and shouting.
+   The one theme where the hard drop shadow gets bigger, not smaller. */
+[data-theme="mania"]{
+  --bg:#F2ECFF;
+  --surface:#FFFFFF;
+  --surface-2:#E4D6FF;
+  --raised:#FFFFFF;
+  --line:#C4A9F0;
+  --ink:#1A0B33;
+  --ink-on:#FFFFFF;
+  --ink-dim:#5B3A8C;
+  --ink-faint:#7C5BAA;
+  --breakfast:#FFC800;
+  --lunch:#00A94F;
+  --dinner:#0090FF;
+  --snacks:#E5006D;
+  --accent:#FFC800;
+  --over:#E01B24;
+  --page:#3A0F63;
+  --page-bg:
+    repeating-linear-gradient(45deg, rgba(255,200,0,.16) 0 18px, rgba(255,200,0,0) 18px 44px),
+    linear-gradient(150deg,#6A1FB0 0%,#3A0F63 46%,#1A0B33 76%,#B8006B 100%);
+  --strip:repeating-linear-gradient(90deg,#FFC800 0 16px,#1A0B33 16px 32px);
+  --strip-size:100% 100%;
+  --hero:linear-gradient(104deg,#FFD84D 0%,#FFC800 40%,#FF8A00 100%);
+  --hero-ink:#1A0B33;
+  --hero-streak:repeating-linear-gradient(100deg, rgba(255,255,255,.55) 0 5px, rgba(255,255,255,0) 5px 18px);
+  --big-shadow:3px 4px 0 #fff, 7px 9px 0 rgba(26,11,51,.3);
+  --cta:linear-gradient(180deg,#E5006D 0%,#A30049 100%);
+  --cta-ink:#FFFFFF;
+  --toast:linear-gradient(180deg,#6A1FB0 0%,#3A0F63 100%);
+  --toast-ink:#FFC800;
+  --warn-bg:#FFF0F1;
+  --warn-ink:#8E0710;
+  --combo-bg:#FFF3D0;
+  --display:Anton,Archivo,sans-serif;
+  --display-weight:400;
+  --display-track:.04em;
+  --border-w:3px;
+  --panel-border:4px;
+  --lift:0 4px 0 var(--ink);
+  --panel-lift:0 9px 0 rgba(26,11,51,.6);
+  --scrim:rgba(26,11,51,.62);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
 body.locked{overflow:hidden}
-html{background:#3B4BE8}
+html{background:var(--page)}
 body{
-  background:
-    repeating-linear-gradient(102deg, rgba(255,255,255,.14) 0 26px, rgba(255,255,255,0) 26px 62px),
-    linear-gradient(158deg,#00D0F5 0%,#3B6BFF 34%,#8A3CFF 66%,#FF2D87 100%);
+  background:var(--page-bg);
   background-attachment:fixed;
   color:var(--ink);
-  font-family:Archivo,system-ui,-apple-system,sans-serif;
+  font-family:var(--body-font);
   font-size:15px;
   line-height:1.45;
   padding:calc(env(safe-area-inset-top,0px) + 14px)
@@ -56,152 +233,182 @@ body{
 .wrap{
   max-width:560px;margin:0 auto;padding:0 18px 22px;
   position:relative;background:var(--surface);
-  border:3px solid var(--ink);border-radius:20px;overflow:hidden;
-  box-shadow:0 7px 0 rgba(16,20,51,.55), 0 26px 50px rgba(16,20,51,.32);
+  border:var(--panel-border) solid var(--ink);border-radius:var(--panel-radius);overflow:hidden;
+  box-shadow:var(--panel-lift,0 7px 0 rgba(0,0,0,.45)), 0 26px 50px rgba(0,0,0,.32);
 }
 .wrap::before{
-  content:'';position:absolute;top:0;left:0;right:0;height:14px;
-  background-image:var(--checker);background-size:14px 14px;
-  border-bottom:2px solid var(--ink);
+  content:'';position:absolute;top:0;left:0;right:0;height:var(--strip-h);
+  background-image:var(--strip);background-size:var(--strip-size);
+  border-bottom:var(--border-w) solid var(--ink);
 }
 button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;padding:0}
-input,select,textarea{font:inherit;font-size:16px;font-weight:500;color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:12px;padding:11px 12px;width:100%}
+input,select,textarea{font:inherit;font-size:16px;font-weight:500;color:var(--ink);background:var(--raised);border:var(--border-w) solid var(--ink);border-radius:12px;padding:11px 12px;width:100%}
 textarea{resize:vertical;min-height:104px;line-height:1.5;font-weight:400;display:block}
 input::placeholder,textarea::placeholder{color:var(--ink-faint);font-weight:400}
-input:focus,select:focus,textarea:focus,button:focus-visible{outline:3px solid var(--dinner);outline-offset:2px}
-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23101433' stroke-width='2.2' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center}
-.num{font-family:Archivo,system-ui,sans-serif;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23888' stroke-width='2.2' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 13px center}
+.num{font-family:var(--body-font);font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
 
 /* ---------- header ---------- */
 header{padding:30px 0 4px}
 .topline{display:flex;align-items:center;justify-content:space-between;gap:12px}
 .datenav{display:flex;align-items:center;gap:10px}
-.datenav h1{font-family:Bungee,Archivo,sans-serif;font-size:15px;font-weight:400;margin:0;letter-spacing:.01em}
-.arrow{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--ink);background:#fff;border:2px solid var(--ink);box-shadow:0 2px 0 var(--ink);font-size:17px;line-height:1}
+.datenav h1{font-family:var(--display);font-size:15px;font-weight:var(--display-weight);margin:0;letter-spacing:var(--display-track);text-transform:uppercase}
+.arrow{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;color:var(--ink);background:var(--raised);border:var(--border-w) solid var(--ink);box-shadow:var(--lift);font-size:17px;line-height:1}
 .arrow:active{transform:translateY(2px);box-shadow:none}
 .arrow,.gear,.iconbtn{position:relative}
 .arrow::after,.gear::after,.iconbtn::after{content:'';position:absolute;left:50%;top:50%;width:44px;height:44px;transform:translate(-50%,-50%)}
 .arrow:disabled{opacity:.25;box-shadow:none;transform:none}
-.gear{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--ink);background:var(--breakfast);border:2px solid var(--ink);box-shadow:0 2px 0 var(--ink)}
+.gear{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--hero-ink);background:var(--accent);border:var(--border-w) solid var(--ink);box-shadow:var(--lift)}
 .gear:active{transform:translateY(2px);box-shadow:none}
 
 /* ---------- hero: the instrument band ---------- */
 .hero{
   position:relative;overflow:hidden;
   margin:18px -18px 4px;padding:20px 18px 18px;
-  background:linear-gradient(104deg,#FFD84D 0%,#FFC400 44%,#FF9E00 100%);
-  border-top:3px solid var(--ink);border-bottom:3px solid var(--ink);
+  background:var(--hero);color:var(--hero-ink);
+  border-top:var(--panel-border) solid var(--ink);border-bottom:var(--panel-border) solid var(--ink);
 }
 .hero::after{
   content:'';position:absolute;inset:0;pointer-events:none;
-  background:repeating-linear-gradient(100deg, rgba(255,255,255,.6) 0 3px, rgba(255,255,255,0) 3px 21px);
+  background:var(--hero-streak);
   -webkit-mask-image:linear-gradient(90deg, transparent 48%, #000 100%);
   mask-image:linear-gradient(90deg, transparent 48%, #000 100%);
 }
 .hero>*{position:relative;z-index:1}
 .remain{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
-.remain .big{font-family:Bungee,Archivo,sans-serif;font-size:50px;font-weight:400;line-height:1;letter-spacing:0;color:var(--ink);text-shadow:2px 3px 0 #fff, 5px 6px 0 rgba(16,20,51,.22)}
-.remain .cap{color:rgba(16,20,51,.7);font-size:13px;font-weight:600}
+.remain .big{font-family:var(--display);font-size:50px;font-weight:var(--display-weight);line-height:1;letter-spacing:var(--display-track);color:var(--hero-ink);text-shadow:var(--big-shadow)}
+.remain .cap{color:var(--hero-ink);opacity:.72;font-size:13px;font-weight:600}
 .remain.over .big{color:var(--over)}
-.bar{display:flex;height:18px;border-radius:999px;overflow:hidden;background:rgba(16,20,51,.15);margin:16px 0 10px;box-shadow:inset 0 0 0 2px var(--ink)}
-.seg{transition:width .35s cubic-bezier(.4,0,.2,1);box-shadow:inset 0 4px 0 rgba(255,255,255,.42), inset 0 -4px 0 rgba(16,20,51,.14);border-right:1px solid rgba(16,20,51,.4)}
-.mathline{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;font-weight:600;color:rgba(16,20,51,.72)}
-.mathline b{color:var(--ink);font-weight:800}
-.mathline button{color:var(--ink);border-bottom:2px dotted rgba(16,20,51,.55)}
+.bar{display:flex;height:18px;border-radius:var(--pill);overflow:hidden;background:rgba(0,0,0,.18);margin:16px 0 10px;box-shadow:inset 0 0 0 var(--border-w) var(--ink)}
+.seg{transition:width .35s cubic-bezier(.4,0,.2,1);box-shadow:inset 0 4px 0 rgba(255,255,255,.34), inset 0 -4px 0 rgba(0,0,0,.16);border-right:1px solid rgba(0,0,0,.4)}
+.mathline{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;font-weight:600;color:var(--hero-ink);opacity:.78}
+.mathline b{color:var(--hero-ink);font-weight:800}
+.mathline button{color:var(--hero-ink);border-bottom:2px dotted currentColor}
 
 /* ---------- meals ---------- */
 .meal{border-top:2px dashed var(--line);padding:16px 0 8px}
 .meal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
-.meal-name{display:flex;align-items:center;gap:9px;font-family:Bungee,Archivo,sans-serif;font-weight:400;font-size:12px;letter-spacing:.03em;text-transform:uppercase}
-.dot{width:12px;height:12px;border-radius:3px;border:2px solid var(--ink);flex:none}
-.meal-total{font-family:Archivo,sans-serif;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink);font-size:15px}
+.meal-name{display:flex;align-items:center;gap:9px;font-family:var(--display);font-weight:var(--display-weight);font-size:12px;letter-spacing:var(--display-track);text-transform:uppercase}
+.dot{width:12px;height:12px;border-radius:3px;border:var(--border-w) solid var(--ink);flex:none}
+.meal-total{font-family:var(--body-font);font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink);font-size:15px}
 .entry{display:flex;align-items:center;gap:14px;padding:11px 0}
 .entry .txt{cursor:pointer}
 .entry .txt{flex:1;min-width:0}
 .entry .nm{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14.5px;font-weight:500}
 .entry .sub{display:block;font-size:12px;color:var(--ink-faint);margin-top:1px;font-weight:500}
-.entry .kc{font-family:Archivo,sans-serif;font-weight:800;font-variant-numeric:tabular-nums;font-size:14.5px}
+.entry .kc{font-family:var(--body-font);font-weight:800;font-variant-numeric:tabular-nums;font-size:14.5px}
 .iconbtn{width:28px;height:28px;border-radius:8px;display:grid;place-items:center;color:var(--ink-faint);flex:none}
 .iconbtn:active{transform:scale(.9)}
-.iconbtn.on{color:var(--breakfast)}
+.iconbtn.on{color:var(--accent)}
 .iconbtn.on svg{fill:currentColor;stroke:var(--ink);stroke-width:1.6}
-.addbtn{display:inline-flex;align-items:center;gap:8px;color:var(--ink);font-size:13px;font-weight:700;background:#fff;border:2px solid var(--ink);border-radius:999px;padding:6px 14px 6px 7px;box-shadow:0 3px 0 var(--ink);margin:8px 0 6px}
+.addbtn{display:inline-flex;align-items:center;gap:8px;color:var(--ink);font-size:13px;font-weight:700;background:var(--raised);border:var(--border-w) solid var(--ink);border-radius:var(--pill);padding:6px 14px 6px 7px;box-shadow:var(--lift);margin:8px 0 6px}
 .addbtn:active{transform:translateY(3px);box-shadow:none}
-.addbtn span.plus{width:21px;height:21px;border-radius:50%;border:2px solid var(--ink);background:var(--dinner);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:800;line-height:1}
-.savemeal{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:#fff;border:2px solid var(--ink);border-radius:999px;padding:4px 10px;box-shadow:0 2px 0 var(--ink)}
+.addbtn span.plus{width:21px;height:21px;border-radius:50%;border:var(--border-w) solid var(--ink);background:var(--accent);color:var(--ink-on);display:grid;place-items:center;font-size:13px;font-weight:800;line-height:1}
+.savemeal{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink);background:var(--raised);border:var(--border-w) solid var(--ink);border-radius:var(--pill);padding:4px 10px;box-shadow:var(--lift)}
 .savemeal:active{transform:translateY(2px);box-shadow:none}
 .quick{display:flex;flex-wrap:wrap;gap:8px;padding:8px 0 2px}
-.qchip{display:flex;align-items:baseline;gap:8px;border:2px solid var(--ink);background:#fff;border-radius:999px;padding:6px 13px;font-size:13px;font-weight:600;max-width:100%;box-shadow:0 3px 0 var(--ink)}
+.qchip{display:flex;align-items:baseline;gap:8px;border:var(--border-w) solid var(--ink);background:var(--raised);border-radius:var(--pill);padding:6px 13px;font-size:13px;font-weight:600;max-width:100%;box-shadow:var(--lift)}
 .qchip:active{transform:translateY(3px);box-shadow:none}
-.qchip.combo{background:#FFF0F7;border-color:var(--snacks);box-shadow:0 3px 0 var(--snacks)}
+.qchip.combo{background:var(--combo-bg);border-color:var(--snacks)}
 .qchip .qn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
-.qchip .qc{font-family:Archivo,sans-serif;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink-dim);font-size:12px;flex:none}
+.qchip .qc{font-family:var(--body-font);font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink-dim);font-size:12px;flex:none}
 .unitcap{font-size:11px;font-weight:600;color:var(--ink-faint);text-align:center}
 
 /* ---------- trend ---------- */
-.trend{border-top:3px solid var(--ink);margin-top:22px;padding-top:16px}
-.trend h2{font-family:Bungee,Archivo,sans-serif;font-size:11.5px;font-weight:400;letter-spacing:.04em;text-transform:uppercase;margin:0 0 16px;color:var(--ink)}
+.trend{border-top:var(--panel-border) solid var(--ink);margin-top:22px;padding-top:16px}
+.trend h2{font-family:var(--display);font-size:11.5px;font-weight:var(--display-weight);letter-spacing:var(--display-track);text-transform:uppercase;margin:0 0 16px;color:var(--ink)}
 .bars{display:flex;align-items:stretch;gap:8px;height:118px;padding-bottom:22px;position:relative}
 .tcol{flex:1;display:flex;flex-direction:column;justify-content:flex-end;position:relative;background:none;border:none;padding:0}
-.tbar{width:100%;border-radius:6px 6px 0 0;background:var(--surface-2);min-height:8px;border:2px solid var(--ink);box-shadow:inset 0 4px 0 rgba(255,255,255,.38);transition:height .3s}
+.tbar{width:100%;border-radius:6px 6px 0 0;background:var(--surface-2);min-height:8px;border:var(--border-w) solid var(--ink);box-shadow:inset 0 4px 0 rgba(255,255,255,.24);transition:height .3s}
 .tlab{position:absolute;bottom:-19px;left:0;right:0;text-align:center;font-size:11px;font-weight:700;color:var(--ink-faint)}
-.tline{position:absolute;left:0;right:0;border-top:2px dashed rgba(16,20,51,.5);pointer-events:none}
+.tline{position:absolute;left:0;right:0;border-top:2px dashed var(--ink-faint);pointer-events:none}
 .tline b{position:absolute;right:0;top:-9px;background:var(--surface);padding-left:6px;font-size:10.5px;color:var(--ink-dim);font-weight:800;font-variant-numeric:tabular-nums}
 .tsum{display:flex;justify-content:space-between;font-size:12.5px;font-weight:600;color:var(--ink-faint);margin-top:14px}
 .tsum b{color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums}
 
 /* ---------- sheet ---------- */
-.scrim{position:fixed;inset:0;background:rgba(16,20,51,.55);opacity:0;pointer-events:none;transition:opacity .22s;z-index:40}
+.scrim{position:fixed;inset:0;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity .22s;z-index:40}
 .scrim.open{opacity:1;pointer-events:auto}
-.sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--surface);border-radius:22px 22px 0 0;transform:translateY(106%);transition:transform .28s cubic-bezier(.32,.72,0,1);max-height:92vh;max-height:92dvh;display:flex;flex-direction:column;border-top:3px solid var(--ink);overflow:hidden;box-shadow:0 -8px 40px rgba(16,20,51,.4)}
-.sheet::before{content:'';position:absolute;top:0;left:0;right:0;height:12px;background-image:var(--checker);background-size:12px 12px;border-bottom:2px solid var(--ink);z-index:4}
+.sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--surface);border-radius:22px 22px 0 0;transform:translateY(106%);transition:transform .28s cubic-bezier(.32,.72,0,1);max-height:92vh;max-height:92dvh;display:flex;flex-direction:column;border-top:var(--panel-border) solid var(--ink);overflow:hidden;box-shadow:0 -8px 40px rgba(0,0,0,.45)}
+.sheet::before{content:'';position:absolute;top:0;left:0;right:0;height:12px;background-image:var(--strip);background-size:var(--strip-size);border-bottom:var(--border-w) solid var(--ink);z-index:4}
 .sheet.open{transform:translateY(0)}
 .sheet-in{max-width:560px;width:100%;margin:0 auto;padding:0 18px calc(20px + env(safe-area-inset-bottom,0px));overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .griparea{flex:none;padding:16px 0 2px;touch-action:none;cursor:grab}
-.grip{width:44px;height:5px;border-radius:3px;background:rgba(16,20,51,.28);margin:0 auto 4px}
+.grip{width:44px;height:5px;border-radius:3px;background:var(--ink-faint);margin:0 auto 4px}
 .sheet.dragging{transition:none}
 .sheet-head{display:flex;align-items:center;justify-content:space-between;padding:8px 0 14px;position:sticky;top:0;background:var(--surface);z-index:2}
-.sheet-head h2{font-family:Bungee,Archivo,sans-serif;font-size:15px;margin:0;font-weight:400;letter-spacing:.01em}
-.tabs{display:flex;gap:2px;margin-bottom:14px;background:var(--bg);padding:3px;border-radius:999px;border:2px solid var(--ink)}
-.tab{flex:1;padding:8px 1px;border-radius:999px;font-size:11.5px;font-weight:700;color:var(--ink-dim);text-align:center;white-space:nowrap;min-width:0;letter-spacing:-.01em}
-.tab.on{background:var(--ink);color:#fff}
-.res{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:2px dashed var(--line);width:100%;text-align:left}
+.sheet-head h2{font-family:var(--display);font-size:15px;margin:0;font-weight:var(--display-weight);letter-spacing:var(--display-track);text-transform:uppercase}
+.tabs{display:flex;gap:2px;margin-bottom:14px;background:var(--bg);padding:3px;border-radius:var(--pill);border:var(--border-w) solid var(--ink)}
+.tab{flex:1;padding:8px 1px;border-radius:var(--pill);font-size:11.5px;font-weight:700;color:var(--ink-dim);text-align:center;white-space:nowrap;min-width:0;letter-spacing:-.01em}
+.tab.on{background:var(--ink);color:var(--ink-on)}
+.res{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px dashed var(--line);width:100%;text-align:left}
 .res:last-child{border-bottom:none}
 .res .txt{flex:1;min-width:0}
 .res .nm{font-size:14.5px;font-weight:500;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .res .sub{font-size:12px;color:var(--ink-faint);display:block;margin-top:2px;font-weight:500}
-.res .kc{font-family:Archivo,sans-serif;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink);font-size:14px;flex:none}
+.res .kc{font-family:var(--body-font);font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink);font-size:14px;flex:none}
 .row{display:flex;gap:10px;align-items:center}
 .row>*{flex:1}
 .field{margin-bottom:12px}
 .field label{display:block;font-size:12.5px;font-weight:600;color:var(--ink-dim);margin-bottom:6px}
-.cta{width:100%;background:linear-gradient(180deg,#E51B38 0%,#C4001A 100%);color:#fff;font-weight:800;padding:14px;border:2px solid var(--ink);border-radius:14px;box-shadow:0 4px 0 var(--ink);margin-top:8px;font-size:15px}
+.cta{width:100%;background:var(--cta);color:var(--cta-ink);font-weight:800;padding:14px;border:var(--border-w) solid var(--ink);border-radius:var(--radius);box-shadow:var(--lift);margin-top:8px;font-size:15px}
 .cta:active{transform:translateY(4px);box-shadow:none}
-.cta.ghost{background:#fff;color:var(--ink);font-weight:700}
+.cta.ghost{background:var(--raised);color:var(--ink);font-weight:700}
 .note{font-size:12.5px;color:var(--ink-dim);line-height:1.55;margin:10px 0 0}
 .note code{background:var(--bg);border:1px solid var(--line);padding:1px 5px;border-radius:5px;font-size:11.5px;word-break:break-all}
-.warn{background:#FFF0F1;border:2px solid var(--over);color:#8E0710;font-size:13px;font-weight:500;padding:11px 12px;border-radius:12px;margin:10px 0;line-height:1.5}
+.warn{background:var(--warn-bg);border:var(--border-w) solid var(--over);color:var(--warn-ink);font-size:13px;font-weight:500;padding:11px 12px;border-radius:12px;margin:10px 0;line-height:1.5}
 .empty{color:var(--ink-faint);font-size:13.5px;font-weight:500;padding:22px 0;text-align:center;line-height:1.6}
-.spin{display:block;width:22px;height:22px;border:3px solid var(--surface-2);border-top-color:var(--snacks);border-radius:50%;margin:26px auto;animation:sp .7s linear infinite}
+.spin{display:block;width:22px;height:22px;border:3px solid var(--surface-2);border-top-color:var(--accent);border-radius:50%;margin:26px auto;animation:sp .7s linear infinite}
 @keyframes sp{to{transform:rotate(360deg)}}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin:4px 0 14px}
-.chip{padding:7px 13px;border-radius:999px;border:2px solid var(--ink);background:#fff;font-size:13px;font-weight:600;color:var(--ink);box-shadow:0 2px 0 var(--ink)}
+.chip{padding:7px 13px;border-radius:var(--pill);border:var(--border-w) solid var(--ink);background:var(--raised);font-size:13px;font-weight:600;color:var(--ink);box-shadow:var(--lift)}
 .chip:active{transform:translateY(2px);box-shadow:none}
-.chip.on{background:var(--snacks);color:#fff}
-.divider{border-top:2px dashed var(--line);margin:20px 0 16px}
-.stickysave{position:sticky;bottom:0;background:linear-gradient(to top,var(--surface) 62%,rgba(255,255,255,0));padding:14px 0 6px;margin-top:18px;z-index:3}
+.chip.on{background:var(--ink);color:var(--ink-on)}
+.divider{border-top:1px dashed var(--line);margin:20px 0 16px}
+.stickysave{position:sticky;bottom:0;background:linear-gradient(to top,var(--surface) 62%,transparent);padding:14px 0 6px;margin-top:18px;z-index:3}
 .stickysave .cta{margin-top:0}
-.divider h3{font-family:Bungee,Archivo,sans-serif;font-size:11.5px;font-weight:400;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);margin:16px 0 12px}
-.toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom,0px));transform:translate(-50%,80px);background:linear-gradient(180deg,#E4007A 0%,#C10067 100%);color:#fff;padding:11px 18px;border:2px solid var(--ink);border-radius:999px;font-size:14px;font-weight:700;z-index:80;opacity:0;transition:all .25s;pointer-events:none;box-shadow:0 4px 0 var(--ink)}
+.divider h3{font-family:var(--display);font-size:11.5px;font-weight:var(--display-weight);letter-spacing:var(--display-track);text-transform:uppercase;color:var(--ink);margin:16px 0 12px}
+.toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom,0px));transform:translate(-50%,80px);background:var(--toast);color:var(--toast-ink);padding:11px 18px;border:var(--border-w) solid var(--ink);border-radius:var(--pill);font-size:14px;font-weight:700;z-index:80;opacity:0;transition:all .25s;pointer-events:none;box-shadow:var(--lift)}
 .toast.on{transform:translate(-50%,0);opacity:1}
 .toast{display:flex;align-items:center;gap:14px;max-width:calc(100vw - 32px)}
 .toast.act{pointer-events:auto}
-.toast button{font-weight:900;color:#fff;text-decoration:underline;flex:none}
+.toast button{font-weight:900;color:var(--toast-ink);text-decoration:underline;flex:none}
+/* ---------- theme picker ---------- */
+.themegrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 12px}
+.themecard{display:flex;flex-direction:column;gap:6px;text-align:left;padding:11px;border:var(--border-w) solid var(--line);border-radius:var(--radius);background:var(--raised);box-shadow:none}
+.themecard.on{border-color:var(--ink);box-shadow:var(--lift)}
+.themecard .tname{font-family:var(--display);font-weight:var(--display-weight);font-size:11.5px;letter-spacing:var(--display-track);text-transform:uppercase}
+.themecard .tblurb{font-size:11px;line-height:1.4;color:var(--ink-faint);font-weight:500}
+.swatch{display:flex;height:24px;border-radius:6px;overflow:hidden;border:1px solid var(--ink)}
+.swatch i{flex:1}
+.swatch.t-speed i:nth-child(1){background:#FFC400}.swatch.t-speed i:nth-child(2){background:#3B6BFF}.swatch.t-speed i:nth-child(3){background:#FF2D87}
+.swatch.t-dune i:nth-child(1){background:#E0A542}.swatch.t-dune i:nth-child(2){background:#8A5A22}.swatch.t-dune i:nth-child(3){background:#241C10}
+.swatch.t-wick i:nth-child(1){background:#C9A227}.swatch.t-wick i:nth-child(2){background:#17171A}.swatch.t-wick i:nth-child(3){background:#9B1B24}
+.swatch.t-mania i:nth-child(1){background:#FFC800}.swatch.t-mania i:nth-child(2){background:#6A1FB0}.swatch.t-mania i:nth-child(3){background:#E5006D}
+
 @media (max-width:380px){
   .remain .big{font-size:42px}
   .tab{font-size:10.5px;padding:8px 1px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* Flat themes get a press state that dims rather than one that drops, since
+   there is no hard shadow underneath for the button to fall into. */
+[data-theme="dune"] .arrow:active,[data-theme="dune"] .gear:active,
+[data-theme="dune"] .addbtn:active,[data-theme="dune"] .qchip:active,
+[data-theme="dune"] .chip:active,[data-theme="dune"] .cta:active,
+[data-theme="dune"] .savemeal:active,
+[data-theme="wick"] .arrow:active,[data-theme="wick"] .gear:active,
+[data-theme="wick"] .addbtn:active,[data-theme="wick"] .qchip:active,
+[data-theme="wick"] .chip:active,[data-theme="wick"] .cta:active,
+[data-theme="wick"] .savemeal:active{transform:none;filter:brightness(1.35)}
+
+/* Engraved capitals need air; Anton needs none. */
+[data-theme="wick"] .remain .big,[data-theme="dune"] .remain .big{font-size:44px}
+[data-theme="mania"] .remain .big{font-size:54px;-webkit-text-stroke:1px var(--ink)}
+[data-theme="wick"] .wrap,[data-theme="dune"] .wrap{border-radius:6px}
+[data-theme="wick"] .sheet,[data-theme="dune"] .sheet{border-radius:6px 6px 0 0}
 </style>
 </head>
 <body>
@@ -236,7 +443,7 @@ header{padding:30px 0 4px}
   <main id="meals"></main>
 
   <section class="trend">
-    <h2>Last 7 days</h2>
+    <h2 id="trendHead">Last 7 days</h2>
     <div class="bars" id="bars"></div>
     <div class="tsum">
       <span>Daily average <b id="avg7">—</b></span>
@@ -285,6 +492,7 @@ const DEFAULTS = {
   usdaKey:'', anthropicKey:'',
   model:'claude-haiku-4-5-20251001',
   proxy:'',                  // optional CORS proxy prefix
+  theme:'speed',             // 'speed' | 'dune' | 'wick' | 'mania'
   unitSystem:'imperial',     // 'imperial' (ft/in/lb) or 'metric'  — your body stats
   foodUnit:'g',              // 'g' or 'oz' — which weight leads when logging food
   syncUrl:'', syncToken:''   // optional, powers the iOS widget
@@ -296,7 +504,7 @@ let S = { settings:{...DEFAULTS}, days:{}, saved:[], combos:[],
 
 /* Body stats sync between devices. Keys and the proxy stay local on purpose:
    they're per-device secrets and the relay is only guarded by a shared word. */
-const PROFILE_KEYS = ['sex','age','heightCm','weightKg','goalDelta','baseMode','manualBase','unitSystem','foodUnit'];
+const PROFILE_KEYS = ['sex','age','heightCm','weightKg','goalDelta','baseMode','manualBase','unitSystem','foodUnit','theme'];
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function stampNew(e){ return {...e, id:uid(), up:Date.now()}; }
 /* Always move a record's clock forward. A device whose clock runs ahead can
@@ -307,6 +515,77 @@ function bury(rec, kind){ if (rec && rec.id) S.graves[rec.id] = {up:Date.now(), 
 function touchProfile(){ S.settings.profileUp = Date.now(); }
 let viewDate = todayKey();
 let sheetState = null;
+
+/* ============================================================
+   Themes
+   A theme is a palette (in CSS), a set of words, and a browser
+   chrome colour. Everything the app says that has any personality
+   in it lives in COPY, so a theme swap changes the voice too and
+   there is exactly one place to look when a phrase reads wrong.
+   ============================================================ */
+const THEMES = [
+  {id:'speed', name:'Speed Racer', blurb:'Candy gradients, checkered flag, hard shadows.', chrome:'#3B6BFF'},
+  {id:'dune',  name:'Dune',        blurb:'Spice and shadow. Wide capitals, desert night.', chrome:'#241C10'},
+  {id:'wick',  name:'John Wick',   blurb:'The Continental after hours. Black, gold, one red.', chrome:'#0B0B0D'},
+  {id:'mania', name:'WrestleMania',blurb:'Championship gold on arena purple. Very loud.', chrome:'#3A0F63'}
+];
+const COPY = {
+  speed: {
+    left:'left of', over:'over budget',
+    added:(n,m)=>n+' added to '+m, removed:n=>'Removed '+n,
+    saved:'Saved', unsaved:'Removed from saved',
+    savedMeal:'Meal saved', addTo:m=>'Add to '+m,
+    addFood:'Add food', saveMeal:'Save meal', savedMealsHead:'Save this meal',
+    recentHead:'Back on the grid', recentEmpty:'Log something and it turns up here next time.',
+    noMeals:'No saved meals yet.', noFoods:'Nothing saved yet.',
+    synced:'Synced', trend:'Last 7 days'
+  },
+  dune: {
+    left:'remaining of', over:'past the ration',
+    added:(n,m)=>n+' recorded to '+m, removed:n=>'Struck '+n+' from the record',
+    saved:'Committed to memory', unsaved:'Released',
+    savedMeal:'Ration recorded', addTo:m=>'Record to '+m,
+    addFood:'Record intake', saveMeal:'Keep ration', savedMealsHead:'Keep this ration',
+    recentHead:'Known provisions', recentEmpty:'What you consume is remembered. Nothing yet.',
+    noMeals:'No rations kept yet.', noFoods:'Nothing committed yet.',
+    synced:'The record agrees', trend:'The last seven days'
+  },
+  wick: {
+    left:'remaining of', over:'over the marker',
+    added:(n,m)=>n+' entered under '+m, removed:n=>n+' expunged',
+    saved:'Noted', unsaved:'Struck',
+    savedMeal:'Arrangement filed', addTo:m=>'Enter under '+m,
+    addFood:'Enter an item', saveMeal:'File this', savedMealsHead:'File this arrangement',
+    recentHead:'Standing arrangements', recentEmpty:'Nothing on file. Enter something and it will be kept.',
+    noMeals:'Nothing filed yet.', noFoods:'Nothing noted yet.',
+    synced:'Accounts settled', trend:'The last seven days'
+  },
+  mania: {
+    left:'left of', over:'OVER THE TOP ROPE',
+    added:(n,m)=>n+' added to '+m+'!', removed:n=>n+' eliminated',
+    saved:'In the hall of fame', unsaved:'Dropped from the card',
+    savedMeal:'Added to the card', addTo:m=>'Add to '+m,
+    addFood:'Add food', saveMeal:'Save the card', savedMealsHead:'Save this card',
+    recentHead:'Main event regulars', recentEmpty:'Log something and it earns a spot on the card.',
+    noMeals:'No cards saved yet.', noFoods:'Nothing in the hall of fame yet.',
+    synced:'Synced', trend:'Last 7 days'
+  }
+};
+function themeId(){
+  return THEMES.some(t=>t.id === S.settings.theme) ? S.settings.theme : 'speed';
+}
+function T(key, ...args){
+  const v = (COPY[themeId()] || COPY.speed)[key];
+  if (v === undefined) return (COPY.speed[key] !== undefined ? COPY.speed[key] : '');
+  return typeof v === 'function' ? v(...args) : v;
+}
+function applyTheme(){
+  const id = themeId();
+  document.documentElement.setAttribute('data-theme', id);
+  const meta = document.querySelector('meta[name="theme-color"]');
+  const t = THEMES.find(x=>x.id === id);
+  if (meta && t) meta.setAttribute('content', t.chrome);
+}
 
 /* ---------- dates ---------- */
 function todayKey(d){
@@ -358,7 +637,9 @@ function target(key){ return baseTarget() + Math.round(peek(key).active||0); }
 
 /* ---------- persistence ---------- */
 let saveTimer = null, syncTimer = null;
+let dataRev = 0;
 function persist(){
+  dataRev++;
   clearTimeout(saveTimer);
   saveTimer = setTimeout(()=>Store.set('daybook', JSON.stringify(S)), 180);
 }
@@ -424,7 +705,8 @@ async function pushSync(full){
 async function doPush(full){
   const k = todayKey();
   const at = Date.now();
-  const ch = collectChanges(full ? 0 : (S.sync.lastPush||0));
+  const since = full ? 0 : (S.sync.lastPush||0);
+  const ch = collectChanges(since);
   const payload = {
     token: S.settings.syncToken || '',
     op: 'push',
@@ -440,28 +722,61 @@ async function doPush(full){
       updated: new Date().toISOString()
     }
   };
-  try {
-    // text/plain keeps this a "simple" request, which avoids the CORS
-    // preflight that Apps Script web apps don't answer.
-    await fetch(S.settings.syncUrl, {
-      method:'POST',
-      headers:{'Content-Type':'text/plain;charset=utf-8'},
-      body: JSON.stringify(payload)
-    });
-    // We can't reliably read a cross-origin POST response, so this is
-    // optimistic. "Re-send everything" in Settings is the repair tool.
+  /* This used to fire and forget, and advance lastPush inside the try
+     regardless of what came back. Only a network-level throw was caught, so
+     a relay that answered {ok:false} — wrong token, bad row, quota — still
+     moved the cursor, and every change in that window was excluded from
+     every later incremental push. Silent, permanent, and only recoverable
+     with "Re-send everything". So: read the reply, and treat a refusal as
+     a refusal. */
+  const body = JSON.stringify(payload);
+  let landed = false, err = 'Could not reach the relay', refused = false;
+  for (const url of pushURLs()){
+    try {
+      // text/plain keeps this a "simple" request, which avoids the CORS
+      // preflight that Apps Script web apps don't answer.
+      const r = await fetch(url, {
+        method:'POST',
+        headers:{'Content-Type':'text/plain;charset=utf-8'},
+        body
+      });
+      if (!r.ok){ err = 'Relay returned '+r.status; continue; }
+      let d = null;
+      try { d = await r.json(); } catch(e){ d = null; }
+      if (d && d.ok === false){
+        // The relay heard us and said no. Another route won't change that.
+        err = d.error || 'Relay refused the push';
+        refused = true;
+        break;
+      }
+      landed = true;
+      break;
+    } catch(e){ /* try the next route */ }
+  }
+  if (landed){
     S.sync.lastPush = at;
     S.sync.at = at;
     S.sync.err = '';
-    persist();
-  } catch(e){
-    S.sync.err = 'Could not reach the relay';
+  } else {
+    // Cursor stays put, so nothing is lost — the next push retries this window.
+    S.sync.err = err;
+    if (refused) S.sync.lastPush = since;
   }
+  persist();
+  return landed;
 }
 
 /* ---------- pull ---------- */
 /* Same two-route trick as the USDA calls: straight at Apps Script first,
    then through your proxy if the browser blocks it. */
+/* Push had no proxy fallback while pull did, so a browser that needed the
+   worker to reach Apps Script could read but never write. */
+function pushURLs(){
+  const direct = S.settings.syncUrl;
+  const px = (S.settings.proxy||'').trim();
+  if (!px) return [direct];
+  return [direct, px.endsWith('=') ? px + encodeURIComponent(direct) : px + direct];
+}
 function syncURLs(qs){
   const direct = S.settings.syncUrl + (S.settings.syncUrl.includes('?') ? '&' : '?') + qs;
   const px = (S.settings.proxy||'').trim();
@@ -520,6 +835,15 @@ function entryIndex(){
   }
   return ix;
 }
+/* A relay running the old script hands dates back as ISO datetimes, because
+   the Sheet turned "2026-09-07" into a real Date. The guards below rejected
+   every one of them, which is why entries stopped travelling between devices
+   while saved foods — which have no date column — kept working. The relay is
+   fixed, but accept the old shape too so a half-updated pair still syncs. */
+function normDate(v){
+  const m = String(v == null ? '' : v).trim().match(/^(\d{4}-\d{2}-\d{2})/);
+  return m ? m[1] : '';
+}
 function mergeRemote(d){
   const touched = new Set();
   const ix = entryIndex();
@@ -545,15 +869,16 @@ function mergeRemote(d){
       drop(found); ix.delete(r.id);
     }
     if (!MEALS.some(m=>m.id === r.meal)) return;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(r.date||''))) return;
+    const dk = normDate(r.date);
+    if (!dk) return;
     const rec = {
       id:r.id, name:r.name, cal:+r.cal||0,
       portion:r.portion||'', src:r.src||'', up
     };
-    const arr = day(r.date).meals[r.meal];
+    const arr = day(dk).meals[r.meal];
     arr.push(rec);
     ix.set(r.id, {arr, e:rec});
-    touched.add(r.date+'|'+r.meal);
+    touched.add(dk+'|'+r.meal);
   });
   touched.forEach(key=>{
     const [dk, mid] = key.split('|');
@@ -562,10 +887,11 @@ function mergeRemote(d){
 
   (d.days||[]).forEach(r=>{
     const up = +r.updated || 0;
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(r.date||''))) return;
-    if (up > (day(r.date).activeUp||0)){
-      day(r.date).active = Math.max(0, Math.round(+r.active||0));
-      day(r.date).activeUp = up;
+    const dk = normDate(r.date);
+    if (!dk) return;
+    if (up > (day(dk).activeUp||0)){
+      day(dk).active = Math.max(0, Math.round(+r.active||0));
+      day(dk).activeUp = up;
     }
   });
 
@@ -596,6 +922,7 @@ function mergeRemote(d){
   const pr = d.profile;
   if (pr && (+pr.updated||0) > (S.settings.profileUp||0)){
     PROFILE_KEYS.forEach(k=>{ if (pr[k] !== undefined && pr[k] !== '') S.settings[k] = pr[k]; });
+    applyTheme();
     S.settings.age = +S.settings.age || DEFAULTS.age;
     S.settings.heightCm = +S.settings.heightCm || DEFAULTS.heightCm;
     S.settings.weightKg = +S.settings.weightKg || DEFAULTS.weightKg;
@@ -632,6 +959,10 @@ function checkRollover(){
 setInterval(checkRollover, 60000);
 document.addEventListener('visibilitychange', ()=>{ if (!document.hidden){ checkRollover(); maybePull(); } });
 window.addEventListener('focus', ()=>{ checkRollover(); maybePull(); });
+/* Pull on a slow loop while the app is actually on screen. Focus and
+   visibility alone never fired for two devices sitting open side by side,
+   so they simply never converged until one of them was backgrounded. */
+setInterval(()=>{ if (!document.hidden) maybePull(); }, 60000);
 async function load(){
   const raw = await Store.get('daybook');
   if (raw){
@@ -754,7 +1085,7 @@ function render(){
   const box = document.getElementById('remainBox');
   box.classList.toggle('over', left < 0);
   document.getElementById('remainNum').textContent = Math.abs(left).toLocaleString();
-  document.getElementById('remainCap').textContent = left < 0 ? 'over budget' : 'left of '+tgt.toLocaleString();
+  document.getElementById('remainCap').textContent = left < 0 ? T('over') : T('left')+' '+tgt.toLocaleString();
   document.getElementById('baseNum').textContent = baseTarget().toLocaleString();
   document.getElementById('activeNum').textContent = Math.round(peek(viewDate).active||0).toLocaleString();
   document.getElementById('eatenNum').textContent = ate.toLocaleString();
@@ -784,7 +1115,7 @@ function render(){
     sec.innerHTML =
       '<div class="meal-head"><div class="meal-name"><span class="dot" style="background:'+m.color+'"></span>'+m.name+'</div>'+
       '<div style="display:flex;align-items:center;gap:10px">'+
-      (items.length ? '<button class="savemeal" data-m="'+m.id+'">Save meal</button>' : '')+
+      (items.length ? '<button class="savemeal" data-m="'+m.id+'">'+escapeHTML(T('saveMeal'))+'</button>' : '')+
       '<div class="meal-total">'+(mealTotal(viewDate,m.id)||'').toLocaleString()+'</div></div></div>';
 
     const sm = sec.querySelector('.savemeal');
@@ -801,12 +1132,12 @@ function render(){
       row.querySelector('.nm').textContent = e.name;
       row.querySelector('.sub').textContent = [e.portion, e.src].filter(Boolean).join(' · ');
       const star = row.querySelector('.star');
-      if (isSaved(e.name)) star.classList.add('on');
+      if (isSaved(e)) star.classList.add('on');
       star.onclick = ()=>{ toggleSave(e, m.id); render(); };
       row.querySelector('.del').onclick = ()=>{
         const gone = items[i], at = i, list = items;
         bury(gone,'entry'); list.splice(at,1); save(); render(); buzz(12);
-        toast('Removed '+gone.name, {label:'Undo', run(){
+        toast(T('removed', gone.name), {label:'Undo', run(){
           // Lift the tombstone as well, or the next pull deletes it again.
           if (gone.id) delete S.graves[gone.id];
           bumpUp(gone);
@@ -829,9 +1160,16 @@ function render(){
         c.innerHTML = '<span class="qn"></span><span class="qc">'+q.cal.toLocaleString()+'</span>';
         c.querySelector('.qn').textContent = q.name;
         c.onclick = ()=>{
-          if (q.type === 'combo') logCombo(q.ref, m);
-          else { day(viewDate).meals[m.id].push(stampNew({name:q.ref.name, cal:q.ref.cal, portion:q.ref.portion, src:q.ref.src}));
-                 bumpUse(q.ref.name); save(); render(); toast(q.cal.toLocaleString()+' added'); }
+          if (q.type === 'combo'){ logCombo(q.ref, m); return; }
+          const e = stampNew({name:q.ref.name, cal:q.ref.cal, portion:q.ref.portion, src:q.ref.src});
+          day(viewDate).meals[m.id].push(e);
+          bumpUse(q.ref, m.id);           // was dropping the meal id entirely
+          buzz(10); save(); render();
+          toast(T('added', q.cal.toLocaleString(), m.name.toLowerCase()), {label:'Undo', run(){
+            const list = day(viewDate).meals[m.id];
+            const at = list.indexOf(e);
+            if (at > -1){ bury(e,'entry'); list.splice(at,1); save(); render(); }
+          }});
         };
         strip.appendChild(c);
       });
@@ -840,7 +1178,7 @@ function render(){
 
     const add = document.createElement('button');
     add.className = 'addbtn';
-    add.innerHTML = '<span class="plus">+</span> Add food';
+    add.innerHTML = '<span class="plus">+</span> '+escapeHTML(T('addFood'));
     add.onclick = ()=>openAdd(m);
     sec.appendChild(add);
     host.appendChild(sec);
@@ -850,6 +1188,8 @@ function render(){
 }
 
 function renderTrend(){
+  const head = document.getElementById('trendHead');
+  if (head) head.textContent = T('trend');
   const host = document.getElementById('bars');
   host.innerHTML = '';
   const keys = [];
@@ -913,15 +1253,20 @@ function editEntry(meal, idx){
 }
 
 /* ---------- saved foods ---------- */
-function isSaved(name){ return S.saved.some(s=>s.name === name); }
+/* Identity is name + calories + portion. Matching on the name alone meant
+   "Greek yogurt, 170 g" and "Greek yogurt, 1 cup" were the same record, so
+   starring one silently rewrote the other. */
+function isSaved(e){ const k = foodKey(e); return S.saved.some(s=>foodKey(s) === k); }
 function toggleSave(e, mealId){
-  const i = S.saved.findIndex(s=>s.name === e.name);
-  if (i > -1){ bury(S.saved[i],'food'); S.saved.splice(i,1); toast('Removed from saved'); }
-  else { S.saved.unshift(stampNew({name:e.name, cal:e.cal, portion:e.portion, src:e.src, uses:1, meal:mealId||''})); toast('Saved'); }
+  const k = foodKey(e);
+  const i = S.saved.findIndex(s=>foodKey(s) === k);
+  if (i > -1){ bury(S.saved[i],'food'); S.saved.splice(i,1); toast(T('unsaved')); }
+  else { S.saved.unshift(stampNew({name:e.name, cal:e.cal, portion:e.portion, src:e.src, uses:1, meal:mealId||''})); toast(T('saved')); }
   save();
 }
-function bumpUse(name, mealId){
-  const s = S.saved.find(x=>x.name === name);
+function bumpUse(e, mealId){
+  const k = foodKey(e);
+  const s = S.saved.find(x=>foodKey(x) === k);
   if (s){
     s.uses = (s.uses||0)+1;
     bumpUp(s);
@@ -937,7 +1282,7 @@ function saveCombo(meal){
   const items = day(viewDate).meals[meal.id].map(e=>({name:e.name, cal:e.cal, portion:e.portion, src:e.src}));
   if (!items.length) return;
   const suggested = items.length === 1 ? items[0].name : items[0].name+' + '+(items.length-1)+' more';
-  openSheet(sheetHead('Save this meal')+
+  openSheet(sheetHead(T('savedMealsHead'))+
     '<div class="field"><label>Call it</label><input id="cbn" value="'+escapeHTML(suggested)+'" autocomplete="off"></div>'+
     '<div style="margin:2px 0 16px">'+items.map(i=>
       '<div class="entry" style="padding:5px 0"><div class="txt"><span class="nm">'+escapeHTML(i.name)+'</span></div>'+
@@ -955,7 +1300,7 @@ function saveCombo(meal){
     S.combos.filter(c=>c.name === nm && c.meal === meal.id).forEach(c=>bury(c,'combo'));
     S.combos = S.combos.filter(c=>!(c.name === nm && c.meal === meal.id));
     S.combos.unshift({id:'c'+uid(), name:nm, meal:meal.id, items, uses:1, up:Date.now()});
-    save(); render(); closeSheet(); toast('Meal saved');
+    save(); render(); closeSheet(); toast(T('savedMeal'));
   };
 }
 function logCombo(combo, meal){
@@ -967,7 +1312,7 @@ function logCombo(combo, meal){
   S.combos.sort((a,b)=>(b.uses||0)-(a.uses||0));
   save(); render();
   if (sheetState) closeSheet();
-  toast(comboCal(combo).toLocaleString()+' added to '+meal.name.toLowerCase());
+  toast(T('added', comboCal(combo).toLocaleString(), meal.name.toLowerCase()));
 }
 function deleteCombo(id){
   S.combos.filter(c=>c.id === id).forEach(c=>bury(c,'combo'));
@@ -975,14 +1320,86 @@ function deleteCombo(id){
   save(); render();
 }
 
+/* ============================================================
+   Recents
+   Derived from the log rather than kept as a second list. The log already
+   syncs, so recents show up on a new device without any new relay surface;
+   they can't drift from what was actually eaten; and deleting an entry
+   stops it suggesting itself. Frequency with a two-week half-life, so a
+   thing eaten daily last month gives way to this week's habit.
+   ============================================================ */
+const RECENT_DAYS = 60, RECENT_HALFLIFE = 14;
+let recentCache = null, recentStamp = '';
+
+/* Name alone was the old identity, which made the same food at two portions
+   collide and overwrite. Portion and calories are part of who a food is. */
+function foodKey(e){
+  return String(e.name||'').trim().toLowerCase()+'|'+
+         Math.round(+e.cal||0)+'|'+
+         String(e.portion||'').trim().toLowerCase();
+}
+function daysBetween(a, b){
+  return Math.round((Date.parse(b+'T00:00:00') - Date.parse(a+'T00:00:00')) / 86400000);
+}
+function buildRecents(){
+  const today = todayKey(), cut = shiftKey(today, -RECENT_DAYS);
+  const map = new Map();
+  Object.keys(S.days).forEach(dk=>{
+    if (dk < cut || dk > today) return;
+    const ago = daysBetween(dk, today);
+    if (!isFinite(ago) || ago < 0) return;
+    const w = Math.pow(0.5, ago / RECENT_HALFLIFE);
+    MEALS.forEach(m=>((S.days[dk].meals||{})[m.id]||[]).forEach(e=>{
+      if (!e || !e.name) return;
+      const k = foodKey(e);
+      let r = map.get(k);
+      if (!r){
+        r = {key:k, name:e.name, cal:Math.round(+e.cal||0), portion:e.portion||'',
+             src:e.src||'', score:0, n:0, meals:{}, last:dk};
+        map.set(k, r);
+      }
+      r.score += w; r.n++;
+      r.meals[m.id] = (r.meals[m.id]||0) + w;
+      if (dk > r.last) r.last = dk;
+    }));
+  });
+  return Array.from(map.values());
+}
+function recentFoods(mealId, limit){
+  const stamp = dataRev+'|'+todayKey();
+  if (recentStamp !== stamp){ recentCache = buildRecents(); recentStamp = stamp; }
+  /* Multiplicative, not additive: a flat bonus barely moved a strong habit
+     and swamped a weak one. Share of a food's own history that happened in
+     this slot is the thing that matters. */
+  return recentCache
+    .map(r=>({...r, rank: r.score * (0.3 + 1.4*((r.meals[mealId]||0)/(r.score||1)))}))
+    .sort((a,b)=> b.rank - a.rank || (a.name < b.name ? -1 : 1))
+    .slice(0, limit || 12);
+}
+function agoLabel(dk){
+  const n = daysBetween(dk, todayKey());
+  if (n <= 0) return 'today';
+  if (n === 1) return 'yesterday';
+  if (n < 7) return n+' days ago';
+  if (n < 14) return 'last week';
+  return Math.round(n/7)+' weeks ago';
+}
+
 /* Top repeats for a meal slot: saved meals first, then single foods. */
 function quickPicks(mealId){
   const out = [];
   S.combos.filter(c=>c.meal === mealId).slice(0,2)
     .forEach(c=>out.push({type:'combo', name:c.name, cal:comboCal(c), ref:c}));
-  S.saved.filter(s=>s.meal === mealId && (s.uses||0) > 1).slice(0, 3-out.length)
-    .forEach(s=>out.push({type:'food', name:s.name, cal:s.cal, ref:s}));
-  return out.slice(0,3);
+  /* These used to come only from starred foods with two or more uses, which
+     meant the chips stayed empty unless you remembered to star things. Draw
+     from what you actually repeat instead. */
+  const seen = new Set(out.map(o=>o.name));
+  recentFoods(mealId, 8).forEach(r=>{
+    if (out.length >= 4 || r.n < 2 || seen.has(r.name)) return;
+    seen.add(r.name);
+    out.push({type:'food', name:r.name, cal:r.cal, ref:r});
+  });
+  return out.slice(0,4);
 }
 
 /* ---------- toast ---------- */
@@ -1072,7 +1489,7 @@ function openAdd(meal){
 function drawAdd(){
   const t = sheetState.tab;
   openSheet(
-    sheetHead('Add to '+sheetState.meal.name) +
+    sheetHead(T('addTo', sheetState.meal.name)) +
     '<div class="tabs">'+
       ['search','recipe','meals','saved','estimate','custom'].map(k=>
         '<button class="tab'+(t===k?' on':'')+'" data-tab="'+k+'">'+
@@ -1091,7 +1508,7 @@ function tabMeals(){
   const mine = S.combos.filter(c=>c.meal === sheetState.meal.id);
   const others = S.combos.filter(c=>c.meal !== sheetState.meal.id);
   if (!S.combos.length){
-    body().innerHTML = '<div class="empty">No saved meals yet.<br>Log a meal you eat often, then tap <b>Save meal</b> beside its heading.</div>';
+    body().innerHTML = '<div class="empty">'+escapeHTML(T('noMeals'))+'<br>Log a meal you eat often, then tap <b>'+escapeHTML(T('saveMeal'))+'</b> beside its heading.</div>';
     return;
   }
   body().innerHTML = '';
@@ -1325,19 +1742,64 @@ function searchHint(){
   return 'Type to search 300,000+ USDA foods.';
 }
 function tabSearch(){
-  if (!S.settings.usdaKey && !PACK && !SEEN.length){
+  const noSource = !S.settings.usdaKey && !PACK && !SEEN.length;
+  if (noSource && !recentFoods(sheetState.meal.id, 1).length){
     body().innerHTML = '<div class="empty">Add your free USDA FoodData Central key in Settings to search the database.<br><br>'+
       '<button class="cta ghost" onclick="closeSheet(true);openSettings()">Open settings</button></div>';
     return;
   }
+  if (noSource){
+    // There is a log to draw on even though there is nothing to search.
+    body().innerHTML = '<div id="results"></div>';
+    showRecents(document.getElementById('results'));
+    const note = document.createElement('p');
+    note.className = 'note';
+    note.innerHTML = 'Add a USDA key in Settings to search for anything new. '+
+      '<button class="cta ghost" style="margin-top:8px" onclick="closeSheet(true);openSettings()">Open settings</button>';
+    body().appendChild(note);
+    return;
+  }
   body().innerHTML =
     '<div class="field"><input id="q" placeholder="Search foods — e.g. greek yogurt" autocomplete="off" enterkeyhint="search"></div>'+
-    '<div id="results"><div class="empty">'+escapeHTML(searchHint())+'</div></div>';
+    '<div id="results"></div>';
+  showRecents(document.getElementById('results'));
   const q = document.getElementById('q');
-  q.focus();
+  /* Don't steal focus on the way in any more. The keyboard used to cover the
+     recents the moment the sheet opened, which made the common case — log the
+     thing you always log — the one you had to dismiss a keyboard to reach. */
+  if (!recentFoods(sheetState.meal.id, 1).length) q.focus();
   let t;
   q.oninput = ()=>{ clearTimeout(t); t = setTimeout(()=>runSearch(q.value.trim()), 450); };
   q.onkeydown = e=>{ if (e.key === 'Enter'){ clearTimeout(t); runSearch(q.value.trim()); } };
+}
+
+/* One tap logs it: the portion is already known, so there is nothing left
+   to decide. That is the whole point of the list. */
+function showRecents(out){
+  if (!out || !sheetState || !sheetState.meal) return;
+  const list = recentFoods(sheetState.meal.id, 12);
+  if (!list.length){
+    out.innerHTML = '<div class="empty">'+escapeHTML(T('recentEmpty'))+'<br><br>'+
+      escapeHTML(searchHint())+'</div>';
+    return;
+  }
+  out.innerHTML = '<div class="divider" style="margin-top:4px"><h3>'+
+    escapeHTML(T('recentHead'))+'</h3></div>';
+  list.forEach(r=>{
+    const b = document.createElement('button');
+    b.className = 'res';
+    b.innerHTML = '<div class="txt"><span class="nm"></span><span class="sub"></span></div>'+
+      '<span class="kc">'+r.cal.toLocaleString()+'</span>';
+    b.querySelector('.nm').textContent = r.name;
+    b.querySelector('.sub').textContent =
+      [r.portion, r.n > 1 ? r.n+'×' : '', agoLabel(r.last)].filter(Boolean).join(' · ');
+    b.onclick = ()=>addEntry({name:r.name, cal:r.cal, portion:r.portion, src:r.src});
+    out.appendChild(b);
+  });
+  const hint = document.createElement('p');
+  hint.className = 'note';
+  hint.textContent = 'Type above to search the database for something new.';
+  out.appendChild(hint);
 }
 
 function kcalOf(food){
@@ -1383,7 +1845,7 @@ function showLocal(out, q, lead){
 
 async function runSearch(q){
   const out = document.getElementById('results');
-  if (!q){ out.innerHTML = '<div class="empty">'+escapeHTML(searchHint())+'</div>'; return; }
+  if (!q){ showRecents(out); return; }
 
   // No connection, or no key: the copy on this device is all there is.
   if (!online() || !S.settings.usdaKey){
@@ -1573,7 +2035,7 @@ function escapeHTML(s){ return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<'
 /* ---------- saved ---------- */
 function tabSaved(){
   if (!S.saved.length){
-    body().innerHTML = '<div class="empty">Nothing saved yet.<br>Tap the star beside anything you\u2019ve logged to keep it here.</div>';
+    body().innerHTML = '<div class="empty">'+escapeHTML(T('noFoods'))+'<br>Tap the star beside anything you\u2019ve logged to keep it here.</div>';
     return;
   }
   body().innerHTML = '';
@@ -1583,7 +2045,7 @@ function tabSaved(){
     b.innerHTML = '<div class="txt"><span class="nm"></span><span class="sub"></span></div><span class="kc">'+s.cal.toLocaleString()+'</span>';
     b.querySelector('.nm').textContent = s.name;
     b.querySelector('.sub').textContent = [s.portion, s.uses>1 ? s.uses+' times' : ''].filter(Boolean).join(' · ');
-    b.onclick = ()=>{ bumpUse(s.name, sheetState.meal.id); addEntry({name:s.name, cal:s.cal, portion:s.portion, src:s.src}); };
+    b.onclick = ()=>{ bumpUse(s, sheetState.meal.id); addEntry({name:s.name, cal:s.cal, portion:s.portion, src:s.src}); };
     body().appendChild(b);
   });
 }
@@ -2073,9 +2535,9 @@ function addEntry(e){
   const meal = sheetState.meal;
   day(viewDate).meals[meal.id].push(stampNew(e));
   buzz(10);
-  bumpUse(e.name, meal.id);
+  bumpUse(e, meal.id);
   save(); render(); closeSheet(true);
-  toast(e.cal.toLocaleString()+' added to '+meal.name.toLowerCase());
+  toast(T('added', e.cal.toLocaleString(), meal.name.toLowerCase()));
 }
 
 /* ---------- daily base ---------- */
@@ -2187,6 +2649,14 @@ function openSettings(){
       '<p class="note" style="margin-top:8px">Which one leads when you log by weight. Both are always there \u2014 '+
       'the portion picker has a g/oz switch, and whichever you use last becomes the default.</p></div>'+
 
+    '<div class="divider"><h3>Look</h3></div>'+
+    '<div class="themegrid">'+THEMES.map(t=>
+      '<button class="themecard'+(themeId()===t.id?' on':'')+'" data-theme-id="'+t.id+'">'+
+      '<span class="swatch t-'+t.id+'"><i></i><i></i><i></i></span>'+
+      '<span class="tname">'+escapeHTML(t.name)+'</span>'+
+      '<span class="tblurb">'+escapeHTML(t.blurb)+'</span></button>').join('')+'</div>'+
+    '<p class="note">Changes the colours, the type and the words. It travels to your other devices with the rest of your profile.</p>'+
+
     '<div class="divider"><h3>Daily base</h3></div>'+
     '<div class="chips"><button class="chip'+(s.baseMode!=='manual'?' on':'')+'" id="sCalc">Work it out for me</button>'+
       '<button class="chip'+(s.baseMode==='manual'?' on':'')+'" id="sMan">Set my own</button></div>'+
@@ -2238,6 +2708,16 @@ function openSettings(){
     document.getElementById('fwG').classList.toggle('on', v !== 'oz');
     document.getElementById('fwOz').classList.toggle('on', v === 'oz');
   };
+  document.querySelectorAll('[data-theme-id]').forEach(b=>{
+    b.onclick = ()=>{
+      if (themeId() === b.dataset.themeId) return;
+      commitBody();
+      S.settings.theme = b.dataset.themeId;
+      applyTheme(); touchProfile(); save(); render();
+      // Reopen so every string on this sheet picks up the new voice.
+      sheetGuard = null; openSettings();
+    };
+  });
   document.getElementById('fwG').onclick  = ()=>fwSet('g');
   document.getElementById('fwOz').onclick = ()=>fwSet('oz');
 
@@ -2337,7 +2817,7 @@ function openSettings(){
     syncNote();
     test.onclick = async ()=>{
       await pushSync(); await pullSync();
-      syncNote(); toast(S.sync.err || 'Synced');
+      syncNote(); toast(S.sync.err || T('synced'));
     };
     document.getElementById('fullSync').onclick = async ()=>{
       toast('Sending your whole log\u2026');
@@ -2395,6 +2875,7 @@ document.addEventListener('keydown', e=>{ if (e.key === 'Escape') closeSheet(); 
 /* ---------- boot ---------- */
 (async function(){
   await load();
+  applyTheme();
   readURL();
   render();
   maybePull(true);
