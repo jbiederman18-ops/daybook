@@ -330,7 +330,12 @@ function day(key){
   MEALS.forEach(m => { if(!d.meals[m.id]) d.meals[m.id] = []; });
   return d;
 }
-function mealTotal(key, mid){ return day(key).meals[mid].reduce((a,e)=>a+(e.cal||0),0); }
+/* Read-only view of a day. day() creates the record as a side effect, so using
+   it for totals meant that merely scrolling back through the trend chart
+   littered storage with empty days. */
+const NO_DAY = {active:0, meals:{}};
+function peek(key){ return S.days[key] || NO_DAY; }
+function mealTotal(key, mid){ return (peek(key).meals[mid]||[]).reduce((a,e)=>a+(e.cal||0),0); }
 function eaten(key){ return MEALS.reduce((a,m)=>a+mealTotal(key,m.id),0); }
 
 /* ---------- energy budget ---------- */
@@ -347,7 +352,7 @@ function baseTarget(){
     ? Math.max(0, Math.round(Number(S.settings.manualBase)||0))
     : calcBase();
 }
-function target(key){ return baseTarget() + Math.round(day(key).active||0); }
+function target(key){ return baseTarget() + Math.round(peek(key).active||0); }
 
 /* ---------- persistence ---------- */
 let saveTimer = null, syncTimer = null;
@@ -405,8 +410,16 @@ function collectChanges(since){
 
 /* Pushes changes plus the widget's summary. Fire-and-forget: the app never
    waits on it and never breaks if it fails. */
+let pushing = null;
 async function pushSync(full){
   if (!S.settings.syncUrl) return;
+  // Serialise pushes. Two in flight would both stamp lastPush, and the slower
+  // one's cursor would hide the faster one's changes from the next push.
+  if (pushing){ try { await pushing; } catch(e){} }
+  pushing = doPush(full);
+  try { await pushing; } finally { pushing = null; }
+}
+async function doPush(full){
   const k = todayKey();
   const at = Date.now();
   const ch = collectChanges(full ? 0 : (S.sync.lastPush||0));
@@ -492,31 +505,52 @@ function findEntry(id){
   }
   return null;
 }
+/* One pass over the log instead of one scan per incoming record. A full pull
+   used to be quadratic, which is exactly the sync you least want to be slow. */
+function entryIndex(){
+  const ix = new Map();
+  for (const dk of Object.keys(S.days)){
+    const meals = S.days[dk].meals || {};
+    for (const m of MEALS){
+      const arr = meals[m.id] || [];
+      for (const e of arr) if (e.id) ix.set(e.id, {arr, e});
+    }
+  }
+  return ix;
+}
 function mergeRemote(d){
   const touched = new Set();
+  const ix = entryIndex();
+  const drop = hit=>{
+    const i = hit.arr.indexOf(hit.e);
+    if (i > -1) hit.arr.splice(i, 1);
+  };
 
   (d.entries||[]).forEach(r=>{
     const up = +r.updated || 0;
     if (!r.id || !up) return;
     const grave = S.graves[r.id];
-    const found = findEntry(r.id);
+    const found = ix.get(r.id);
 
     if (+r.deleted === 1){
-      if (found) found.arr.splice(found.i, 1);
+      if (found){ drop(found); ix.delete(r.id); }
       if (!grave || grave.up < up) S.graves[r.id] = {up, kind:'entry'};
       return;
     }
     if (grave && grave.up >= up) return;          // we deleted it more recently
     if (found){
       if ((found.e.up||0) >= up) return;          // our copy is newer
-      found.arr.splice(found.i, 1);
+      drop(found); ix.delete(r.id);
     }
     if (!MEALS.some(m=>m.id === r.meal)) return;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(r.date||''))) return;
-    day(r.date).meals[r.meal].push({
+    const rec = {
       id:r.id, name:r.name, cal:+r.cal||0,
       portion:r.portion||'', src:r.src||'', up
-    });
+    };
+    const arr = day(r.date).meals[r.meal];
+    arr.push(rec);
+    ix.set(r.id, {arr, e:rec});
     touched.add(r.date+'|'+r.meal);
   });
   touched.forEach(key=>{
@@ -634,6 +668,18 @@ function hydrate(){
   });
   S.saved.forEach(f=>{ if (!f.id){ f.id = uid(); f.up = f.up || stamp; dirty = true; } });
   S.combos.forEach(c=>{ if (!c.id){ c.id = uid(); } if (!c.up){ c.up = stamp; dirty = true; } });
+  // Anything just stamped carries up=1, which is older than lastPush, so an
+  // incremental push would skip it forever. Rewind the cursor once instead.
+  if (dirty) S.sync.lastPush = 0;
+
+  // Reading a day used to create it. Clear out anything empty that predates
+  // the fix so it stops riding along in every save.
+  Object.keys(S.days).forEach(dk=>{
+    const dd = S.days[dk];
+    if (!dd || dd.activeUp || Math.round(dd.active||0)) return;
+    const hasFood = MEALS.some(m=>(dd.meals && dd.meals[m.id] || []).length);
+    if (!hasFood){ delete S.days[dk]; dirty = true; }
+  });
 
   const cutoff = Date.now() - 60*24*3600*1000;
   Object.keys(S.graves).forEach(id=>{
@@ -690,7 +736,7 @@ function render(){
   document.getElementById('remainNum').textContent = Math.abs(left).toLocaleString();
   document.getElementById('remainCap').textContent = left < 0 ? 'over budget' : 'left of '+tgt.toLocaleString();
   document.getElementById('baseNum').textContent = baseTarget().toLocaleString();
-  document.getElementById('activeNum').textContent = Math.round(day(viewDate).active||0).toLocaleString();
+  document.getElementById('activeNum').textContent = Math.round(peek(viewDate).active||0).toLocaleString();
   document.getElementById('eatenNum').textContent = ate.toLocaleString();
 
   // segmented budget bar
@@ -714,7 +760,7 @@ function render(){
   MEALS.forEach(m=>{
     const sec = document.createElement('section');
     sec.className = 'meal';
-    const items = day(viewDate).meals[m.id];
+    const items = peek(viewDate).meals[m.id] || [];
     sec.innerHTML =
       '<div class="meal-head"><div class="meal-name"><span class="dot" style="background:'+m.color+'"></span>'+m.name+'</div>'+
       '<div style="display:flex;align-items:center;gap:10px">'+
@@ -1113,6 +1159,18 @@ async function loadSeen(){
   try { SEEN = JSON.parse(await Store.get(SEEN_KEY) || '[]') || []; }
   catch(e){ SEEN = []; }
 }
+/* This cache runs to ~100 KB. localStorage writes are synchronous, so doing
+   one per search stutters the UI on a phone. Coalesce them, and drop the
+   lowercase search key — it's derived, and persisting it inflated the cache
+   by about a quarter for nothing. */
+let seenTimer = null;
+function persistSeen(){
+  clearTimeout(seenTimer);
+  seenTimer = setTimeout(()=>{
+    try { Store.set(SEEN_KEY, JSON.stringify(SEEN.map(({key, ...rest})=>rest))); }
+    catch(e){}
+  }, 600);
+}
 /* Everything you look up online is kept, so your own vocabulary — including
    branded food, which is far too large to bundle — is there when you're not. */
 function rememberFoods(list){
@@ -1124,13 +1182,13 @@ function rememberFoods(list){
     SEEN.unshift(f);
   });
   if (SEEN.length > 800) SEEN.length = 800;
-  Store.set(SEEN_KEY, JSON.stringify(SEEN));
+  persistSeen();
 }
 function rememberPortions(id, portions){
   const f = SEEN.find(x=>x.id === id);
   if (!f || !portions.length) return;
   f.portions = portions.slice(0, 8);
-  Store.set(SEEN_KEY, JSON.stringify(SEEN));
+  persistSeen();
 }
 
 /* Every search term has to appear somewhere in the name. Ranked by how early
