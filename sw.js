@@ -9,8 +9,9 @@
  * device to drop what it has cached.
  */
 const VERSION = 'v1';
-const SHELL   = 'daybook-shell-' + VERSION;
-const FONTS   = 'daybook-fonts-' + VERSION;
+const PREFIX  = 'daybook-';
+const SHELL   = PREFIX + 'shell-' + VERSION;
+const FONTS   = PREFIX + 'fonts-' + VERSION;
 
 // Live endpoints. Requests to these are passed straight through, uncached.
 const LIVE = [
@@ -34,8 +35,13 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
+    // caches.keys() is origin-wide, not scope-wide. On a shared origin like
+    // username.github.io every project sits in the same cache storage, so this
+    // has to stay inside our own prefix or it wipes the neighbours.
     const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k !== SHELL && k !== FONTS).map(k => caches.delete(k)));
+    await Promise.all(keys
+      .filter(k => k.startsWith(PREFIX) && k !== SHELL && k !== FONTS)
+      .map(k => caches.delete(k)));
     await self.clients.claim();
   })());
 });
