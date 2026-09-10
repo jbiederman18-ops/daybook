@@ -727,13 +727,19 @@ function collectChanges(since){
     MEALS.forEach(m=>(d.meals[m.id]||[]).forEach(e=>{
       if ((e.up||0) > since) entries.push({
         id:e.id, date:dk, meal:m.id, name:e.name, cal:e.cal,
-        portion:e.portion||'', src:e.src||'', updated:e.up, deleted:0
+        portion:e.portion||'', src:e.src||'',
+        // Blank rather than 0 so an unweighed entry leaves an empty cell.
+        // A relay older than version 6 has no column for this and drops it,
+        // which is why the weight is still written into the portion label.
+        g: Math.round(gramsOf(e)) || '',
+        updated:e.up, deleted:0
       });
     }));
   });
   S.saved.forEach(f=>{ if ((f.up||0) > since) library.push({
     id:f.id, kind:'food', name:f.name, cal:f.cal, portion:f.portion||'', src:f.src||'',
-    meal:f.meal||'', uses:f.uses||1, items:'', updated:f.up, deleted:0 }); });
+    meal:f.meal||'', uses:f.uses||1, items:'', g: Math.round(gramsOf(f)) || '',
+    updated:f.up, deleted:0 }); });
   S.combos.forEach(c=>{ if ((c.up||0) > since) library.push({
     id:c.id, kind:'combo', name:c.name, cal:comboCal(c), portion:'', src:'',
     meal:c.meal||'', uses:c.uses||1, items:JSON.stringify(c.items||[]), updated:c.up, deleted:0 }); });
@@ -937,6 +943,11 @@ function mergeRemote(d){
       id:r.id, name:r.name, cal:+r.cal||0,
       portion:r.portion||'', src:r.src||'', up
     };
+    // The sheet has no grams column today, so this is normally recovered from
+    // the portion label. Reading r.g first means adding the column later is a
+    // relay change on its own, with nothing needed here.
+    const rg = +r.g || parseGrams(rec.portion);
+    if (rg > 0) rec.g = Math.round(rg);
     const arr = day(dk).meals[r.meal];
     arr.push(rec);
     ix.set(r.id, {arr, e:rec});
@@ -975,7 +986,8 @@ function mergeRemote(d){
       ? {id:r.id, name:r.name, meal:r.meal||'', uses:+r.uses||1, up,
          items: parseItems(r.items)}
       : {id:r.id, name:r.name, cal:+r.cal||0, portion:r.portion||'', src:r.src||'',
-         meal:r.meal||'', uses:+r.uses||1, up};
+         meal:r.meal||'', uses:+r.uses||1, up,
+         g: Math.round(+r.g || parseGrams(r.portion)) || undefined};
     if (i > -1) list[i] = rec; else list.unshift(rec);
   });
   S.saved.sort((a,b)=>(b.uses||0)-(a.uses||0));
@@ -1108,6 +1120,50 @@ function fmtAmt(v, u){
   return u === 'oz' ? Math.round(Number(v)*100)/100 : Math.round(Number(v));
 }
 function weightLabel(g, u){ return fmtAmt(toUnit(g,u), u)+' '+u; }
+
+/* ---------- weight on an entry ----------
+   `g` is set wherever a weight was genuinely known: the portion picker, Custom
+   by weight, a recipe that knows what it weighs. It is never invented.
+
+   parseGrams is the fallback, and it is not belt-and-braces — it is load
+   bearing. The relay's sheet has no grams column, so an entry logged on the
+   phone and read back on the laptop arrives with its portion label and nothing
+   else. Every writer below that sets `g` also puts the weight in the label, so
+   the number survives the round trip either way. */
+function parseGrams(s){
+  const all = String(s||'').match(/\d+(?:\.\d+)?\s*(?:g|gram|grams|oz|ounce|ounces)\b/gi);
+  if (!all) return 0;
+  const last = all[all.length-1];              // the weight is always written last
+  const v = parseFloat(last);
+  if (!isFinite(v) || v <= 0) return 0;
+  return /o/i.test(last) ? v*G_PER_OZ : v;
+}
+function gramsOf(e){
+  const g = Number(e && e.g);
+  if (isFinite(g) && g > 0) return g;
+  return parseGrams(e && e.portion);
+}
+/* A rate, in whichever unit you log in. Empty when there is no weight to
+   divide by: a density with nothing behind it is worse than no density. */
+function rateLabel(cal, grams){
+  if (!(grams > 0) || !(cal > 0)) return '';
+  return foodUnit() === 'oz'
+    ? Math.round(cal/grams*G_PER_OZ)+' kcal/oz'
+    : Math.round(cal/grams*100)+' kcal/100g';
+}
+/* A saved meal only gets a rate when every item that carries calories also
+   carries a weight. Summing the ones that happen to have weights and calling
+   that the total is the failure worth avoiding here. */
+function comboRate(c){
+  let g = 0, cal = 0, missing = 0;
+  (c.items||[]).forEach(i=>{
+    const w = gramsOf(i);
+    cal += (+i.cal||0);
+    if (w > 0) g += w; else if ((+i.cal||0) > 0) missing++;
+  });
+  return {grams:g, cal:cal, missing:missing,
+          label: missing ? '' : rateLabel(cal, g)};
+}
 /* The same weight said the other way, so both units are always on screen. */
 function altWeight(g){
   return foodUnit() === 'oz'
@@ -1223,7 +1279,7 @@ function render(){
         c.querySelector('.qn').textContent = q.name;
         c.onclick = ()=>{
           if (q.type === 'combo'){ logCombo(q.ref, m); return; }
-          const e = stampNew({name:q.ref.name, cal:q.ref.cal, portion:q.ref.portion, src:q.ref.src});
+          const e = stampNew({name:q.ref.name, cal:q.ref.cal, portion:q.ref.portion, g:gramsOf(q.ref)||undefined, src:q.ref.src});
           day(viewDate).meals[m.id].push(e);
           bumpUse(q.ref, m.id);           // was dropping the meal id entirely
           buzz(10); save(); render();
@@ -1323,7 +1379,7 @@ function toggleSave(e, mealId){
   const k = foodKey(e);
   const i = S.saved.findIndex(s=>foodKey(s) === k);
   if (i > -1){ bury(S.saved[i],'food'); S.saved.splice(i,1); toast(T('unsaved')); }
-  else { S.saved.unshift(stampNew({name:e.name, cal:e.cal, portion:e.portion, src:e.src, uses:1, meal:mealId||''})); toast(T('saved')); }
+  else { S.saved.unshift(stampNew({name:e.name, cal:e.cal, portion:e.portion, g:gramsOf(e)||undefined, src:e.src, uses:1, meal:mealId||''})); toast(T('saved')); }
   save();
 }
 function bumpUse(e, mealId){
@@ -1341,7 +1397,7 @@ function bumpUse(e, mealId){
 /* ---------- saved meals (combos) ---------- */
 function comboCal(c){ return c.items.reduce((a,i)=>a+(i.cal||0),0); }
 function saveCombo(meal){
-  const items = day(viewDate).meals[meal.id].map(e=>({name:e.name, cal:e.cal, portion:e.portion, src:e.src}));
+  const items = day(viewDate).meals[meal.id].map(e=>({name:e.name, cal:e.cal, portion:e.portion, g:gramsOf(e)||undefined, src:e.src}));
   if (!items.length) return;
   const suggested = items.length === 1 ? items[0].name : items[0].name+' + '+(items.length-1)+' more';
   openSheet(sheetHead(T('savedMealsHead'))+
@@ -1350,7 +1406,9 @@ function saveCombo(meal){
       '<div class="entry" style="padding:5px 0"><div class="txt"><span class="nm">'+escapeHTML(i.name)+'</span></div>'+
       '<span class="kc">'+i.cal.toLocaleString()+'</span></div>').join('')+
       '<div class="entry" style="padding:8px 0 0;border-top:1px solid var(--line);margin-top:6px">'+
-      '<div class="txt"><span class="nm" style="color:var(--ink-dim)">Total</span></div>'+
+      '<div class="txt"><span class="nm" style="color:var(--ink-dim)">Total</span>'+
+      (comboRate({items}).label
+        ? '<span class="sub">'+escapeHTML(comboRate({items}).label)+'</span>' : '')+'</div>'+
       '<span class="kc">'+items.reduce((a,i)=>a+i.cal,0).toLocaleString()+'</span></div></div>'+
     '<button class="cta" id="cbSave">Save meal</button>'+
     '<p class="note">Saved meals show up as a one-tap button under '+meal.name+'.</p>');
@@ -1367,7 +1425,7 @@ function saveCombo(meal){
 }
 function logCombo(combo, meal){
   combo.items.forEach(i=>day(viewDate).meals[meal.id].push(stampNew({
-    name:i.name, cal:i.cal, portion:i.portion, src:i.src
+    name:i.name, cal:i.cal, portion:i.portion, g:gramsOf(i)||undefined, src:i.src
   })));
   combo.uses = (combo.uses||0)+1;
   bumpUp(combo);
@@ -1589,7 +1647,9 @@ function tabMeals(){
         '<span class="kc">'+comboCal(c).toLocaleString()+'</span>'+
         '<button class="iconbtn del" aria-label="Delete saved meal"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
       row.querySelector('.nm').textContent = c.name;
-      row.querySelector('.sub').textContent = c.items.map(i=>i.name).join(', ');
+      const r = comboRate(c);
+      row.querySelector('.sub').textContent =
+        [c.items.map(i=>i.name).join(', '), r.label].filter(Boolean).join(' \u00b7 ');
       row.querySelector('.txt').onclick = ()=>logCombo(c, sheetState.meal);
       row.querySelector('.del').onclick = ()=>{ deleteCombo(c.id); tabMeals(); toast('Saved meal deleted'); };
       body().appendChild(row);
@@ -2238,6 +2298,7 @@ async function openPortion(food, per100){
       addEntry({
         name, cal: Math.round(per100/100*g),
         portion: named ? named+' \u00b7 '+w : w,
+        g: Math.round(g),
         src:'USDA'
       });
     };
@@ -2267,7 +2328,7 @@ function tabSaved(){
     b.innerHTML = '<div class="txt"><span class="nm"></span><span class="sub"></span></div><span class="kc">'+s.cal.toLocaleString()+'</span>';
     b.querySelector('.nm').textContent = s.name;
     b.querySelector('.sub').textContent = [s.portion, s.uses>1 ? s.uses+' times' : ''].filter(Boolean).join(' · ');
-    b.onclick = ()=>{ bumpUse(s, sheetState.meal.id); addEntry({name:s.name, cal:s.cal, portion:s.portion, src:s.src}); };
+    b.onclick = ()=>{ bumpUse(s, sheetState.meal.id); addEntry({name:s.name, cal:s.cal, portion:s.portion, g:gramsOf(s)||undefined, src:s.src}); };
     body().appendChild(b);
   });
 }
@@ -2437,6 +2498,13 @@ async function readRecipe(raw){
       rec = await askClaudeRecipe(raw, '');
     }
     if (!sheetState) return;      // you may have closed the sheet meanwhile
+    // A second recipe must not inherit the first one's weight, mode or
+    // portion. These outlive a single showRecipe() call by design, so they
+    // have to be cleared where the recipe itself is replaced.
+    sheetState.rWeighed = 0;
+    sheetState.rMode = 'serving';
+    sheetState.rGrams = null;
+    sheetState.rEat = 1;
     sheetState.recipe = rec;
     sheetState.rEat = null;
     showRecipe(rec);
@@ -2474,7 +2542,8 @@ function parseRecipeHTML(html){
   let doc;
   try { doc = new DOMParser().parseFromString(html, 'text/html'); } catch(e){ return null; }
   const rec = {name:'', servings:0, servingsText:'', ingredients:[],
-               perServing:null, total:null, basis:'', source:''};
+               perServing:null, total:null, basis:'', source:'',
+               servingGrams:0, totalGrams:0, weightSrc:''};
 
   let node = null;
   doc.querySelectorAll('script[type="application/ld+json"]').forEach(s=>{
@@ -2494,6 +2563,13 @@ function parseRecipeHTML(html){
       rec.servingsText = rec.servings+(rec.servings === 1 ? ' serving' : ' servings');
     }
     const n = node.nutrition;
+    // servingSize is frequently a real weight ("125 g", "1 cup (240g)"). When
+    // it is, the rate is arithmetic rather than an estimate, so it is worth
+    // reading whether or not the page also published a calorie figure.
+    if (n && ldStr(n.servingSize)){
+      const sg = parseGrams(ldStr(n.servingSize));
+      if (sg > 0) rec.servingGrams = sg;
+    }
     if (n && n.calories != null){
       const c = firstNum(ldStr(n.calories));
       if (c > 0){
@@ -2501,6 +2577,10 @@ function parseRecipeHTML(html){
         rec.basis = 'Nutrition figures published with the recipe'+
           (ldStr(n.servingSize) ? ', per '+ldStr(n.servingSize) : '')+'.';
       }
+    }
+    if (rec.servingGrams > 0 && rec.servings > 0){
+      rec.totalGrams = Math.round(rec.servingGrams*rec.servings);
+      rec.weightSrc = 'published';
     }
   }
   if (!rec.ingredients.length){
@@ -2551,7 +2631,12 @@ function recipeToText(rec){
 const RECIPE_SCHEMA =
   'Respond with ONLY a JSON object, no markdown fences and no other text:\n'+
   '{"name":"short recipe name","servings":integer,"totalCalories":integer,'+
-  '"perServing":integer,"basis":"one short sentence on how you got there"}';
+  '"perServing":integer,"totalGrams":integer or null,'+
+  '"basis":"one short sentence on how you got there"}\n'+
+  'totalGrams is what the finished dish weighs once it is cooked, not the sum of '+
+  'the raw ingredients \u2014 roasting, simmering and draining drive off a lot of '+
+  'water. Return null rather than a guess if the recipe does not give you enough '+
+  'to work it out.';
 
 async function askClaudeRecipe(text, url){
   const prompt = url
@@ -2567,6 +2652,7 @@ async function askClaudeRecipe(text, url){
     ? [{type:'web_search_20250305', name:'web_search', max_uses:4}] : null);
 
   const sv = Math.max(1, Math.round(Number(j.servings)) || 1);
+  const gTot = Math.round(Number(j.totalGrams));
   const tot = Math.round(Number(j.totalCalories));
   const per = Math.round(Number(j.perServing));
   const goodTot = isFinite(tot) && tot > 0, goodPer = isFinite(per) && per > 0;
@@ -2579,7 +2665,10 @@ async function askClaudeRecipe(text, url){
     perServing: goodPer ? per : Math.round(tot/sv),
     total: goodTot ? tot : per*sv,
     basis: j.basis || '',
-    source: url ? hostOf(url) : ''
+    source: url ? hostOf(url) : '',
+    servingGrams: 0,
+    totalGrams: (isFinite(gTot) && gTot > 0) ? gTot : 0,
+    weightSrc: (isFinite(gTot) && gTot > 0) ? 'estimated' : ''
   };
 }
 /* The page is the better source for the name, the ingredients and the yield;
@@ -2587,6 +2676,15 @@ async function askClaudeRecipe(text, url){
    estimate assumed 4, the page wins and the per-serving figure is re-derived. */
 function mergeRecipe(rec, est){
   rec.total = est.total;
+  // A weight the page published beats one that was estimated, and it stays
+  // pinned to the page's yield rather than whatever yield the estimate assumed.
+  if (rec.servingGrams > 0 && rec.servings > 0){
+    rec.totalGrams = Math.round(rec.servingGrams*rec.servings);
+    rec.weightSrc = 'published';
+  } else if (!rec.totalGrams && est.totalGrams > 0){
+    rec.totalGrams = est.totalGrams;
+    rec.weightSrc = 'estimated';
+  }
   rec.perServing = (rec.servings && est.total)
     ? Math.round(est.total/rec.servings) : est.perServing;
   rec.basis = est.basis;
@@ -2606,60 +2704,185 @@ function showRecipe(rec){
     return;
   }
   const total = rec.total != null ? Math.round(rec.total) : per0*sv0;
+  // Three sources, in order of how much they can be trusted: a weight you put
+  // on a scale, a weight the recipe published, a weight Claude guessed at.
+  const gWeighed = Math.round(Number(sheetState.rWeighed) || 0);
+  const gTot  = gWeighed > 0 ? gWeighed : Math.round(Number(rec.totalGrams) || 0);
+  const wSrc  = gWeighed > 0 ? 'weighed' : rec.weightSrc;
+  const hasW  = gTot > 0;
   if (sheetState.rEat == null) sheetState.rEat = 1;
+  // Weight mode is only reachable when there is a weight; without one the tab
+  // behaves exactly as it did before.
+  if (!hasW) sheetState.rMode = 'serving';
+  const byW = hasW && sheetState.rMode === 'weight';
+  const u = foodUnit();
+  if (sheetState.rGrams == null) sheetState.rGrams = hasW ? Math.round(gTot/sv0) : 0;
+
+  const rate = hasW ? rateLabel(total, gTot) : '';
+  const prov = wSrc === 'weighed' ? 'weighed'
+    : wSrc === 'published' ? 'weight from the recipe'
+    : wSrc === 'estimated' ? 'cooked weight estimated' : '';
 
   out.innerHTML =
     '<div class="divider"></div>'+
     '<p style="margin:0 0 3px;font-size:15px;font-weight:600">'+escapeHTML(rec.name || 'Recipe')+'</p>'+
-    '<p class="note" style="margin:0 0 14px">'+escapeHTML([
+    '<p class="note" style="margin:0 0 10px">'+escapeHTML([
         rec.servingsText || (sv0+' servings'),
         total.toLocaleString()+' in total',
         per0.toLocaleString()+' a serving',
         rec.source, rec.basis].filter(Boolean).join(' \u00b7 '))+'</p>'+
-    '<div class="row" style="margin-bottom:12px">'+
-      '<div class="field" style="margin:0"><label>Makes</label>'+
-        '<input id="rsv" type="number" inputmode="numeric" min="1" step="1" value="'+sv0+'"></div>'+
-      '<div class="field" style="margin:0"><label>You had</label>'+
-        '<input id="rhad" type="number" inputmode="decimal" min="0" step="0.25" value="'+trimNum(sheetState.rEat)+'"></div>'+
-    '</div>'+
-    '<div class="chips">'+
-      [['\u00bc',0.25],['\u2153',1/3],['\u00bd',0.5],['1 serving',1],['2 servings',2],['Whole thing',sv0]]
-      .map(p=>'<button class="chip" data-v="'+p[1]+'">'+p[0]+'</button>').join('')+'</div>'+
+    (rate
+      ? '<p class="note" id="rrate" style="margin:-4px 0 12px;color:var(--ink)">'+
+        // The batch total is prose, not something you type into, so two decimal
+        // places of ounces would just be noise here.
+        '<b>'+escapeHTML(rate)+'</b> \u00b7 '+
+        escapeHTML(Math.round(toUnit(gTot,u)).toLocaleString()+' '+u)+' all in'+
+        (prov ? ' \u00b7 '+escapeHTML(prov) : '')+'</p>'
+      : '')+
+    // Always offered, whatever the recipe did or did not say. A number off a
+    // scale is the only one here that is not a guess, and it is the only way
+    // to get a rate at all when nothing could estimate one.
+    '<div class="field" style="margin:0 0 12px">'+
+      '<label for="rw">Weighed the finished dish? (optional)</label>'+
+      '<div class="row">'+
+        '<input id="rw" type="number" inputmode="decimal" min="0" step="'+(u==='oz'?'0.1':'1')+
+          '" placeholder="'+(u==='oz'?'65':'1850')+'" value="'+
+          (gWeighed ? fmtAmt(toUnit(gWeighed,u),u) : '')+'">'+
+        '<span style="flex:0 0 auto;color:var(--ink-dim);font-size:13px">'+u+'</span>'+
+      '</div></div>'+
+    (hasW
+      ? '<div class="chips">'+
+          '<button class="chip'+(!byW?' on':'')+'" id="rmS">By serving</button>'+
+          '<button class="chip'+(byW?' on':'')+'" id="rmW">By weight</button></div>'
+      : '')+
+    (byW
+      ? '<div class="row" style="margin-bottom:6px">'+
+          '<div class="field" style="margin:0"><label>You had</label>'+
+            '<input id="rg" type="number" inputmode="decimal" min="0" step="'+(u==='oz'?'0.1':'1')+
+              '" value="'+fmtAmt(toUnit(sheetState.rGrams,u),u)+'"></div>'+
+          '<div class="field" style="margin:0"><label>Unit</label>'+
+            '<select id="rgu"><option value="g"'+(u==='g'?' selected':'')+'>g</option>'+
+            '<option value="oz"'+(u==='oz'?' selected':'')+'>oz</option></select></div>'+
+        '</div>'+
+        '<p class="note" id="rAlt" style="margin:0 0 10px"></p>'+
+        '<div class="chips">'+
+          [['A serving',gTot/sv0],['Half the batch',gTot/2],['All of it',gTot]]
+          .map(p=>'<button class="chip" data-g="'+Math.round(p[1])+'">'+p[0]+'</button>').join('')+'</div>'
+      : '<div class="row" style="margin-bottom:12px">'+
+          '<div class="field" style="margin:0"><label>Makes</label>'+
+            '<input id="rsv" type="number" inputmode="numeric" min="1" step="1" value="'+sv0+'"></div>'+
+          '<div class="field" style="margin:0"><label>You had</label>'+
+            '<input id="rhad" type="number" inputmode="decimal" min="0" step="0.25" value="'+trimNum(sheetState.rEat)+'"></div>'+
+        '</div>'+
+        '<div class="chips">'+
+          [['\u00bc',0.25],['\u2153',1/3],['\u00bd',0.5],['1 serving',1],['2 servings',2],['Whole thing',sv0]]
+          .map(p=>'<button class="chip" data-v="'+p[1]+'">'+p[0]+'</button>').join('')+'</div>')+
     '<div style="display:flex;align-items:baseline;gap:8px;margin:4px 0 12px">'+
       '<span class="num" id="rcal" style="font-size:34px;font-weight:700">0</span>'+
       '<span style="color:var(--ink-dim);font-size:13px">calories</span></div>'+
     '<button class="cta" id="raddb">Add to '+sheetState.meal.name+'</button>'+
+    (wSrc === 'estimated'
+      ? '<p class="note">That batch weight is an estimate, so logging by weight is only as '+
+        'good as the guess. Put the dish on a scale and type the number in above to '+
+        'replace it.</p>' : '')+
     (rec.ingredients.length
       ? '<p class="note">From '+rec.ingredients.length+' ingredients: '+
         escapeHTML(rec.ingredients.slice(0,4).join('; '))+
         (rec.ingredients.length > 4 ? '\u2026' : '')+'</p>' : '');
 
-  const svEl = document.getElementById('rsv'), hadEl = document.getElementById('rhad');
-  // The total is fixed; cutting it into more or fewer servings just moves the
-  // per-serving figure, which is what you want when the yield was wrong.
-  const read = ()=>{
-    const s = Math.max(1, Math.round(Number(svEl.value)||1));
-    const had = Math.max(0, parseFloat(hadEl.value)||0);
-    return {s, had, cal: Math.round(total/s*had)};
+  if (hasW){
+    document.getElementById('rmS').onclick = ()=>{ sheetState.rMode='serving'; showRecipe(rec); };
+    document.getElementById('rmW').onclick = ()=>{ sheetState.rMode='weight';  showRecipe(rec); };
+  }
+
+  const wEl = document.getElementById('rw');
+  // Typing updates the rate in place; the structural bits — the mode chips
+  // appearing for the first time, the caveat going away — settle on blur, so
+  // the field does not lose focus mid-number.
+  wEl.oninput = ()=>{
+    const g = Math.max(0, fromUnit(parseFloat(wEl.value)||0, foodUnit()));
+    sheetState.rWeighed = Math.round(g);
+    const line = document.getElementById('rrate');
+    if (line && g > 0){
+      line.innerHTML = '<b>'+escapeHTML(rateLabel(total, g))+'</b> \u00b7 '+
+        escapeHTML(Math.round(toUnit(g,foodUnit())).toLocaleString()+' '+foodUnit())+
+        ' all in \u00b7 weighed';
+    }
   };
-  const upd = ()=>{ document.getElementById('rcal').textContent = read().cal.toLocaleString(); };
-  svEl.oninput = upd;
-  hadEl.oninput = ()=>{ sheetState.rEat = Math.max(0, parseFloat(hadEl.value)||0); upd(); };
-  out.querySelectorAll('.chip').forEach(c=>c.onclick = ()=>{
-    const v = Number(c.dataset.v);
-    hadEl.value = trimNum(v); sheetState.rEat = v; upd();
-  });
-  document.getElementById('raddb').onclick = ()=>{
-    const {s, had, cal} = read();
-    if (!had){ toast('Say how much of it you had'); return; }
-    addEntry({
-      name: rec.name || 'Recipe',
-      cal: cal,
-      portion: trimNum(had)+' of '+s+' serving'+(s === 1 ? '' : 's'),
-      src: rec.source ? 'Recipe \u00b7 '+rec.source : 'Recipe'
+  wEl.onchange = ()=>{ showRecipe(rec); };
+
+  const setCal = c=>{ document.getElementById('rcal').textContent = c.toLocaleString(); };
+
+  if (byW){
+    const gEl = document.getElementById('rg');
+    const read = ()=>{
+      const uu = foodUnit();
+      const g = Math.max(0, fromUnit(parseFloat(gEl.value)||0, uu));
+      return {g, cal: Math.round(total/gTot*g)};
+    };
+    const upd = ()=>{
+      const {g, cal} = read();
+      sheetState.rGrams = g;
+      setCal(cal);
+      document.getElementById('rAlt').textContent = g ? altWeight(g) : '';
+    };
+    gEl.oninput = upd;
+    // Switching units converts what is already typed, and sticks as the
+    // default, exactly as the portion picker does.
+    document.getElementById('rgu').onchange = e=>{
+      S.settings.foodUnit = e.target.value === 'oz' ? 'oz' : 'g';
+      touchProfile(); save(); showRecipe(rec);
+    };
+    out.querySelectorAll('.chip[data-g]').forEach(c=>c.onclick = ()=>{
+      sheetState.rGrams = Number(c.dataset.g);
+      gEl.value = fmtAmt(toUnit(sheetState.rGrams, foodUnit()), foodUnit());
+      upd();
     });
-  };
-  upd();
+    document.getElementById('raddb').onclick = ()=>{
+      const {g, cal} = read();
+      if (!g){ toast('Say how much of it you had'); return; }
+      addEntry({
+        name: rec.name || 'Recipe',
+        cal: cal,
+        portion: weightLabel(g, foodUnit()),
+        g: Math.round(g),
+        src: rec.source ? 'Recipe \u00b7 '+rec.source : 'Recipe'
+      });
+    };
+    upd();
+  } else {
+    const svEl = document.getElementById('rsv'), hadEl = document.getElementById('rhad');
+    // The total is fixed; cutting it into more or fewer servings just moves the
+    // per-serving figure, which is what you want when the yield was wrong.
+    const read = ()=>{
+      const s = Math.max(1, Math.round(Number(svEl.value)||1));
+      const had = Math.max(0, parseFloat(hadEl.value)||0);
+      return {s, had, cal: Math.round(total/s*had),
+              g: hasW ? Math.round(gTot/s*had) : 0};
+    };
+    const upd = ()=>setCal(read().cal);
+    svEl.oninput = upd;
+    hadEl.oninput = ()=>{ sheetState.rEat = Math.max(0, parseFloat(hadEl.value)||0); upd(); };
+    out.querySelectorAll('.chip[data-v]').forEach(c=>c.onclick = ()=>{
+      const v = Number(c.dataset.v);
+      hadEl.value = trimNum(v); sheetState.rEat = v; upd();
+    });
+    document.getElementById('raddb').onclick = ()=>{
+      const {s, had, cal, g} = read();
+      if (!had){ toast('Say how much of it you had'); return; }
+      const label = trimNum(had)+' of '+s+' serving'+(s === 1 ? '' : 's');
+      addEntry({
+        name: rec.name || 'Recipe',
+        cal: cal,
+        // The weight goes in the label too, so the rate survives a sync even
+        // though the sheet has nowhere to put the number.
+        portion: g ? label+' \u00b7 '+weightLabel(g, foodUnit()) : label,
+        g: g || undefined,
+        src: rec.source ? 'Recipe \u00b7 '+rec.source : 'Recipe'
+      });
+    };
+    upd();
+  }
 }
 
 /* ---------- custom ---------- */
@@ -2737,7 +2960,8 @@ function tabCustom(){
       const {grams, cal} = calc();
       if (!n || !cal){ toast('Needs a name, a rate and an amount'); return; }
       sheetState.cname = '';
-      addEntry({name:n, cal:cal, portion:weightLabel(grams, foodUnit()), src:'Custom'});
+      addEntry({name:n, cal:cal, portion:weightLabel(grams, foodUnit()),
+                g: Math.round(grams), src:'Custom'});
     };
   } else {
     document.getElementById('cadd').onclick = ()=>{
