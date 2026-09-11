@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Daybook</title>
-<meta name="theme-color" content="#3B6BFF">
+<meta name="theme-color" content="#2E4FB0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Daybook">
@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Bungee&family=Cinzel:wght@500;700;900&family=Anton&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Cinzel:wght@500;700;900&family=Jost:wght@400;500;600&family=Saira:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    Themes
@@ -29,99 +29,127 @@
 }
 
 /* ---------- Speed Racer (default) ---------- */
+/* Modern race telemetry rather than 2008 candy: hairline rules, one soft
+   shadow, and the neon kept at full strength so the colour does the shouting. */
 [data-theme="speed"]{
-  --bg:#EDF1FF;            /* recessed track colour (inputs, tab rails) */
+  --bar-track:rgba(255,255,255,.42);
+  --good:#3B6BFF;
+  --radius:12px;
+  --panel-radius:18px;
+  --strip-h:5px;
+  --bg:#F1F4FB;            /* recessed track colour (inputs, tab rails) */
   --surface:#FFFFFF;
-  --surface-2:#DFE6FF;
+  --surface-2:#E4EAF7;
   --raised:#FFFFFF;        /* buttons and chips that sit above the surface */
-  --line:#BEC9F0;
-  --ink:#101433;
+  --line:#D4DCEF;
+  --ink:#0B1030;
   --ink-on:#FFFFFF;        /* text that sits on top of --ink */
-  --ink-dim:#4C568F;
-  --ink-faint:#6A72A4;
-  --breakfast:#FFB000;
-  --lunch:#22C55E;
+  --ink-dim:#48527F;
+  --ink-faint:#7B84A9;
+  --breakfast:#FFAE00;
+  --lunch:#12C971;
   --dinner:#00B4F0;
   --snacks:#FF2D87;
   --accent:#FF2D87;
-  --over:#EE1B24;
-  --page:#3B4BE8;
+  --over:#FF3040;
+  --page:#0A0E2E;
   --page-bg:
-    repeating-linear-gradient(102deg, rgba(255,255,255,.14) 0 26px, rgba(255,255,255,0) 26px 62px),
-    linear-gradient(158deg,#00D0F5 0%,#3B6BFF 34%,#8A3CFF 66%,#FF2D87 100%);
-  --strip:repeating-conic-gradient(#101433 0% 25%, #ffffff 0% 50%);
-  --strip-size:14px 14px;
-  --hero:linear-gradient(104deg,#FFD84D 0%,#FFC400 44%,#FF9E00 100%);
-  --hero-ink:#101433;
-  --hero-streak:repeating-linear-gradient(100deg, rgba(255,255,255,.6) 0 3px, rgba(255,255,255,0) 3px 21px);
-  --big-shadow:2px 3px 0 #fff, 5px 6px 0 rgba(16,20,51,.22);
-  --cta:linear-gradient(180deg,#E51B38 0%,#C4001A 100%);
+    radial-gradient(120% 78% at 10% 0%, rgba(0,208,245,.55) 0%, rgba(0,208,245,0) 56%),
+    radial-gradient(110% 72% at 92% 6%, rgba(255,45,135,.48) 0%, rgba(255,45,135,0) 54%),
+    linear-gradient(168deg,#1D2FA0 0%,#0D1348 52%,#070A26 100%);
+  --strip:linear-gradient(90deg,#00D0F5 0%,#3B6BFF 34%,#8A3CFF 66%,#FF2D87 100%);
+  --strip-size:100% 100%;
+  --hero:linear-gradient(118deg,#FFD230 0%,#FFB000 54%,#FF8A1F 100%);
+  --hero-ink:#0B1030;
+  --hero-streak:linear-gradient(258deg, rgba(255,255,255,.34) 0%, rgba(255,255,255,0) 62%);
+  --big-shadow:none;
+  --cta:linear-gradient(180deg,#FF3355 0%,#E00030 100%);
   --cta-ink:#FFFFFF;
-  --toast:linear-gradient(180deg,#E4007A 0%,#C10067 100%);
+  --toast:linear-gradient(180deg,#161C4A 0%,#0B1030 100%);
   --toast-ink:#FFFFFF;
-  --warn-bg:#FFF0F1;
-  --warn-ink:#8E0710;
-  --combo-bg:#FFF0F7;
-  --display:Bungee,Archivo,sans-serif;
-  --display-weight:400;
-  --display-track:.01em;
-  --border-w:2px;
-  --panel-border:3px;
-  --lift:0 3px 0 var(--ink);
-  --panel-lift:0 7px 0 rgba(16,20,51,.55);
-  --scrim:rgba(16,20,51,.55);
+  --warn-bg:#FFF1F3;
+  --warn-ink:#A50F1C;
+  --combo-bg:#FFEFF7;
+  --display:Saira,Archivo,sans-serif;
+  --display-weight:800;
+  --display-track:.05em;
+  --border-w:1px;
+  --panel-border:1px;
+  --lift:0 1px 2px rgba(11,16,48,.12);
+  --panel-lift:0 22px 46px rgba(6,10,40,.36);
+  --press:brightness(.94);
+  --rule:1px solid var(--line);
+  --meal-rule:1px solid var(--line);
+  --seg-gloss:none;
+  --seg-edge:rgba(255,255,255,.55);
+  --bar-gloss:none;
+  --scrim:rgba(7,10,34,.55);
 }
 
 /* ---------- Dune ---------- */
-/* Sand, spice and shadow. Monumental rather than bouncy: wide tracked
-   capitals, deep desert night, no gloss and no hard candy shadows. */
+/* Spice on black. The browns are gone; what is left is a near-neutral dark
+   and one hot amber, so the palette reads architectural instead of muddy. */
 [data-theme="dune"]{
-  --bg:#1B1710;
-  --surface:#231E16;
-  --surface-2:#332B20;
-  --raised:#2E2819;
-  --line:#4A3F2C;
-  --ink:#E8D8B4;
-  --ink-on:#17130C;
-  --ink-dim:#B49F76;
-  --ink-faint:#8A7854;
-  --breakfast:#E0A542;
-  --lunch:#8C9A5B;
-  --dinner:#5B8CA8;
-  --snacks:#C2683A;
-  --accent:#E0A542;
-  --over:#D2452B;
-  --page:#0C0A07;
+  --bar-track:rgba(255,255,255,.30);
+  --good:#A9C25C;
+  --radius:6px;
+  --panel-radius:8px;
+  --strip-h:3px;
+  --bg:#131110;
+  --surface:#1A1714;
+  --surface-2:#2B241C;
+  --raised:#221D18;
+  --line:#3B332A;
+  --ink:#F4E7CB;
+  --ink-on:#141009;
+  --ink-dim:#C4AE86;
+  --ink-faint:#93815F;
+  --breakfast:#F3C969;
+  --lunch:#A9C25C;
+  --dinner:#5FA8C7;
+  --snacks:#E2703C;
+  --accent:#FF9E1B;
+  --over:#F2452B;
+  --page:#0A0806;
   --page-bg:
-    repeating-linear-gradient(96deg, rgba(232,216,180,.05) 0 40px, rgba(232,216,180,0) 40px 96px),
-    linear-gradient(168deg,#0C0A07 0%,#241C10 40%,#5A3E1C 78%,#9A6427 100%);
-  --strip:linear-gradient(90deg,#5A3E1C 0%,#C08A3E 50%,#5A3E1C 100%);
+    radial-gradient(120% 62% at 50% 104%, rgba(255,158,27,.34) 0%, rgba(255,158,27,0) 62%),
+    radial-gradient(90% 50% at 50% 0%, rgba(95,168,199,.14) 0%, rgba(95,168,199,0) 60%),
+    linear-gradient(178deg,#0A0806 0%,#15100A 54%,#2A1A08 100%);
+  --strip:linear-gradient(90deg,rgba(255,158,27,0) 0%,#FF9E1B 50%,rgba(255,158,27,0) 100%);
   --strip-size:100% 100%;
-  --hero:linear-gradient(104deg,#8A5A22 0%,#C08A3E 46%,#E0A542 100%);
-  --hero-ink:#17130C;
-  --hero-streak:repeating-linear-gradient(180deg, rgba(23,19,12,.12) 0 2px, rgba(23,19,12,0) 2px 14px);
-  --big-shadow:0 2px 14px rgba(23,19,12,.4);
-  --cta:linear-gradient(180deg,#C2683A 0%,#8E4520 100%);
-  --cta-ink:#F6ECD6;
-  --toast:linear-gradient(180deg,#3A2F1E 0%,#241C10 100%);
-  --toast-ink:#E8D8B4;
-  --warn-bg:#3A1E16;
-  --warn-ink:#F0A88E;
-  --combo-bg:#332617;
-  --display:Archivo,system-ui,sans-serif;
-  --display-weight:900;
-  --display-track:.22em;
+  --hero:linear-gradient(118deg,#FFB53C 0%,#FF9E1B 50%,#E2703C 100%);
+  --hero-ink:#1A1206;
+  --hero-streak:linear-gradient(258deg, rgba(255,255,255,.2) 0%, rgba(255,255,255,0) 62%);
+  --big-shadow:none;
+  --cta:linear-gradient(180deg,#E2703C 0%,#B04617 100%);
+  --cta-ink:#FFF3E2;
+  --toast:linear-gradient(180deg,#241E18 0%,#14100C 100%);
+  --toast-ink:#FFB53C;
+  --warn-bg:#33150E;
+  --warn-ink:#FFB29B;
+  --combo-bg:#2C1F11;
+  --display:Jost,Archivo,sans-serif;
+  --display-weight:500;
+  --display-track:.24em;
   --border-w:1px;
   --panel-border:1px;
   --lift:0 0 0 rgba(0,0,0,0);
-  --panel-lift:0 0 0 rgba(0,0,0,0);
-  --scrim:rgba(6,5,3,.78);
+  --panel-lift:0 24px 52px rgba(0,0,0,.55);
+  --press:brightness(1.3);
+  --rule:1px solid var(--line);
+  --meal-rule:1px solid var(--line);
+  --seg-gloss:none;
+  --seg-edge:rgba(20,16,9,.55);
+  --bar-gloss:none;
+  --scrim:rgba(6,4,2,.78);
 }
 
 /* ---------- John Wick ---------- */
 /* The Continental after hours: black marble, gold leaf, one red accent.
    Thin rules, engraved serif capitals, nothing that bounces. */
 [data-theme="wick"]{
+  --bar-track:rgba(0,0,0,.18);
+  --good:#6E8B6B;
   --bg:#101012;
   --surface:#17171A;
   --surface-2:#232327;
@@ -160,54 +188,72 @@
   --border-w:1px;
   --panel-border:1px;
   --lift:0 0 0 rgba(0,0,0,0);
-  --panel-lift:0 0 0 rgba(0,0,0,0);
+  --panel-lift:0 26px 50px rgba(0,0,0,.32);
+  --press:brightness(1.35);
+  --rule:1px dashed var(--line);
+  --meal-rule:2px dashed var(--line);
+  --seg-gloss:inset 0 4px 0 rgba(255,255,255,.34), inset 0 -4px 0 rgba(0,0,0,.16);
+  --seg-edge:rgba(0,0,0,.4);
+  --bar-gloss:inset 0 4px 0 rgba(255,255,255,.24);
   --scrim:rgba(0,0,0,.8);
 }
 
 /* ---------- WrestleMania ---------- */
-/* Championship gold on arena purple, everything oversized and shouting.
-   The one theme where the hard drop shadow gets bigger, not smaller. */
+/* An arena at night rather than a poster: violet dark, gold and hot pink
+   under stage lighting. Still the loudest theme, but loud through colour. */
 [data-theme="mania"]{
-  --bg:#F2ECFF;
-  --surface:#FFFFFF;
-  --surface-2:#E4D6FF;
-  --raised:#FFFFFF;
-  --line:#C4A9F0;
-  --ink:#1A0B33;
-  --ink-on:#FFFFFF;
-  --ink-dim:#5B3A8C;
-  --ink-faint:#7C5BAA;
+  --bar-track:rgba(255,255,255,.42);
+  --good:#FFC800;
+  --radius:12px;
+  --panel-radius:18px;
+  --strip-h:5px;
+  --bg:#171029;
+  --surface:#1D1434;
+  --surface-2:#2C1E4E;
+  --raised:#241941;
+  --line:#3E2C68;
+  --ink:#F5EEFF;
+  --ink-on:#150B2A;
+  --ink-dim:#BCA6E4;
+  --ink-faint:#8F79BE;
   --breakfast:#FFC800;
-  --lunch:#00A94F;
-  --dinner:#0090FF;
-  --snacks:#E5006D;
+  --lunch:#00E07A;
+  --dinner:#31A9FF;
+  --snacks:#FF2D9E;
   --accent:#FFC800;
-  --over:#E01B24;
-  --page:#3A0F63;
+  --over:#FF3B4E;
+  --page:#0C0620;
   --page-bg:
-    repeating-linear-gradient(45deg, rgba(255,200,0,.16) 0 18px, rgba(255,200,0,0) 18px 44px),
-    linear-gradient(150deg,#6A1FB0 0%,#3A0F63 46%,#1A0B33 76%,#B8006B 100%);
-  --strip:repeating-linear-gradient(90deg,#FFC800 0 16px,#1A0B33 16px 32px);
+    radial-gradient(105% 62% at 16% 0%, rgba(255,200,0,.26) 0%, rgba(255,200,0,0) 55%),
+    radial-gradient(110% 70% at 88% 10%, rgba(255,45,158,.42) 0%, rgba(255,45,158,0) 56%),
+    linear-gradient(165deg,#4A128C 0%,#1C0B40 54%,#0B0520 100%);
+  --strip:linear-gradient(90deg,#FFC800 0%,#FF2D9E 52%,#7A3CFF 100%);
   --strip-size:100% 100%;
-  --hero:linear-gradient(104deg,#FFD84D 0%,#FFC800 40%,#FF8A00 100%);
-  --hero-ink:#1A0B33;
-  --hero-streak:repeating-linear-gradient(100deg, rgba(255,255,255,.55) 0 5px, rgba(255,255,255,0) 5px 18px);
-  --big-shadow:3px 4px 0 #fff, 7px 9px 0 rgba(26,11,51,.3);
-  --cta:linear-gradient(180deg,#E5006D 0%,#A30049 100%);
+  --hero:linear-gradient(118deg,#FFE04D 0%,#FFC800 46%,#FF9500 100%);
+  --hero-ink:#160C2B;
+  --hero-streak:linear-gradient(258deg, rgba(255,255,255,.38) 0%, rgba(255,255,255,0) 60%);
+  --big-shadow:none;
+  --cta:linear-gradient(180deg,#FF2D9E 0%,#C00071 100%);
   --cta-ink:#FFFFFF;
-  --toast:linear-gradient(180deg,#6A1FB0 0%,#3A0F63 100%);
+  --toast:linear-gradient(180deg,#2C1E4E 0%,#170F31 100%);
   --toast-ink:#FFC800;
-  --warn-bg:#FFF0F1;
-  --warn-ink:#8E0710;
-  --combo-bg:#FFF3D0;
-  --display:Anton,Archivo,sans-serif;
+  --warn-bg:#3A1028;
+  --warn-ink:#FFA3C4;
+  --combo-bg:#33144C;
+  --display:'Bebas Neue',Archivo,sans-serif;
   --display-weight:400;
-  --display-track:.04em;
-  --border-w:3px;
-  --panel-border:4px;
-  --lift:0 4px 0 var(--ink);
-  --panel-lift:0 9px 0 rgba(26,11,51,.6);
-  --scrim:rgba(26,11,51,.62);
+  --display-track:.07em;
+  --border-w:1px;
+  --panel-border:1px;
+  --lift:0 1px 3px rgba(0,0,0,.5);
+  --panel-lift:0 24px 54px rgba(6,3,20,.6);
+  --press:brightness(1.28);
+  --rule:1px solid var(--line);
+  --meal-rule:1px solid var(--line);
+  --seg-gloss:none;
+  --seg-edge:rgba(21,11,42,.5);
+  --bar-gloss:none;
+  --scrim:rgba(9,5,24,.7);
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;padding:0}
@@ -234,7 +280,7 @@ body{
   max-width:560px;margin:0 auto;padding:0 18px 22px;
   position:relative;background:var(--surface);
   border:var(--panel-border) solid var(--ink);border-radius:var(--panel-radius);overflow:hidden;
-  box-shadow:var(--panel-lift,0 7px 0 rgba(0,0,0,.45)), 0 26px 50px rgba(0,0,0,.32);
+  box-shadow:var(--panel-lift);
 }
 .wrap::before{
   content:'';position:absolute;top:0;left:0;right:0;height:var(--strip-h);
@@ -280,14 +326,14 @@ header{padding:30px 0 4px}
 .remain .big{font-family:var(--display);font-size:50px;font-weight:var(--display-weight);line-height:1;letter-spacing:var(--display-track);color:var(--hero-ink);text-shadow:var(--big-shadow)}
 .remain .cap{color:var(--hero-ink);opacity:.72;font-size:13px;font-weight:600}
 .remain.over .big{color:var(--over)}
-.bar{display:flex;height:18px;border-radius:var(--pill);overflow:hidden;background:rgba(0,0,0,.18);margin:16px 0 10px;box-shadow:inset 0 0 0 var(--border-w) var(--ink)}
-.seg{transition:width .35s cubic-bezier(.4,0,.2,1);box-shadow:inset 0 4px 0 rgba(255,255,255,.34), inset 0 -4px 0 rgba(0,0,0,.16);border-right:1px solid rgba(0,0,0,.4)}
+.bar{display:flex;height:18px;border-radius:var(--pill);overflow:hidden;background:var(--bar-track);margin:16px 0 10px;box-shadow:inset 0 0 0 var(--border-w) var(--ink)}
+.seg{transition:width .35s cubic-bezier(.4,0,.2,1);box-shadow:var(--seg-gloss);border-right:1px solid var(--seg-edge)}
 .mathline{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;font-weight:600;color:var(--hero-ink);opacity:.78}
 .mathline b{color:var(--hero-ink);font-weight:800}
 .mathline button{color:var(--hero-ink);border-bottom:2px dotted currentColor}
 
 /* ---------- meals ---------- */
-.meal{border-top:2px dashed var(--line);padding:16px 0 8px}
+.meal{border-top:var(--meal-rule);padding:16px 0 8px}
 .meal-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
 .meal-name{display:flex;align-items:center;gap:9px;font-family:var(--display);font-weight:var(--display-weight);font-size:12px;letter-spacing:var(--display-track);text-transform:uppercase}
 .dot{width:12px;height:12px;border-radius:3px;border:var(--border-w) solid var(--ink);flex:none}
@@ -320,7 +366,7 @@ header{padding:30px 0 4px}
 .trend h2{font-family:var(--display);font-size:11.5px;font-weight:var(--display-weight);letter-spacing:var(--display-track);text-transform:uppercase;margin:0 0 16px;color:var(--ink)}
 .bars{display:flex;align-items:stretch;gap:8px;height:118px;padding-bottom:22px;position:relative}
 .tcol{flex:1;display:flex;flex-direction:column;justify-content:flex-end;position:relative;background:none;border:none;padding:0}
-.tbar{width:100%;border-radius:6px 6px 0 0;background:var(--surface-2);min-height:8px;border:var(--border-w) solid var(--ink);box-shadow:inset 0 4px 0 rgba(255,255,255,.24);transition:height .3s}
+.tbar{width:100%;border-radius:6px 6px 0 0;background:var(--surface-2);min-height:8px;border:var(--border-w) solid var(--ink);box-shadow:var(--bar-gloss);transition:height .3s}
 .tlab{position:absolute;bottom:-19px;left:0;right:0;text-align:center;font-size:11px;font-weight:700;color:var(--ink-faint)}
 .tline{position:absolute;left:0;right:0;border-top:2px dashed var(--ink-faint);pointer-events:none}
 .tline b{position:absolute;right:0;top:-9px;background:var(--surface);padding-left:6px;font-size:10.5px;color:var(--ink-dim);font-weight:800;font-variant-numeric:tabular-nums}
@@ -331,7 +377,7 @@ header{padding:30px 0 4px}
 .scrim{position:fixed;inset:0;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity .22s;z-index:40}
 .scrim.open{opacity:1;pointer-events:auto}
 .sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--surface);border-radius:22px 22px 0 0;transform:translateY(106%);transition:transform .28s cubic-bezier(.32,.72,0,1);max-height:92vh;max-height:92dvh;display:flex;flex-direction:column;border-top:var(--panel-border) solid var(--ink);overflow:hidden;box-shadow:0 -8px 40px rgba(0,0,0,.45)}
-.sheet::before{content:'';position:absolute;top:0;left:0;right:0;height:12px;background-image:var(--strip);background-size:var(--strip-size);border-bottom:var(--border-w) solid var(--ink);z-index:4}
+.sheet::before{content:'';position:absolute;top:0;left:0;right:0;height:var(--strip-h);background-image:var(--strip);background-size:var(--strip-size);border-bottom:var(--border-w) solid var(--ink);z-index:4}
 .sheet.open{transform:translateY(0)}
 .sheet-in{max-width:560px;width:100%;margin:0 auto;padding:0 18px calc(20px + env(safe-area-inset-bottom,0px));overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .griparea{flex:none;padding:16px 0 2px;touch-action:none;cursor:grab}
@@ -342,7 +388,7 @@ header{padding:30px 0 4px}
 .tabs{display:flex;gap:2px;margin-bottom:14px;background:var(--bg);padding:3px;border-radius:var(--pill);border:var(--border-w) solid var(--ink)}
 .tab{flex:1;padding:8px 1px;border-radius:var(--pill);font-size:11.5px;font-weight:700;color:var(--ink-dim);text-align:center;white-space:nowrap;min-width:0;letter-spacing:-.01em}
 .tab.on{background:var(--ink);color:var(--ink-on)}
-.res{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px dashed var(--line);width:100%;text-align:left}
+.res{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:var(--rule);width:100%;text-align:left}
 .res:last-child{border-bottom:none}
 .res .txt{flex:1;min-width:0}
 .res .nm{font-size:14.5px;font-weight:500;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -365,7 +411,7 @@ header{padding:30px 0 4px}
 .chip{padding:7px 13px;border-radius:var(--pill);border:var(--border-w) solid var(--ink);background:var(--raised);font-size:13px;font-weight:600;color:var(--ink);box-shadow:var(--lift)}
 .chip:active{transform:translateY(2px);box-shadow:none}
 .chip.on{background:var(--ink);color:var(--ink-on)}
-.divider{border-top:1px dashed var(--line);margin:20px 0 16px}
+.divider{border-top:var(--rule);margin:20px 0 16px}
 .stickysave{position:sticky;bottom:0;background:linear-gradient(to top,var(--surface) 62%,transparent);padding:14px 0 6px;margin-top:18px;z-index:3}
 .stickysave .cta{margin-top:0}
 .divider h3{font-family:var(--display);font-size:11.5px;font-weight:var(--display-weight);letter-spacing:var(--display-track);text-transform:uppercase;color:var(--ink);margin:16px 0 12px}
@@ -395,10 +441,10 @@ header{padding:30px 0 4px}
 .themecard .tblurb{font-size:11px;line-height:1.4;color:var(--ink-faint);font-weight:500}
 .swatch{display:flex;height:24px;border-radius:6px;overflow:hidden;border:1px solid var(--ink)}
 .swatch i{flex:1}
-.swatch.t-speed i:nth-child(1){background:#FFC400}.swatch.t-speed i:nth-child(2){background:#3B6BFF}.swatch.t-speed i:nth-child(3){background:#FF2D87}
-.swatch.t-dune i:nth-child(1){background:#E0A542}.swatch.t-dune i:nth-child(2){background:#8A5A22}.swatch.t-dune i:nth-child(3){background:#241C10}
+.swatch.t-speed i:nth-child(1){background:#FFB000}.swatch.t-speed i:nth-child(2){background:#00B4F0}.swatch.t-speed i:nth-child(3){background:#FF2D87}
+.swatch.t-dune i:nth-child(1){background:#FF9E1B}.swatch.t-dune i:nth-child(2){background:#E2703C}.swatch.t-dune i:nth-child(3){background:#141210}
 .swatch.t-wick i:nth-child(1){background:#C9A227}.swatch.t-wick i:nth-child(2){background:#17171A}.swatch.t-wick i:nth-child(3){background:#9B1B24}
-.swatch.t-mania i:nth-child(1){background:#FFC800}.swatch.t-mania i:nth-child(2){background:#6A1FB0}.swatch.t-mania i:nth-child(3){background:#E5006D}
+.swatch.t-mania i:nth-child(1){background:#FFC800}.swatch.t-mania i:nth-child(2){background:#FF2D9E}.swatch.t-mania i:nth-child(3){background:#1D1434}
 
 @media (max-width:380px){
   .remain .big{font-size:42px}
@@ -406,20 +452,23 @@ header{padding:30px 0 4px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 
-/* Flat themes get a press state that dims rather than one that drops, since
-   there is no hard shadow underneath for the button to fall into. */
-[data-theme="dune"] .arrow:active,[data-theme="dune"] .gear:active,
-[data-theme="dune"] .addbtn:active,[data-theme="dune"] .qchip:active,
-[data-theme="dune"] .chip:active,[data-theme="dune"] .cta:active,
-[data-theme="dune"] .savemeal:active,
-[data-theme="wick"] .arrow:active,[data-theme="wick"] .gear:active,
-[data-theme="wick"] .addbtn:active,[data-theme="wick"] .qchip:active,
-[data-theme="wick"] .chip:active,[data-theme="wick"] .cta:active,
-[data-theme="wick"] .savemeal:active{transform:none;filter:brightness(1.35)}
+/* No theme carries a hard shadow for a control to fall into any more, so the
+   press state dims instead of dropping. --press points the right way per
+   theme: down on the light palette, up on the dark ones. */
+.arrow:active,.gear:active,.addbtn:active,.qchip:active,
+.chip:active,.cta:active,.savemeal:active,.camera:active{
+  transform:none;filter:var(--press,brightness(1.2));
+}
 
-/* Engraved capitals need air; Anton needs none. */
+/* Display faces sit at different optical sizes, so the hero number and the
+   headings get trued up per theme rather than sharing one size. */
 [data-theme="wick"] .remain .big,[data-theme="dune"] .remain .big{font-size:44px}
-[data-theme="mania"] .remain .big{font-size:54px;-webkit-text-stroke:1px var(--ink)}
+[data-theme="dune"] .remain .big{letter-spacing:.1em}
+[data-theme="mania"] .remain .big{font-size:58px}
+[data-theme="mania"] .datenav h1,[data-theme="mania"] .sheet-head h2{font-size:17px}
+[data-theme="mania"] .meal-name{font-size:13.5px}
+[data-theme="mania"] .trend h2,[data-theme="mania"] .divider h3,
+[data-theme="mania"] .themecard .tname{font-size:13px}
 [data-theme="wick"] .wrap,[data-theme="dune"] .wrap{border-radius:6px}
 [data-theme="wick"] .sheet,[data-theme="dune"] .sheet{border-radius:6px 6px 0 0}
 </style>
@@ -537,10 +586,10 @@ let sheetState = null;
    there is exactly one place to look when a phrase reads wrong.
    ============================================================ */
 const THEMES = [
-  {id:'speed', name:'Speed Racer', blurb:'Candy gradients, checkered flag, hard shadows.', chrome:'#3B6BFF'},
-  {id:'dune',  name:'Dune',        blurb:'Spice and shadow. Wide capitals, desert night.', chrome:'#241C10'},
+  {id:'speed', name:'Speed Racer', blurb:'Neon telemetry on white. Hairline rules.', chrome:'#2E4FB0'},
+  {id:'dune',  name:'Dune',        blurb:'Hot spice on near-black. Wide capitals.', chrome:'#0C0906'},
   {id:'wick',  name:'John Wick',   blurb:'The Continental after hours. Black, gold, one red.', chrome:'#0B0B0D'},
-  {id:'mania', name:'WrestleMania',blurb:'Championship gold on arena purple. Very loud.', chrome:'#3A0F63'}
+  {id:'mania', name:'WrestleMania',blurb:'Arena lights. Gold and hot pink on violet.', chrome:'#45148A'}
 ];
 const COPY = {
   speed: {
@@ -678,13 +727,19 @@ function collectChanges(since){
     MEALS.forEach(m=>(d.meals[m.id]||[]).forEach(e=>{
       if ((e.up||0) > since) entries.push({
         id:e.id, date:dk, meal:m.id, name:e.name, cal:e.cal,
-        portion:e.portion||'', src:e.src||'', updated:e.up, deleted:0
+        portion:e.portion||'', src:e.src||'',
+        // Blank rather than 0 so an unweighed entry leaves an empty cell.
+        // A relay older than version 6 has no column for this and drops it,
+        // which is why the weight is still written into the portion label.
+        g: Math.round(gramsOf(e)) || '',
+        updated:e.up, deleted:0
       });
     }));
   });
   S.saved.forEach(f=>{ if ((f.up||0) > since) library.push({
     id:f.id, kind:'food', name:f.name, cal:f.cal, portion:f.portion||'', src:f.src||'',
-    meal:f.meal||'', uses:f.uses||1, items:'', updated:f.up, deleted:0 }); });
+    meal:f.meal||'', uses:f.uses||1, items:'', g: Math.round(gramsOf(f)) || '',
+    updated:f.up, deleted:0 }); });
   S.combos.forEach(c=>{ if ((c.up||0) > since) library.push({
     id:c.id, kind:'combo', name:c.name, cal:comboCal(c), portion:'', src:'',
     meal:c.meal||'', uses:c.uses||1, items:JSON.stringify(c.items||[]), updated:c.up, deleted:0 }); });
@@ -888,6 +943,11 @@ function mergeRemote(d){
       id:r.id, name:r.name, cal:+r.cal||0,
       portion:r.portion||'', src:r.src||'', up
     };
+    // The sheet has no grams column today, so this is normally recovered from
+    // the portion label. Reading r.g first means adding the column later is a
+    // relay change on its own, with nothing needed here.
+    const rg = +r.g || parseGrams(rec.portion);
+    if (rg > 0) rec.g = Math.round(rg);
     const arr = day(dk).meals[r.meal];
     arr.push(rec);
     ix.set(r.id, {arr, e:rec});
@@ -926,7 +986,8 @@ function mergeRemote(d){
       ? {id:r.id, name:r.name, meal:r.meal||'', uses:+r.uses||1, up,
          items: parseItems(r.items)}
       : {id:r.id, name:r.name, cal:+r.cal||0, portion:r.portion||'', src:r.src||'',
-         meal:r.meal||'', uses:+r.uses||1, up};
+         meal:r.meal||'', uses:+r.uses||1, up,
+         g: Math.round(+r.g || parseGrams(r.portion)) || undefined};
     if (i > -1) list[i] = rec; else list.unshift(rec);
   });
   S.saved.sort((a,b)=>(b.uses||0)-(a.uses||0));
@@ -1059,6 +1120,50 @@ function fmtAmt(v, u){
   return u === 'oz' ? Math.round(Number(v)*100)/100 : Math.round(Number(v));
 }
 function weightLabel(g, u){ return fmtAmt(toUnit(g,u), u)+' '+u; }
+
+/* ---------- weight on an entry ----------
+   `g` is set wherever a weight was genuinely known: the portion picker, Custom
+   by weight, a recipe that knows what it weighs. It is never invented.
+
+   parseGrams is the fallback, and it is not belt-and-braces — it is load
+   bearing. The relay's sheet has no grams column, so an entry logged on the
+   phone and read back on the laptop arrives with its portion label and nothing
+   else. Every writer below that sets `g` also puts the weight in the label, so
+   the number survives the round trip either way. */
+function parseGrams(s){
+  const all = String(s||'').match(/\d+(?:\.\d+)?\s*(?:g|gram|grams|oz|ounce|ounces)\b/gi);
+  if (!all) return 0;
+  const last = all[all.length-1];              // the weight is always written last
+  const v = parseFloat(last);
+  if (!isFinite(v) || v <= 0) return 0;
+  return /o/i.test(last) ? v*G_PER_OZ : v;
+}
+function gramsOf(e){
+  const g = Number(e && e.g);
+  if (isFinite(g) && g > 0) return g;
+  return parseGrams(e && e.portion);
+}
+/* A rate, in whichever unit you log in. Empty when there is no weight to
+   divide by: a density with nothing behind it is worse than no density. */
+function rateLabel(cal, grams){
+  if (!(grams > 0) || !(cal > 0)) return '';
+  return foodUnit() === 'oz'
+    ? Math.round(cal/grams*G_PER_OZ)+' kcal/oz'
+    : Math.round(cal/grams*100)+' kcal/100g';
+}
+/* A saved meal only gets a rate when every item that carries calories also
+   carries a weight. Summing the ones that happen to have weights and calling
+   that the total is the failure worth avoiding here. */
+function comboRate(c){
+  let g = 0, cal = 0, missing = 0;
+  (c.items||[]).forEach(i=>{
+    const w = gramsOf(i);
+    cal += (+i.cal||0);
+    if (w > 0) g += w; else if ((+i.cal||0) > 0) missing++;
+  });
+  return {grams:g, cal:cal, missing:missing,
+          label: missing ? '' : rateLabel(cal, g)};
+}
 /* The same weight said the other way, so both units are always on screen. */
 function altWeight(g){
   return foodUnit() === 'oz'
@@ -1175,7 +1280,7 @@ function render(){
         c.querySelector('.qn').textContent = q.name;
         c.onclick = ()=>{
           if (q.type === 'combo'){ logCombo(q.ref, m); return; }
-          const e = stampNew({name:q.ref.name, cal:q.ref.cal, portion:q.ref.portion, src:q.ref.src});
+          const e = stampNew({name:q.ref.name, cal:q.ref.cal, portion:q.ref.portion, g:gramsOf(q.ref)||undefined, src:q.ref.src});
           day(viewDate).meals[m.id].push(e);
           bumpUse(q.ref, m.id);           // was dropping the meal id entirely
           buzz(10); save(); render();
@@ -1228,7 +1333,7 @@ function renderTrend(){
     const dObj = new Date(k.split('-')[0], k.split('-')[1]-1, dd);
     col.innerHTML =
       '<div class="tbar" style="height:'+Math.max(2, v/peak*100)+'%;background:'+
-        (v===0 ? 'var(--surface-2)' : over ? 'var(--over)' : 'var(--lunch)')+'"></div>'+
+        (v===0 ? 'var(--surface-2)' : over ? 'var(--over)' : 'var(--good)')+'"></div>'+
       '<div class="tlab">'+dObj.toLocaleDateString(undefined,{weekday:'narrow'})+'</div>';
     col.title = prettyDate(k)+': '+v.toLocaleString();
     col.setAttribute('aria-label', col.title);
@@ -1275,7 +1380,7 @@ function toggleSave(e, mealId){
   const k = foodKey(e);
   const i = S.saved.findIndex(s=>foodKey(s) === k);
   if (i > -1){ bury(S.saved[i],'food'); S.saved.splice(i,1); toast(T('unsaved')); }
-  else { S.saved.unshift(stampNew({name:e.name, cal:e.cal, portion:e.portion, src:e.src, uses:1, meal:mealId||''})); toast(T('saved')); }
+  else { S.saved.unshift(stampNew({name:e.name, cal:e.cal, portion:e.portion, g:gramsOf(e)||undefined, src:e.src, uses:1, meal:mealId||''})); toast(T('saved')); }
   save();
 }
 function bumpUse(e, mealId){
@@ -1293,7 +1398,7 @@ function bumpUse(e, mealId){
 /* ---------- saved meals (combos) ---------- */
 function comboCal(c){ return c.items.reduce((a,i)=>a+(i.cal||0),0); }
 function saveCombo(meal){
-  const items = day(viewDate).meals[meal.id].map(e=>({name:e.name, cal:e.cal, portion:e.portion, src:e.src}));
+  const items = day(viewDate).meals[meal.id].map(e=>({name:e.name, cal:e.cal, portion:e.portion, g:gramsOf(e)||undefined, src:e.src}));
   if (!items.length) return;
   const suggested = items.length === 1 ? items[0].name : items[0].name+' + '+(items.length-1)+' more';
   openSheet(sheetHead(T('savedMealsHead'))+
@@ -1302,7 +1407,9 @@ function saveCombo(meal){
       '<div class="entry" style="padding:5px 0"><div class="txt"><span class="nm">'+escapeHTML(i.name)+'</span></div>'+
       '<span class="kc">'+i.cal.toLocaleString()+'</span></div>').join('')+
       '<div class="entry" style="padding:8px 0 0;border-top:1px solid var(--line);margin-top:6px">'+
-      '<div class="txt"><span class="nm" style="color:var(--ink-dim)">Total</span></div>'+
+      '<div class="txt"><span class="nm" style="color:var(--ink-dim)">Total</span>'+
+      (comboRate({items}).label
+        ? '<span class="sub">'+escapeHTML(comboRate({items}).label)+'</span>' : '')+'</div>'+
       '<span class="kc">'+items.reduce((a,i)=>a+i.cal,0).toLocaleString()+'</span></div></div>'+
     '<button class="cta" id="cbSave">Save meal</button>'+
     '<p class="note">Saved meals show up as a one-tap button under '+meal.name+'.</p>');
@@ -1319,7 +1426,7 @@ function saveCombo(meal){
 }
 function logCombo(combo, meal){
   combo.items.forEach(i=>day(viewDate).meals[meal.id].push(stampNew({
-    name:i.name, cal:i.cal, portion:i.portion, src:i.src
+    name:i.name, cal:i.cal, portion:i.portion, g:gramsOf(i)||undefined, src:i.src
   })));
   combo.uses = (combo.uses||0)+1;
   bumpUp(combo);
@@ -1369,11 +1476,18 @@ function buildRecents(){
       let r = map.get(k);
       if (!r){
         r = {key:k, name:e.name, cal:Math.round(+e.cal||0), portion:e.portion||'',
-             src:e.src||'', score:0, n:0, meals:{}, last:dk};
+             src:e.src||'', g:0, score:0, n:0, meals:{}, last:dk};
         map.set(k, r);
       }
       r.score += w; r.n++;
       r.meals[m.id] = (r.meals[m.id]||0) + w;
+      /* Weight has to ride along. gramsOf() can usually recover it from the
+         portion label, but not always — a recipe logged as "1 of 4 servings"
+         carries g and says nothing about weight in its text. Entries that
+         share a foodKey can still differ here if one was written by an older
+         build, so take the most recent one that actually has a number. */
+      const eg = gramsOf(e);
+      if (eg > 0 && dk >= r.last) r.g = Math.round(eg);
       if (dk > r.last) r.last = dk;
     }));
   });
@@ -1421,9 +1535,9 @@ function termScore(key, terms){
 }
 
 /* The log, filtered by what you're typing. This is the thing that makes a
-   repeat log free: the portion and the calorie count are already settled, so
-   the row is one tap and no network call happens at all. Recency still
-   breaks ties, but a text match outranks a strong habit that doesn't match. */
+   repeat log free: the portion, the weight and the calorie count are already
+   settled, so the row is one tap and no network call happens at all. Recency
+   still breaks ties, but a text match outranks a strong habit that doesn't. */
 function searchRecents(q, mealId, limit){
   const terms = termsOf(q);
   if (!terms.length) return [];
@@ -1431,11 +1545,11 @@ function searchRecents(q, mealId, limit){
   const hits = [];
   all.forEach((r, i)=>{
     const key = (r.name+' '+(r.portion||'')).toLowerCase();
-    const s = termScore(key, terms);
-    if (s == null) return;
+    const sc = termScore(key, terms);
+    if (sc == null) return;
     // i is the habit rank; a small weight keeps "the one you always eat"
     // above an equally-good text match you had once.
-    hits.push({r, score: s + i / 25});
+    hits.push({r, score: sc + i / 25});
   });
   hits.sort((a,b)=>a.score - b.score);
   return hits.slice(0, limit || 6).map(h=>h.r);
@@ -1592,7 +1706,9 @@ function tabMeals(){
         '<span class="kc">'+comboCal(c).toLocaleString()+'</span>'+
         '<button class="iconbtn del" aria-label="Delete saved meal"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
       row.querySelector('.nm').textContent = c.name;
-      row.querySelector('.sub').textContent = c.items.map(i=>i.name).join(', ');
+      const r = comboRate(c);
+      row.querySelector('.sub').textContent =
+        [c.items.map(i=>i.name).join(', '), r.label].filter(Boolean).join(' \u00b7 ');
       row.querySelector('.txt').onclick = ()=>logCombo(c, sheetState.meal);
       row.querySelector('.del').onclick = ()=>{ deleteCombo(c.id); tabMeals(); toast('Saved meal deleted'); };
       body().appendChild(row);
@@ -2030,7 +2146,11 @@ function recentRow(r){
   b.querySelector('.nm').textContent = r.name;
   b.querySelector('.sub').textContent =
     [r.portion, r.n > 1 ? r.n+'×' : '', agoLabel(r.last)].filter(Boolean).join(' · ');
-  b.onclick = ()=>addEntry({name:r.name, cal:r.cal, portion:r.portion, src:r.src});
+  /* g had been dropped here, so re-logging from this list quietly produced an
+     entry with no weight — invisible unless you went looking for the rate.
+     gramsOf() matches what the quick-pick chips already do. */
+  b.onclick = ()=>addEntry({name:r.name, cal:r.cal, portion:r.portion,
+                            g:gramsOf(r)||undefined, src:r.src});
   return b;
 }
 
@@ -2112,8 +2232,8 @@ function renderLocal(q, host){
   let rows = 0;
   host.innerHTML = '';
 
-  /* Straight from the log: portion and calories are already settled, so this
-     is one tap and nothing else to decide. */
+  /* Straight from the log: portion, weight and calories are already settled,
+     so this is one tap and nothing else to decide. */
   const mine = (sheetState && sheetState.meal)
     ? searchRecents(q, sheetState.meal.id, 6) : [];
   if (mine.length){
@@ -2276,7 +2396,7 @@ async function openPortion(food, per100){
 
   // Portions came down with the pack, or were kept from a previous lookup.
   // They go in front of the plain 100 g so the useful one is the default.
-  let cached = food._local ? (food._portions||[]) : seenPortions(food.fdcId);
+  const cached = food._local ? (food._portions||[]) : seenPortions(food.fdcId);
   if (cached.length) options = namedFirst(cached);
   options = dedupe(options);
 
@@ -2342,6 +2462,7 @@ async function openPortion(food, per100){
       addEntry({
         name, cal: Math.round(per100/100*g),
         portion: named ? named+' \u00b7 '+w : w,
+        g: Math.round(g),
         src:'USDA'
       });
     };
@@ -2352,8 +2473,8 @@ async function openPortion(food, per100){
   /* Named portions are a refinement — grams already work — so the picker no
      longer waits on a second round trip before showing you anything. When
      they land, the list is rebuilt with them in front, but the option you
-     were looking at stays selected by identity, so nothing moves under your
-     finger and the calorie count on screen never changes by itself. */
+     were looking at stays selected by label and weight, so nothing moves
+     under your finger and the calorie count never changes by itself. */
   if (!food._local && !cached.length && online() && S.settings.usdaKey){
     try {
       const d = await fdcFetch('food/'+food.fdcId+'?api_key='+encodeURIComponent(S.settings.usdaKey));
@@ -2401,7 +2522,7 @@ function tabSaved(){
     b.innerHTML = '<div class="txt"><span class="nm"></span><span class="sub"></span></div><span class="kc">'+s.cal.toLocaleString()+'</span>';
     b.querySelector('.nm').textContent = s.name;
     b.querySelector('.sub').textContent = [s.portion, s.uses>1 ? s.uses+' times' : ''].filter(Boolean).join(' · ');
-    b.onclick = ()=>{ bumpUse(s, sheetState.meal.id); addEntry({name:s.name, cal:s.cal, portion:s.portion, src:s.src}); };
+    b.onclick = ()=>{ bumpUse(s, sheetState.meal.id); addEntry({name:s.name, cal:s.cal, portion:s.portion, g:gramsOf(s)||undefined, src:s.src}); };
     body().appendChild(b);
   });
 }
@@ -2571,6 +2692,13 @@ async function readRecipe(raw){
       rec = await askClaudeRecipe(raw, '');
     }
     if (!sheetState) return;      // you may have closed the sheet meanwhile
+    // A second recipe must not inherit the first one's weight, mode or
+    // portion. These outlive a single showRecipe() call by design, so they
+    // have to be cleared where the recipe itself is replaced.
+    sheetState.rWeighed = 0;
+    sheetState.rMode = 'serving';
+    sheetState.rGrams = null;
+    sheetState.rEat = 1;
     sheetState.recipe = rec;
     sheetState.rEat = null;
     showRecipe(rec);
@@ -2608,7 +2736,8 @@ function parseRecipeHTML(html){
   let doc;
   try { doc = new DOMParser().parseFromString(html, 'text/html'); } catch(e){ return null; }
   const rec = {name:'', servings:0, servingsText:'', ingredients:[],
-               perServing:null, total:null, basis:'', source:''};
+               perServing:null, total:null, basis:'', source:'',
+               servingGrams:0, totalGrams:0, weightSrc:''};
 
   let node = null;
   doc.querySelectorAll('script[type="application/ld+json"]').forEach(s=>{
@@ -2628,6 +2757,13 @@ function parseRecipeHTML(html){
       rec.servingsText = rec.servings+(rec.servings === 1 ? ' serving' : ' servings');
     }
     const n = node.nutrition;
+    // servingSize is frequently a real weight ("125 g", "1 cup (240g)"). When
+    // it is, the rate is arithmetic rather than an estimate, so it is worth
+    // reading whether or not the page also published a calorie figure.
+    if (n && ldStr(n.servingSize)){
+      const sg = parseGrams(ldStr(n.servingSize));
+      if (sg > 0) rec.servingGrams = sg;
+    }
     if (n && n.calories != null){
       const c = firstNum(ldStr(n.calories));
       if (c > 0){
@@ -2635,6 +2771,10 @@ function parseRecipeHTML(html){
         rec.basis = 'Nutrition figures published with the recipe'+
           (ldStr(n.servingSize) ? ', per '+ldStr(n.servingSize) : '')+'.';
       }
+    }
+    if (rec.servingGrams > 0 && rec.servings > 0){
+      rec.totalGrams = Math.round(rec.servingGrams*rec.servings);
+      rec.weightSrc = 'published';
     }
   }
   if (!rec.ingredients.length){
@@ -2685,7 +2825,12 @@ function recipeToText(rec){
 const RECIPE_SCHEMA =
   'Respond with ONLY a JSON object, no markdown fences and no other text:\n'+
   '{"name":"short recipe name","servings":integer,"totalCalories":integer,'+
-  '"perServing":integer,"basis":"one short sentence on how you got there"}';
+  '"perServing":integer,"totalGrams":integer or null,'+
+  '"basis":"one short sentence on how you got there"}\n'+
+  'totalGrams is what the finished dish weighs once it is cooked, not the sum of '+
+  'the raw ingredients \u2014 roasting, simmering and draining drive off a lot of '+
+  'water. Return null rather than a guess if the recipe does not give you enough '+
+  'to work it out.';
 
 async function askClaudeRecipe(text, url){
   const prompt = url
@@ -2701,6 +2846,7 @@ async function askClaudeRecipe(text, url){
     ? [{type:'web_search_20250305', name:'web_search', max_uses:4}] : null);
 
   const sv = Math.max(1, Math.round(Number(j.servings)) || 1);
+  const gTot = Math.round(Number(j.totalGrams));
   const tot = Math.round(Number(j.totalCalories));
   const per = Math.round(Number(j.perServing));
   const goodTot = isFinite(tot) && tot > 0, goodPer = isFinite(per) && per > 0;
@@ -2713,7 +2859,10 @@ async function askClaudeRecipe(text, url){
     perServing: goodPer ? per : Math.round(tot/sv),
     total: goodTot ? tot : per*sv,
     basis: j.basis || '',
-    source: url ? hostOf(url) : ''
+    source: url ? hostOf(url) : '',
+    servingGrams: 0,
+    totalGrams: (isFinite(gTot) && gTot > 0) ? gTot : 0,
+    weightSrc: (isFinite(gTot) && gTot > 0) ? 'estimated' : ''
   };
 }
 /* The page is the better source for the name, the ingredients and the yield;
@@ -2721,6 +2870,15 @@ async function askClaudeRecipe(text, url){
    estimate assumed 4, the page wins and the per-serving figure is re-derived. */
 function mergeRecipe(rec, est){
   rec.total = est.total;
+  // A weight the page published beats one that was estimated, and it stays
+  // pinned to the page's yield rather than whatever yield the estimate assumed.
+  if (rec.servingGrams > 0 && rec.servings > 0){
+    rec.totalGrams = Math.round(rec.servingGrams*rec.servings);
+    rec.weightSrc = 'published';
+  } else if (!rec.totalGrams && est.totalGrams > 0){
+    rec.totalGrams = est.totalGrams;
+    rec.weightSrc = 'estimated';
+  }
   rec.perServing = (rec.servings && est.total)
     ? Math.round(est.total/rec.servings) : est.perServing;
   rec.basis = est.basis;
@@ -2740,60 +2898,185 @@ function showRecipe(rec){
     return;
   }
   const total = rec.total != null ? Math.round(rec.total) : per0*sv0;
+  // Three sources, in order of how much they can be trusted: a weight you put
+  // on a scale, a weight the recipe published, a weight Claude guessed at.
+  const gWeighed = Math.round(Number(sheetState.rWeighed) || 0);
+  const gTot  = gWeighed > 0 ? gWeighed : Math.round(Number(rec.totalGrams) || 0);
+  const wSrc  = gWeighed > 0 ? 'weighed' : rec.weightSrc;
+  const hasW  = gTot > 0;
   if (sheetState.rEat == null) sheetState.rEat = 1;
+  // Weight mode is only reachable when there is a weight; without one the tab
+  // behaves exactly as it did before.
+  if (!hasW) sheetState.rMode = 'serving';
+  const byW = hasW && sheetState.rMode === 'weight';
+  const u = foodUnit();
+  if (sheetState.rGrams == null) sheetState.rGrams = hasW ? Math.round(gTot/sv0) : 0;
+
+  const rate = hasW ? rateLabel(total, gTot) : '';
+  const prov = wSrc === 'weighed' ? 'weighed'
+    : wSrc === 'published' ? 'weight from the recipe'
+    : wSrc === 'estimated' ? 'cooked weight estimated' : '';
 
   out.innerHTML =
     '<div class="divider"></div>'+
     '<p style="margin:0 0 3px;font-size:15px;font-weight:600">'+escapeHTML(rec.name || 'Recipe')+'</p>'+
-    '<p class="note" style="margin:0 0 14px">'+escapeHTML([
+    '<p class="note" style="margin:0 0 10px">'+escapeHTML([
         rec.servingsText || (sv0+' servings'),
         total.toLocaleString()+' in total',
         per0.toLocaleString()+' a serving',
         rec.source, rec.basis].filter(Boolean).join(' \u00b7 '))+'</p>'+
-    '<div class="row" style="margin-bottom:12px">'+
-      '<div class="field" style="margin:0"><label>Makes</label>'+
-        '<input id="rsv" type="number" inputmode="numeric" min="1" step="1" value="'+sv0+'"></div>'+
-      '<div class="field" style="margin:0"><label>You had</label>'+
-        '<input id="rhad" type="number" inputmode="decimal" min="0" step="0.25" value="'+trimNum(sheetState.rEat)+'"></div>'+
-    '</div>'+
-    '<div class="chips">'+
-      [['\u00bc',0.25],['\u2153',1/3],['\u00bd',0.5],['1 serving',1],['2 servings',2],['Whole thing',sv0]]
-      .map(p=>'<button class="chip" data-v="'+p[1]+'">'+p[0]+'</button>').join('')+'</div>'+
+    (rate
+      ? '<p class="note" id="rrate" style="margin:-4px 0 12px;color:var(--ink)">'+
+        // The batch total is prose, not something you type into, so two decimal
+        // places of ounces would just be noise here.
+        '<b>'+escapeHTML(rate)+'</b> \u00b7 '+
+        escapeHTML(Math.round(toUnit(gTot,u)).toLocaleString()+' '+u)+' all in'+
+        (prov ? ' \u00b7 '+escapeHTML(prov) : '')+'</p>'
+      : '')+
+    // Always offered, whatever the recipe did or did not say. A number off a
+    // scale is the only one here that is not a guess, and it is the only way
+    // to get a rate at all when nothing could estimate one.
+    '<div class="field" style="margin:0 0 12px">'+
+      '<label for="rw">Weighed the finished dish? (optional)</label>'+
+      '<div class="row">'+
+        '<input id="rw" type="number" inputmode="decimal" min="0" step="'+(u==='oz'?'0.1':'1')+
+          '" placeholder="'+(u==='oz'?'65':'1850')+'" value="'+
+          (gWeighed ? fmtAmt(toUnit(gWeighed,u),u) : '')+'">'+
+        '<span style="flex:0 0 auto;color:var(--ink-dim);font-size:13px">'+u+'</span>'+
+      '</div></div>'+
+    (hasW
+      ? '<div class="chips">'+
+          '<button class="chip'+(!byW?' on':'')+'" id="rmS">By serving</button>'+
+          '<button class="chip'+(byW?' on':'')+'" id="rmW">By weight</button></div>'
+      : '')+
+    (byW
+      ? '<div class="row" style="margin-bottom:6px">'+
+          '<div class="field" style="margin:0"><label>You had</label>'+
+            '<input id="rg" type="number" inputmode="decimal" min="0" step="'+(u==='oz'?'0.1':'1')+
+              '" value="'+fmtAmt(toUnit(sheetState.rGrams,u),u)+'"></div>'+
+          '<div class="field" style="margin:0"><label>Unit</label>'+
+            '<select id="rgu"><option value="g"'+(u==='g'?' selected':'')+'>g</option>'+
+            '<option value="oz"'+(u==='oz'?' selected':'')+'>oz</option></select></div>'+
+        '</div>'+
+        '<p class="note" id="rAlt" style="margin:0 0 10px"></p>'+
+        '<div class="chips">'+
+          [['A serving',gTot/sv0],['Half the batch',gTot/2],['All of it',gTot]]
+          .map(p=>'<button class="chip" data-g="'+Math.round(p[1])+'">'+p[0]+'</button>').join('')+'</div>'
+      : '<div class="row" style="margin-bottom:12px">'+
+          '<div class="field" style="margin:0"><label>Makes</label>'+
+            '<input id="rsv" type="number" inputmode="numeric" min="1" step="1" value="'+sv0+'"></div>'+
+          '<div class="field" style="margin:0"><label>You had</label>'+
+            '<input id="rhad" type="number" inputmode="decimal" min="0" step="0.25" value="'+trimNum(sheetState.rEat)+'"></div>'+
+        '</div>'+
+        '<div class="chips">'+
+          [['\u00bc',0.25],['\u2153',1/3],['\u00bd',0.5],['1 serving',1],['2 servings',2],['Whole thing',sv0]]
+          .map(p=>'<button class="chip" data-v="'+p[1]+'">'+p[0]+'</button>').join('')+'</div>')+
     '<div style="display:flex;align-items:baseline;gap:8px;margin:4px 0 12px">'+
       '<span class="num" id="rcal" style="font-size:34px;font-weight:700">0</span>'+
       '<span style="color:var(--ink-dim);font-size:13px">calories</span></div>'+
     '<button class="cta" id="raddb">Add to '+sheetState.meal.name+'</button>'+
+    (wSrc === 'estimated'
+      ? '<p class="note">That batch weight is an estimate, so logging by weight is only as '+
+        'good as the guess. Put the dish on a scale and type the number in above to '+
+        'replace it.</p>' : '')+
     (rec.ingredients.length
       ? '<p class="note">From '+rec.ingredients.length+' ingredients: '+
         escapeHTML(rec.ingredients.slice(0,4).join('; '))+
         (rec.ingredients.length > 4 ? '\u2026' : '')+'</p>' : '');
 
-  const svEl = document.getElementById('rsv'), hadEl = document.getElementById('rhad');
-  // The total is fixed; cutting it into more or fewer servings just moves the
-  // per-serving figure, which is what you want when the yield was wrong.
-  const read = ()=>{
-    const s = Math.max(1, Math.round(Number(svEl.value)||1));
-    const had = Math.max(0, parseFloat(hadEl.value)||0);
-    return {s, had, cal: Math.round(total/s*had)};
+  if (hasW){
+    document.getElementById('rmS').onclick = ()=>{ sheetState.rMode='serving'; showRecipe(rec); };
+    document.getElementById('rmW').onclick = ()=>{ sheetState.rMode='weight';  showRecipe(rec); };
+  }
+
+  const wEl = document.getElementById('rw');
+  // Typing updates the rate in place; the structural bits — the mode chips
+  // appearing for the first time, the caveat going away — settle on blur, so
+  // the field does not lose focus mid-number.
+  wEl.oninput = ()=>{
+    const g = Math.max(0, fromUnit(parseFloat(wEl.value)||0, foodUnit()));
+    sheetState.rWeighed = Math.round(g);
+    const line = document.getElementById('rrate');
+    if (line && g > 0){
+      line.innerHTML = '<b>'+escapeHTML(rateLabel(total, g))+'</b> \u00b7 '+
+        escapeHTML(Math.round(toUnit(g,foodUnit())).toLocaleString()+' '+foodUnit())+
+        ' all in \u00b7 weighed';
+    }
   };
-  const upd = ()=>{ document.getElementById('rcal').textContent = read().cal.toLocaleString(); };
-  svEl.oninput = upd;
-  hadEl.oninput = ()=>{ sheetState.rEat = Math.max(0, parseFloat(hadEl.value)||0); upd(); };
-  out.querySelectorAll('.chip').forEach(c=>c.onclick = ()=>{
-    const v = Number(c.dataset.v);
-    hadEl.value = trimNum(v); sheetState.rEat = v; upd();
-  });
-  document.getElementById('raddb').onclick = ()=>{
-    const {s, had, cal} = read();
-    if (!had){ toast('Say how much of it you had'); return; }
-    addEntry({
-      name: rec.name || 'Recipe',
-      cal: cal,
-      portion: trimNum(had)+' of '+s+' serving'+(s === 1 ? '' : 's'),
-      src: rec.source ? 'Recipe \u00b7 '+rec.source : 'Recipe'
+  wEl.onchange = ()=>{ showRecipe(rec); };
+
+  const setCal = c=>{ document.getElementById('rcal').textContent = c.toLocaleString(); };
+
+  if (byW){
+    const gEl = document.getElementById('rg');
+    const read = ()=>{
+      const uu = foodUnit();
+      const g = Math.max(0, fromUnit(parseFloat(gEl.value)||0, uu));
+      return {g, cal: Math.round(total/gTot*g)};
+    };
+    const upd = ()=>{
+      const {g, cal} = read();
+      sheetState.rGrams = g;
+      setCal(cal);
+      document.getElementById('rAlt').textContent = g ? altWeight(g) : '';
+    };
+    gEl.oninput = upd;
+    // Switching units converts what is already typed, and sticks as the
+    // default, exactly as the portion picker does.
+    document.getElementById('rgu').onchange = e=>{
+      S.settings.foodUnit = e.target.value === 'oz' ? 'oz' : 'g';
+      touchProfile(); save(); showRecipe(rec);
+    };
+    out.querySelectorAll('.chip[data-g]').forEach(c=>c.onclick = ()=>{
+      sheetState.rGrams = Number(c.dataset.g);
+      gEl.value = fmtAmt(toUnit(sheetState.rGrams, foodUnit()), foodUnit());
+      upd();
     });
-  };
-  upd();
+    document.getElementById('raddb').onclick = ()=>{
+      const {g, cal} = read();
+      if (!g){ toast('Say how much of it you had'); return; }
+      addEntry({
+        name: rec.name || 'Recipe',
+        cal: cal,
+        portion: weightLabel(g, foodUnit()),
+        g: Math.round(g),
+        src: rec.source ? 'Recipe \u00b7 '+rec.source : 'Recipe'
+      });
+    };
+    upd();
+  } else {
+    const svEl = document.getElementById('rsv'), hadEl = document.getElementById('rhad');
+    // The total is fixed; cutting it into more or fewer servings just moves the
+    // per-serving figure, which is what you want when the yield was wrong.
+    const read = ()=>{
+      const s = Math.max(1, Math.round(Number(svEl.value)||1));
+      const had = Math.max(0, parseFloat(hadEl.value)||0);
+      return {s, had, cal: Math.round(total/s*had),
+              g: hasW ? Math.round(gTot/s*had) : 0};
+    };
+    const upd = ()=>setCal(read().cal);
+    svEl.oninput = upd;
+    hadEl.oninput = ()=>{ sheetState.rEat = Math.max(0, parseFloat(hadEl.value)||0); upd(); };
+    out.querySelectorAll('.chip[data-v]').forEach(c=>c.onclick = ()=>{
+      const v = Number(c.dataset.v);
+      hadEl.value = trimNum(v); sheetState.rEat = v; upd();
+    });
+    document.getElementById('raddb').onclick = ()=>{
+      const {s, had, cal, g} = read();
+      if (!had){ toast('Say how much of it you had'); return; }
+      const label = trimNum(had)+' of '+s+' serving'+(s === 1 ? '' : 's');
+      addEntry({
+        name: rec.name || 'Recipe',
+        cal: cal,
+        // The weight goes in the label too, so the rate survives a sync even
+        // though the sheet has nowhere to put the number.
+        portion: g ? label+' \u00b7 '+weightLabel(g, foodUnit()) : label,
+        g: g || undefined,
+        src: rec.source ? 'Recipe \u00b7 '+rec.source : 'Recipe'
+      });
+    };
+    upd();
+  }
 }
 
 /* ---------- custom ---------- */
@@ -2871,7 +3154,8 @@ function tabCustom(){
       const {grams, cal} = calc();
       if (!n || !cal){ toast('Needs a name, a rate and an amount'); return; }
       sheetState.cname = '';
-      addEntry({name:n, cal:cal, portion:weightLabel(grams, foodUnit()), src:'Custom'});
+      addEntry({name:n, cal:cal, portion:weightLabel(grams, foodUnit()),
+                g: Math.round(grams), src:'Custom'});
     };
   } else {
     document.getElementById('cadd').onclick = ()=>{
