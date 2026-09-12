@@ -495,6 +495,7 @@ header{padding:30px 0 4px}
   --raised:rgba(var(--tint-rgb),.14);
 }
 [data-glass="on"][data-theme="speed"]{
+  --plate:.62;
   --g-blur:22px; --g-sat:175%; --g-tint:.17; --g-rim:.55; --g-depth:.34;
   --tint-rgb:255,255,255; --rim-rgb:255,255,255; --hero-rgb:255,178,0;
   --ink:rgba(255,255,255,.96); --ink-dim:rgba(255,255,255,.72);
@@ -502,6 +503,7 @@ header{padding:30px 0 4px}
   --ink-on:#0B1030;
 }
 [data-glass="on"][data-theme="aqua"]{
+  --plate:.56;
   --g-blur:28px; --g-sat:195%; --g-tint:.12; --g-rim:.50; --g-depth:.42;
   --tint-rgb:186,240,250; --rim-rgb:206,248,255; --hero-rgb:240,160,42;
   --ink:rgba(232,250,252,.97); --ink-dim:rgba(190,232,240,.76);
@@ -509,6 +511,7 @@ header{padding:30px 0 4px}
   --ink-on:#06222C;
 }
 [data-glass="on"][data-theme="wick"]{
+  --plate:.50;
   --g-blur:17px; --g-sat:115%; --g-tint:.06; --g-rim:.40; --g-depth:.30;
   --tint-rgb:237,233,226; --rim-rgb:227,199,102; --hero-rgb:201,162,39;
   --ink:rgba(240,236,229,.95); --ink-dim:rgba(196,190,180,.72);
@@ -516,6 +519,7 @@ header{padding:30px 0 4px}
   --ink-on:#0B0B0D;
 }
 [data-glass="on"][data-theme="mania"]{
+  --plate:.62;
   --g-blur:20px; --g-sat:205%; --g-tint:.17; --g-rim:.60; --g-depth:.38;
   --tint-rgb:255,255,255; --rim-rgb:255,214,90; --hero-rgb:255,200,0;
   --ink:rgba(250,245,255,.97); --ink-dim:rgba(214,196,246,.78);
@@ -605,16 +609,59 @@ header{padding:30px 0 4px}
 /* ---- the three places --surface was load-bearing as an opaque colour.
    Left inheriting a transparent surface, each of these stops masking
    what scrolls under it. ---- */
-[data-glass="on"] .sheet-head{
-  background:linear-gradient(to bottom,rgba(var(--tint-rgb),calc(var(--g-tint) * 2.2)) 62%,transparent);
-  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+/* These two mask what scrolls under them, which on an opaque sheet was
+   one line: paint --surface over it. On glass it is harder, and the
+   obvious version is wrong in two visible ways.
+
+   backdrop-filter applies to the whole element box at full strength. It
+   does not follow the alpha of the background gradient painted on top of
+   it, so fading the gradient to transparent still leaves a hard-edged
+   rectangle of extra blur — a blocky pane floating over the sheet.
+
+   And .sheet-in pads its children 18px, so that rectangle stopped short
+   of the sheet's edges and drew two vertical seams down the sides.
+
+   So: a full-bleed pseudo-element that reaches past the padding, and a
+   mask on the layer itself, so the blur and the tint fade out together
+   and there is no edge anywhere to catch the eye. */
+[data-glass="on"] .sheet-head,[data-glass="on"] .stickysave{ background:none }
+[data-glass="on"] .griparea{
+  background:rgba(var(--tint-rgb),var(--plate));
+  -webkit-backdrop-filter:blur(14px) saturate(var(--g-sat));
+  backdrop-filter:blur(14px) saturate(var(--g-sat));
+}
+[data-glass="on"] .sheet-head::before,[data-glass="on"] .stickysave::before{
+  content:'';position:absolute;left:-18px;right:-18px;z-index:-1;pointer-events:none;
+  -webkit-backdrop-filter:blur(14px) saturate(var(--g-sat));
+  backdrop-filter:blur(14px) saturate(var(--g-sat));
+}
+/* The ramp has to be long enough to read as a fade rather than an edge.
+   At 16px it is neither: the eye resolves it as a line. These boxes
+   therefore extend well past the element they belong to, and the mask
+   holds full strength only over the text itself before spending the rest
+   of that distance getting to nothing. */
+[data-glass="on"] .sheet-head::before{
+  top:0;bottom:-72px;
+  background:rgba(var(--tint-rgb),var(--plate));
+  -webkit-mask-image:linear-gradient(to bottom,#000 0 42px,rgba(0,0,0,.5) 78px,
+                     rgba(0,0,0,.16) 100px,transparent 122px);
+  mask-image:linear-gradient(to bottom,#000 0 42px,rgba(0,0,0,.5) 78px,
+             rgba(0,0,0,.16) 100px,transparent 122px);
 }
 [data-glass="on"] .stickysave{
-  background:linear-gradient(to top,rgba(var(--tint-rgb),calc(var(--g-tint) * 2.4)) 58%,transparent);
-  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+  bottom:calc(-20px - env(safe-area-inset-bottom,0px));
+  padding-bottom:calc(6px + 20px + env(safe-area-inset-bottom,0px));
+}
+[data-glass="on"] .stickysave::before{
+  top:-96px;bottom:0;
+  background:rgba(var(--tint-rgb),var(--plate));
+  -webkit-mask-image:linear-gradient(to top,#000 0 96px,rgba(0,0,0,.5) 132px,
+                     rgba(0,0,0,.16) 154px,transparent 176px);
+  mask-image:linear-gradient(to top,#000 0 96px,rgba(0,0,0,.5) 132px,
+             rgba(0,0,0,.16) 154px,transparent 176px);
 }
 [data-glass="on"] .tline b{
-  background:rgba(var(--tint-rgb),calc(var(--g-tint) * 2.4)); color:var(--ink);
+  background:rgba(var(--tint-rgb),var(--plate)); color:var(--ink);
   -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
   border-radius:4px; padding:0 5px;
 }
