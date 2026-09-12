@@ -1053,6 +1053,33 @@ async function doPush(full){
      a refusal. */
   const body = JSON.stringify(payload);
   let landed = false, err = 'Could not reach the relay', refused = false;
+
+  if (isRTDB(S.settings.syncUrl)){
+    /* One multi-path PATCH at the root. Firebase applies it atomically, so the
+       row-at-a-time write and the script lock that serialised it both go away
+       — there is no "Busy" to come back from. */
+    const patch = {};
+    ch.entries.forEach(r=>{ if (rtdbKeyOK(r.id))   patch['entries/'+r.id]  = r; });
+    ch.library.forEach(r=>{ if (rtdbKeyOK(r.id))   patch['library/'+r.id]  = r; });
+    ch.days.forEach(r=>{    if (rtdbKeyOK(r.date)) patch['days/'+r.date]   = r; });
+    if (ch.profile) patch['profile'] = ch.profile;
+    patch['summary'] = payload.summary;
+    try {
+      const r = await fetch(dbURL('/'), {
+        method:'PATCH',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(patch)
+      });
+      if (r.ok) landed = true;
+      else {
+        let d = null; try { d = await r.json(); } catch(e){}
+        err = (d && d.error) || ('Firebase returned '+r.status);
+        // 4xx is a considered no — wrong secret, rules, bad shape. Retrying
+        // won't change it, and the cursor must not move.
+        refused = r.status >= 400 && r.status < 500;
+      }
+    } catch(e){ err = 'Could not reach Firebase'; }
+  } else
   for (const url of pushURLs()){
     try {
       // text/plain keeps this a "simple" request, which avoids the CORS
@@ -1105,11 +1132,71 @@ function syncURLs(qs){
   if (!px) return [direct];
   return [direct, px.endsWith('=') ? px + encodeURIComponent(direct) : px + direct];
 }
+/* ---------- transport ---------- */
+/* The relay was always dumb storage: collectChanges, mergeRemote, the
+   tombstones and the cursor discipline never cared what was on the other end.
+   So Firebase is a second transport under the same protocol, picked by
+   hostname. Paste an /exec URL back into the field and you are on the old
+   backend again, which is also how a rollback works. */
+function isRTDB(u){
+  return /\/\/[^/]*\.(firebaseio\.com|firebasedatabase\.app)/i.test(String(u||''));
+}
+function dbRoot(){
+  return String(S.settings.syncUrl||'').trim().replace(/\/+$/,'').replace(/\.json$/i,'');
+}
+function dbURL(path, qs){
+  return dbRoot()+path+'.json?'+(qs ? qs+'&' : '')+
+         'auth='+encodeURIComponent(S.settings.syncToken||'');
+}
+/* Firebase rejects the entire write if any key holds one of these, so a single
+   malformed id would take a whole push down with it — and since the cursor
+   only advances on acceptance, it would take every later push down too. Drop
+   the record and let the rest land. */
+function rtdbKeyOK(k){ return !!k && !/[.$#[\]/\u0000-\u001f\u007f]/.test(String(k)); }
+/* Google's clock, to the second, out of a header the browser lets us read
+   cross-origin. Keeps the pull cursor on server time the way the relay's
+   own `now` did, instead of quietly switching it to the phone's. */
+function serverNow(r){
+  const t = Date.parse((r.headers && r.headers.get('Date')) || '');
+  return isFinite(t) ? t : Date.now();
+}
+
 async function pullSync(){
   if (!S.settings.syncUrl) return false;
   const qs = 'token='+encodeURIComponent(S.settings.syncToken||'')+
              '&op=pull&since='+(S.sync.lastPull||0);
   let data = null, err = 'Could not reach the relay';
+
+  if (isRTDB(S.settings.syncUrl)){
+    /* Three queried reads in parallel plus the profile node. Needs
+       ".indexOn": "updated" on entries, library and days in the rules, or
+       Firebase answers 400 rather than scanning. */
+    const q = 'orderBy=%22updated%22&startAt='+(S.sync.lastPull||0);
+    try {
+      const [re, rl, rd, rp] = await Promise.all([
+        fetch(dbURL('/entries', q)),
+        fetch(dbURL('/library', q)),
+        fetch(dbURL('/days', q)),
+        fetch(dbURL('/profile'))
+      ]);
+      const bad = [re, rl, rd, rp].find(x=>!x.ok);
+      if (bad){
+        let j = null; try { j = await bad.json(); } catch(e){}
+        err = (j && j.error) || ('Firebase returned '+bad.status);
+      } else {
+        // Firebase hands back an object keyed by id; the merge wants a list.
+        const vals = o => (o && typeof o === 'object') ? Object.values(o) : [];
+        data = {
+          ok: true,
+          entries: vals(await re.json()),
+          library: vals(await rl.json()),
+          days:    vals(await rd.json()),
+          profile: await rp.json(),
+          now: serverNow(re)
+        };
+      }
+    } catch(e){ err = 'Could not reach Firebase'; }
+  } else
   for (const url of syncURLs(qs)){
     try {
       const r = await fetch(url, {headers:{'Accept':'application/json'}});
@@ -3581,9 +3668,9 @@ function openSettings(){
     '<p class="note">The USDA search URL gets appended to whatever you put here. End the prefix with <code>=</code> and it will be URL-encoded for you; end it with <code>/</code> and it is passed through raw.</p>'+
     '<p class="note">Keys are stored only in this browser and are sent straight to USDA and Anthropic. Nothing goes anywhere else.</p>'+
 
-    '<div class="divider"><h3>Home screen widget</h3></div>'+
-    '<div class="field"><label>Apps Script web app URL</label><input id="su" value="'+escapeHTML(s.syncUrl)+'" placeholder="https://script.google.com/macros/s/…/exec" autocomplete="off"></div>'+
-    '<div class="field"><label>Shared secret</label><input id="st" value="'+escapeHTML(s.syncToken)+'" placeholder="any word you also put in the script" autocomplete="off"></div>'+
+    '<div class="divider"><h3>Sync</h3></div>'+
+    '<div class="field"><label>Sync URL</label><input id="su" value="'+escapeHTML(s.syncUrl)+'" placeholder="https://…-default-rtdb.firebasedatabase.app" autocomplete="off"></div>'+
+    '<div class="field"><label>Secret</label><input id="st" value="'+escapeHTML(s.syncToken)+'" placeholder="Firebase database secret" autocomplete="off"></div>'+
     '<p class="note">Leave both blank and everything still works — you just won\u2019t get the widget. Setup is in <b>widget-setup.md</b>.</p>'+
     (s.syncUrl ? '<p class="note" id="syncNote"></p>'+
       '<button class="cta ghost" id="testSync" style="margin-top:6px">Sync now</button>'+
@@ -3727,7 +3814,8 @@ function openSettings(){
       el.innerHTML = S.sync.err
         ? '<b style="color:var(--over)">'+escapeHTML(S.sync.err)+'</b>'
         : (S.sync.at ? 'Last synced '+new Date(S.sync.at).toLocaleTimeString()+'.' : 'Not synced yet.')+
-          ' Your log and saved meals travel between devices; API keys stay on this one.';
+          ' Using '+(isRTDB(S.settings.syncUrl) ? 'Firebase' : 'Apps Script')+
+          '. Your log and saved meals travel between devices; API keys stay on this one.';
     };
     syncNote();
     test.onclick = async ()=>{
