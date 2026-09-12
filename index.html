@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Cinzel:wght@500;700;900&family=Jost:wght@400;500;600&family=Saira:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Cinzel:wght@500;700;900&family=Outfit:wght@500;600;700&family=Saira:wght@600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    Themes
@@ -86,62 +86,63 @@
   --scrim:rgba(7,10,34,.55);
 }
 
-/* ---------- Dune ---------- */
-/* Spice on black. The browns are gone; what is left is a near-neutral dark
-   and one hot amber, so the palette reads architectural instead of muddy. */
-[data-theme="dune"]{
-  --bar-track:rgba(255,255,255,.30);
-  --good:#A9C25C;
-  --radius:6px;
-  --panel-radius:8px;
-  --strip-h:3px;
-  --bg:#131110;
-  --surface:#1A1714;
-  --surface-2:#2B241C;
-  --raised:#221D18;
-  --line:#3B332A;
-  --ink:#F4E7CB;
-  --ink-on:#141009;
-  --ink-dim:#C4AE86;
-  --ink-faint:#93815F;
-  --breakfast:#F3C969;
-  --lunch:#A9C25C;
-  --dinner:#5FA8C7;
-  --snacks:#E2703C;
-  --accent:#FF9E1B;
-  --over:#F2452B;
-  --page:#0A0806;
+/* ---------- Aquaman ---------- */
+/* The trench looking up. Cold deep water below, one shaft of surface light
+   entering from above, and Atlantean gold as the only warm thing in frame.
+   Built for glass: depth and refraction are the subject, not a finish. */
+[data-theme="aqua"]{
+  --bar-track:rgba(160,225,240,.22);
+  --good:#2FD4A0;
+  --radius:14px;
+  --panel-radius:22px;
+  --strip-h:4px;
+  --bg:#0A212B;
+  --surface:#0E2732;
+  --surface-2:#17404F;
+  --raised:#12323F;
+  --line:#1F4A5B;
+  --ink:#E4F7F6;
+  --ink-on:#06222C;
+  --ink-dim:#93C4CC;
+  --ink-faint:#5F8F9C;
+  --breakfast:#F5B942;
+  --lunch:#2FD4A0;
+  --dinner:#35B8F0;
+  --snacks:#FF5C47;
+  --accent:#F0A02A;
+  --over:#FF4D3D;
+  --page:#041219;
   --page-bg:
-    radial-gradient(120% 62% at 50% 104%, rgba(255,158,27,.34) 0%, rgba(255,158,27,0) 62%),
-    radial-gradient(90% 50% at 50% 0%, rgba(95,168,199,.14) 0%, rgba(95,168,199,0) 60%),
-    linear-gradient(178deg,#0A0806 0%,#15100A 54%,#2A1A08 100%);
-  --strip:linear-gradient(90deg,rgba(255,158,27,0) 0%,#FF9E1B 50%,rgba(255,158,27,0) 100%);
+    radial-gradient(88% 44% at 46% -6%, rgba(180,240,255,.42) 0%, rgba(120,215,240,.10) 46%, rgba(120,215,240,0) 72%),
+    radial-gradient(70% 40% at 84% 12%, rgba(240,160,42,.16) 0%, rgba(240,160,42,0) 62%),
+    linear-gradient(178deg,#0C4358 0%,#072836 44%,#041219 78%,#020A0F 100%);
+  --strip:linear-gradient(90deg,#35B8F0 0%,#2FD4A0 42%,#F0A02A 100%);
   --strip-size:100% 100%;
-  --hero:linear-gradient(118deg,#FFB53C 0%,#FF9E1B 50%,#E2703C 100%);
-  --hero-ink:#1A1206;
-  --hero-streak:linear-gradient(258deg, rgba(255,255,255,.2) 0%, rgba(255,255,255,0) 62%);
+  --hero:linear-gradient(118deg,#F7C45A 0%,#F0A02A 52%,#D8722A 100%);
+  --hero-ink:#10242B;
+  --hero-streak:linear-gradient(258deg, rgba(255,255,255,.26) 0%, rgba(255,255,255,0) 62%);
   --big-shadow:none;
-  --cta:linear-gradient(180deg,#E2703C 0%,#B04617 100%);
-  --cta-ink:#FFF3E2;
-  --toast:linear-gradient(180deg,#241E18 0%,#14100C 100%);
-  --toast-ink:#FFB53C;
-  --warn-bg:#33150E;
-  --warn-ink:#FFB29B;
-  --combo-bg:#2C1F11;
-  --display:Jost,Archivo,sans-serif;
-  --display-weight:500;
-  --display-track:.24em;
+  --cta:linear-gradient(180deg,#F0A02A 0%,#C4711A 100%);
+  --cta-ink:#0E2732;
+  --toast:linear-gradient(180deg,#123643 0%,#081E27 100%);
+  --toast-ink:#E4F7F6;
+  --warn-bg:#3A1512;
+  --warn-ink:#FFB3A6;
+  --combo-bg:#123A3C;
+  --display:Outfit,Archivo,sans-serif;
+  --display-weight:600;
+  --display-track:.16em;
   --border-w:1px;
   --panel-border:1px;
-  --lift:0 0 0 rgba(0,0,0,0);
-  --panel-lift:0 24px 52px rgba(0,0,0,.55);
-  --press:brightness(1.3);
+  --lift:0 1px 3px rgba(2,14,22,.5);
+  --panel-lift:0 26px 56px rgba(2,14,22,.62);
+  --press:brightness(1.25);
   --rule:1px solid var(--line);
   --meal-rule:1px solid var(--line);
   --seg-gloss:none;
-  --seg-edge:rgba(20,16,9,.55);
+  --seg-edge:rgba(6,34,44,.5);
   --bar-gloss:none;
-  --scrim:rgba(6,4,2,.78);
+  --scrim:rgba(2,12,18,.72);
 }
 
 /* ---------- John Wick ---------- */
@@ -442,7 +443,7 @@ header{padding:30px 0 4px}
 .swatch{display:flex;height:24px;border-radius:6px;overflow:hidden;border:1px solid var(--ink)}
 .swatch i{flex:1}
 .swatch.t-speed i:nth-child(1){background:#FFB000}.swatch.t-speed i:nth-child(2){background:#00B4F0}.swatch.t-speed i:nth-child(3){background:#FF2D87}
-.swatch.t-dune i:nth-child(1){background:#FF9E1B}.swatch.t-dune i:nth-child(2){background:#E2703C}.swatch.t-dune i:nth-child(3){background:#141210}
+.swatch.t-aqua i:nth-child(1){background:#F0A02A}.swatch.t-aqua i:nth-child(2){background:#35B8F0}.swatch.t-aqua i:nth-child(3){background:#062430}
 .swatch.t-wick i:nth-child(1){background:#C9A227}.swatch.t-wick i:nth-child(2){background:#17171A}.swatch.t-wick i:nth-child(3){background:#9B1B24}
 .swatch.t-mania i:nth-child(1){background:#FFC800}.swatch.t-mania i:nth-child(2){background:#FF2D9E}.swatch.t-mania i:nth-child(3){background:#1D1434}
 
@@ -462,18 +463,195 @@ header{padding:30px 0 4px}
 
 /* Display faces sit at different optical sizes, so the hero number and the
    headings get trued up per theme rather than sharing one size. */
-[data-theme="wick"] .remain .big,[data-theme="dune"] .remain .big{font-size:44px}
-[data-theme="dune"] .remain .big{letter-spacing:.1em}
+[data-theme="wick"] .remain .big,[data-theme="aqua"] .remain .big{font-size:44px}
+[data-theme="aqua"] .remain .big{letter-spacing:.06em}
 [data-theme="mania"] .remain .big{font-size:58px}
 [data-theme="mania"] .datenav h1,[data-theme="mania"] .sheet-head h2{font-size:17px}
 [data-theme="mania"] .meal-name{font-size:13.5px}
 [data-theme="mania"] .trend h2,[data-theme="mania"] .divider h3,
 [data-theme="mania"] .themecard .tname{font-size:13px}
-[data-theme="wick"] .wrap,[data-theme="dune"] .wrap{border-radius:6px}
-[data-theme="wick"] .sheet,[data-theme="dune"] .sheet{border-radius:6px 6px 0 0}
+[data-theme="wick"] .wrap{border-radius:6px}
+[data-theme="wick"] .sheet{border-radius:6px 6px 0 0}
+
+/* ============================================================
+   LIQUID GLASS
+   ------------------------------------------------------------
+   An orthogonal material axis, not a fifth theme. Every rule below
+   is gated on [data-glass="on"], so with the switch off nothing in
+   this file applies and the four themes render exactly as they did
+   before it existed. Each theme declares its own five numbers,
+   because the tint a near-black theme needs and the tint a white
+   theme needs are not the same tint.
+
+   What glass forces, and why these blocks are longer than five
+   numbers: the app uses --ink for both text and borders. On glass,
+   text wants to be near-white and borders want to be a faint rim,
+   so every bordered control needs its border named separately.
+   ============================================================ */
+[data-glass="on"]{
+  --glass:rgba(var(--tint-rgb),var(--g-tint));
+  --rim:rgba(var(--rim-rgb),var(--g-rim));
+  --rim-low:rgba(var(--rim-rgb),calc(var(--g-rim) * .28));
+  --raised:rgba(var(--tint-rgb),.14);
+}
+[data-glass="on"][data-theme="speed"]{
+  --g-blur:22px; --g-sat:175%; --g-tint:.17; --g-rim:.55; --g-depth:.34;
+  --tint-rgb:255,255,255; --rim-rgb:255,255,255; --hero-rgb:255,178,0;
+  --ink:rgba(255,255,255,.96); --ink-dim:rgba(255,255,255,.72);
+  --ink-faint:rgba(255,255,255,.48); --line:rgba(255,255,255,.14);
+  --ink-on:#0B1030;
+}
+[data-glass="on"][data-theme="aqua"]{
+  --g-blur:28px; --g-sat:195%; --g-tint:.12; --g-rim:.50; --g-depth:.42;
+  --tint-rgb:186,240,250; --rim-rgb:206,248,255; --hero-rgb:240,160,42;
+  --ink:rgba(232,250,252,.97); --ink-dim:rgba(190,232,240,.76);
+  --ink-faint:rgba(160,210,222,.52); --line:rgba(170,225,238,.15);
+  --ink-on:#06222C;
+}
+[data-glass="on"][data-theme="wick"]{
+  --g-blur:17px; --g-sat:115%; --g-tint:.06; --g-rim:.40; --g-depth:.30;
+  --tint-rgb:237,233,226; --rim-rgb:227,199,102; --hero-rgb:201,162,39;
+  --ink:rgba(240,236,229,.95); --ink-dim:rgba(196,190,180,.72);
+  --ink-faint:rgba(150,145,136,.62); --line:rgba(227,199,102,.13);
+  --ink-on:#0B0B0D;
+}
+[data-glass="on"][data-theme="mania"]{
+  --g-blur:20px; --g-sat:205%; --g-tint:.17; --g-rim:.60; --g-depth:.38;
+  --tint-rgb:255,255,255; --rim-rgb:255,214,90; --hero-rgb:255,200,0;
+  --ink:rgba(250,245,255,.97); --ink-dim:rgba(214,196,246,.78);
+  --ink-faint:rgba(168,150,206,.56); --line:rgba(255,255,255,.13);
+  --ink-on:#150B2A;
+}
+
+/* Someone who has asked the OS to cut transparency gets solid surfaces,
+   not a slightly-less-blurry version of the same thing. */
+@media (prefers-reduced-transparency: reduce){
+  [data-glass="on"]{ --g-blur:0px; --g-tint:.96; }
+  [data-glass="on"] .caustic{ display:none }
+}
+@media (prefers-reduced-motion: reduce){ .caustic{ animation:none !important } }
+
+/* ---- the panel ---- */
+[data-glass="on"] .wrap{
+  background:var(--glass);
+  -webkit-backdrop-filter:blur(var(--g-blur)) saturate(var(--g-sat));
+  backdrop-filter:blur(var(--g-blur)) saturate(var(--g-sat));
+  border-color:var(--rim-low);
+  box-shadow:0 18px 46px rgba(2,6,20,var(--g-depth));
+}
+/* ::before is already the strip, so the specular rim takes ::after. */
+[data-glass="on"] .wrap::after{
+  content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  padding:1px;z-index:3;
+  background:linear-gradient(150deg,var(--rim) 0%,rgba(255,255,255,0) 38%,
+             rgba(255,255,255,0) 72%,rgba(var(--rim-rgb),calc(var(--g-rim) * .5)) 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);
+  -webkit-mask-composite:xor; mask-composite:exclude;
+}
+[data-glass="on"] .wrap::before{ border-bottom:none }
+
+/* ---- the hero band: the theme's warm gradient as a tint, not a fill ---- */
+[data-glass="on"] .hero{
+  background:linear-gradient(118deg,rgba(var(--hero-rgb),.36) 0%,
+             rgba(var(--hero-rgb),.17) 58%,rgba(var(--hero-rgb),.07) 100%);
+  border-top-color:var(--rim-low); border-bottom-color:var(--line);
+}
+[data-glass="on"] .remain .big,[data-glass="on"] .mathline b{ color:var(--ink) }
+[data-glass="on"] .remain .cap,[data-glass="on"] .mathline{ color:var(--ink-dim); opacity:1 }
+[data-glass="on"] .remain.over .big{ color:var(--over) }
+[data-glass="on"] .bar{ box-shadow:inset 0 1px 2px rgba(0,0,0,.25),inset 0 0 0 1px var(--rim-low) }
+
+/* ---- every control that drew a 1px --ink border ---- */
+[data-glass="on"] .arrow,[data-glass="on"] .chip,[data-glass="on"] .qchip,
+[data-glass="on"] .addbtn,[data-glass="on"] .savemeal,[data-glass="on"] .dot,
+[data-glass="on"] .tbar,[data-glass="on"] .tabs,[data-glass="on"] .camera,
+[data-glass="on"] .shot,[data-glass="on"] .themecard,[data-glass="on"] .swatch,
+[data-glass="on"] input,[data-glass="on"] select,[data-glass="on"] textarea{
+  border-color:var(--rim-low);
+}
+[data-glass="on"] .gear,[data-glass="on"] .addbtn .plus{ border-color:transparent }
+[data-glass="on"] .qchip,[data-glass="on"] .addbtn,[data-glass="on"] .chip,
+[data-glass="on"] .savemeal,[data-glass="on"] .camera{
+  -webkit-backdrop-filter:blur(8px) saturate(140%);
+  backdrop-filter:blur(8px) saturate(140%);
+}
+[data-glass="on"] .chip.on,[data-glass="on"] .tab.on{
+  background:rgba(var(--tint-rgb),.9); color:var(--ink-on); border-color:transparent;
+}
+[data-glass="on"] .themecard.on{ border-color:var(--rim) }
+[data-glass="on"] .iconbtn.on svg{ stroke:none }
+
+/* ---- floating chrome: the blur goes on a child, never on the fixed
+   element itself, which is what tints Safari's own toolbar on iOS 26 ---- */
+[data-glass="on"] .sheet{ background:transparent; border-top-color:var(--rim) }
+[data-glass="on"] .sheet::after{
+  content:'';position:absolute;inset:0;z-index:0;border-radius:inherit;
+  background:var(--glass);
+  -webkit-backdrop-filter:blur(var(--g-blur)) saturate(var(--g-sat));
+  backdrop-filter:blur(var(--g-blur)) saturate(var(--g-sat));
+}
+[data-glass="on"] .sheet > *{ position:relative; z-index:1 }
+[data-glass="on"] .toast{
+  background:rgba(var(--tint-rgb),calc(var(--g-tint) + .1)); color:var(--ink);
+  border-color:var(--rim-low);
+  -webkit-backdrop-filter:blur(18px) saturate(160%);
+  backdrop-filter:blur(18px) saturate(160%);
+}
+[data-glass="on"] .toast button{ color:var(--ink) }
+[data-glass="on"] .scrim{
+  -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px);
+}
+
+/* ---- the three places --surface was load-bearing as an opaque colour.
+   Left inheriting a transparent surface, each of these stops masking
+   what scrolls under it. ---- */
+[data-glass="on"] .sheet-head{
+  background:linear-gradient(to bottom,rgba(var(--tint-rgb),calc(var(--g-tint) * 2.2)) 62%,transparent);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+}
+[data-glass="on"] .stickysave{
+  background:linear-gradient(to top,rgba(var(--tint-rgb),calc(var(--g-tint) * 2.4)) 58%,transparent);
+  -webkit-backdrop-filter:blur(10px); backdrop-filter:blur(10px);
+}
+[data-glass="on"] .tline b{
+  background:rgba(var(--tint-rgb),calc(var(--g-tint) * 2.4)); color:var(--ink);
+  -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
+  border-radius:4px; padding:0 5px;
+}
+
+/* ---- caustics: Aquaman only, and only on glass ----
+   Two independent layers. They have to be separate elements: on one
+   element with two background layers they drift in lockstep and the
+   interference between them — the thing that reads as light through
+   water — never happens.
+
+   Tiles are sized in absolute px. A percentage size on a full-bleed
+   fixed element stretches a square turbulence field to the viewport's
+   aspect ratio, which on a phone is worse than 2:1 vertical smear, and
+   smeared turbulence loses its filaments and reads as low-resolution
+   blobs. stitchTiles in the filter makes the tiles join without a seam,
+   so repeating at native size costs nothing.
+
+   Translate only, never scale: a scaled layer is rasterized once at its
+   pre-transform size and then blown up by the compositor, which is real
+   resolution loss on a 3x screen. */
+.caustic{
+  position:fixed;inset:-30%;z-index:-1;pointer-events:none;display:none;
+  mix-blend-mode:screen;will-change:transform;
+}
+[data-glass="on"][data-theme="aqua"] .caustic{ display:block }
+#caustics { background-image:var(--caustic-a); background-size:300px 300px;
+            opacity:.42; animation:driftA 34s linear infinite }
+#caustics2{ background-image:var(--caustic-b); background-size:194px 194px;
+            opacity:.3;  animation:driftB 47s linear infinite }
+@keyframes driftA{ from{transform:translate3d(0,0,0)} to{transform:translate3d(300px,-300px,0)} }
+@keyframes driftB{ from{transform:translate3d(0,0,0)} to{transform:translate3d(-194px,-388px,0)} }
 </style>
 </head>
 <body>
+
+<div id="caustics" class="caustic"></div>
+<div id="caustics2" class="caustic"></div>
 
 <div class="wrap">
   <header>
@@ -554,7 +732,8 @@ const DEFAULTS = {
   usdaKey:'', anthropicKey:'',
   model:'claude-haiku-4-5-20251001',
   proxy:'',                  // optional CORS proxy prefix
-  theme:'speed',             // 'speed' | 'dune' | 'wick' | 'mania'
+  theme:'speed',             // 'speed' | 'aqua' | 'wick' | 'mania'
+  glass:true,                // Liquid Glass material, orthogonal to the theme
   unitSystem:'imperial',     // 'imperial' (ft/in/lb) or 'metric'  — your body stats
   foodUnit:'g',              // 'g' or 'oz' — which weight leads when logging food
   syncUrl:'', syncToken:''   // optional, powers the iOS widget
@@ -566,7 +745,7 @@ let S = { settings:{...DEFAULTS}, days:{}, saved:[], combos:[],
 
 /* Body stats sync between devices. Keys and the proxy stay local on purpose:
    they're per-device secrets and the relay is only guarded by a shared word. */
-const PROFILE_KEYS = ['sex','age','heightCm','weightKg','goalDelta','baseMode','manualBase','unitSystem','foodUnit','theme'];
+const PROFILE_KEYS = ['sex','age','heightCm','weightKg','goalDelta','baseMode','manualBase','unitSystem','foodUnit','theme','glass'];
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function stampNew(e){ return {...e, id:uid(), up:Date.now()}; }
 /* Always move a record's clock forward. A device whose clock runs ahead can
@@ -587,7 +766,7 @@ let sheetState = null;
    ============================================================ */
 const THEMES = [
   {id:'speed', name:'Speed Racer', blurb:'Neon telemetry on white. Hairline rules.', chrome:'#2E4FB0'},
-  {id:'dune',  name:'Dune',        blurb:'Hot spice on near-black. Wide capitals.', chrome:'#0C0906'},
+  {id:'aqua',  name:'Aquaman',     blurb:'The trench looking up. Deep water, Atlantean gold.', chrome:'#072836'},
   {id:'wick',  name:'John Wick',   blurb:'The Continental after hours. Black, gold, one red.', chrome:'#0B0B0D'},
   {id:'mania', name:'WrestleMania',blurb:'Arena lights. Gold and hot pink on violet.', chrome:'#45148A'}
 ];
@@ -602,15 +781,15 @@ const COPY = {
     noMeals:'No saved meals yet.', noFoods:'Nothing saved yet.',
     synced:'Synced', trend:'Last 7 days'
   },
-  dune: {
-    left:'remaining of', over:'past the ration',
-    added:(n,m)=>n+' recorded to '+m, removed:n=>'Struck '+n+' from the record',
-    saved:'Committed to memory', unsaved:'Released',
-    savedMeal:'Ration recorded', addTo:m=>'Record to '+m,
-    addFood:'Record intake', saveMeal:'Keep ration', savedMealsHead:'Keep this ration',
-    recentHead:'Known provisions', recentEmpty:'What you consume is remembered. Nothing yet.',
-    noMeals:'No rations kept yet.', noFoods:'Nothing committed yet.',
-    synced:'The record agrees', trend:'The last seven days'
+  aqua: {
+    left:'remaining of', over:'past the line',
+    added:(n,m)=>n+' stowed under '+m, removed:n=>n+' thrown back',
+    saved:'Kept aboard', unsaved:'Let go',
+    savedMeal:'Stores logged', addTo:m=>'Stow under '+m,
+    addFood:'Take aboard', saveMeal:'Log the stores', savedMealsHead:'Log these stores',
+    recentHead:'In the hold', recentEmpty:'Take something aboard and it turns up here next time.',
+    noMeals:'Nothing in the stores yet.', noFoods:'Nothing kept aboard yet.',
+    synced:'Soundings agree', trend:'The last seven days'
   },
   wick: {
     left:'remaining of', over:'over the marker',
@@ -633,9 +812,16 @@ const COPY = {
     synced:'Synced', trend:'Last 7 days'
   }
 };
+/* Dune was retired in favour of Aquaman. The mapping lives here rather
+   than only in a one-time migration because profile sync is last-write-
+   wins: a device still running the old build will keep pushing 'dune'
+   back at us, and falling through to 'speed' would silently take the
+   theme away every time it did. */
 function themeId(){
-  return THEMES.some(t=>t.id === S.settings.theme) ? S.settings.theme : 'speed';
+  const want = S.settings.theme === 'dune' ? 'aqua' : S.settings.theme;
+  return THEMES.some(t=>t.id === want) ? want : 'speed';
 }
+function glassOn(){ return S.settings.glass !== false; }
 function T(key, ...args){
   const v = (COPY[themeId()] || COPY.speed)[key];
   if (v === undefined) return (COPY.speed[key] !== undefined ? COPY.speed[key] : '');
@@ -644,10 +830,31 @@ function T(key, ...args){
 function applyTheme(){
   const id = themeId();
   document.documentElement.setAttribute('data-theme', id);
+  document.documentElement.setAttribute('data-glass', glassOn() ? 'on' : 'off');
   const meta = document.querySelector('meta[name="theme-color"]');
   const t = THEMES.find(x=>x.id === id);
   if (meta && t) meta.setAttribute('content', t.chrome);
 }
+
+/* Aquaman's caustics. Two turbulence fields at different frequencies;
+   stitchTiles lets each tile seamlessly at its native size, so the CSS
+   repeats them 1:1 instead of stretching one copy across the screen.
+   The feColorMatrix pulls a hard alpha ramp out of the noise, which is
+   what turns a cloud into thin bright filaments rather than blobs. */
+function causticTexture(freq, octaves, seed, rgb, slope, lift, size){
+  return "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='" + size +
+    "' height='" + size + "'%3E%3Cfilter id='c' x='0%25' y='0%25' width='100%25' height='100%25'%3E" +
+    "%3CfeTurbulence type='fractalNoise' baseFrequency='" + freq + "' numOctaves='" + octaves +
+    "' seed='" + seed + "' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='" +
+    "0 0 0 0 " + rgb[0] + " 0 0 0 0 " + rgb[1] + " 0 0 0 0 " + rgb[2] + " 0 0 0 " + slope + " " + lift +
+    "'/%3E%3C/filter%3E%3Crect width='" + size + "' height='" + size +
+    "' filter='url(%23c)'/%3E%3C/svg%3E\")";
+}
+(function(){
+  const r = document.documentElement.style;
+  r.setProperty('--caustic-a', causticTexture('0.026', 3, 5,  [0.62,0.93,1.0],  -2.4, 1.22, 300));
+  r.setProperty('--caustic-b', causticTexture('0.042', 2, 11, [0.78,1.0,0.94], -2.9, 1.34, 194));
+})();
 
 /* ---------- dates ---------- */
 function todayKey(d){
@@ -1065,6 +1272,8 @@ function hydrate(){
   });
   const token = cleanToken(S.settings.syncToken);
   if (token !== S.settings.syncToken){ S.settings.syncToken = token; dirty = true; }
+  // Retired theme: rewrite it once so this device stops pushing it around.
+  if (S.settings.theme === 'dune'){ S.settings.theme = 'aqua'; dirty = true; }
   const stamp = 1;   // oldest possible, so any synced edit wins over untracked history
   Object.keys(S.days).forEach(dk=>{
     const d = S.days[dk];
@@ -3299,6 +3508,14 @@ function openSettings(){
       '<span class="tblurb">'+escapeHTML(t.blurb)+'</span></button>').join('')+'</div>'+
     '<p class="note">Changes the colours, the type and the words. It travels to your other devices with the rest of your profile.</p>'+
 
+    '<div class="field" style="margin-top:14px"><label>Material</label>'+
+      '<div class="chips" style="margin:0">'+
+      '<button class="chip'+(glassOn()?' on':'')+'" id="glOn">Glass</button>'+
+      '<button class="chip'+(glassOn()?'':' on')+'" id="glOff">Solid</button></div>'+
+      '<p class="note" style="margin-top:8px">Glass frosts the panel so the background shows through it. '+
+      'Solid is the flat version of the same theme. If you have asked iOS to reduce transparency, '+
+      'you get solid either way.</p></div>'+
+
     '<div class="divider"><h3>Daily base</h3></div>'+
     '<div class="chips"><button class="chip'+(s.baseMode!=='manual'?' on':'')+'" id="sCalc">Work it out for me</button>'+
       '<button class="chip'+(s.baseMode==='manual'?' on':'')+'" id="sMan">Set my own</button></div>'+
@@ -3362,6 +3579,15 @@ function openSettings(){
   });
   document.getElementById('fwG').onclick  = ()=>fwSet('g');
   document.getElementById('fwOz').onclick = ()=>fwSet('oz');
+
+  const glSet = v=>{
+    if (glassOn() === v) return;
+    S.settings.glass = v; applyTheme(); touchProfile(); save();
+    document.getElementById('glOn').classList.toggle('on', v);
+    document.getElementById('glOff').classList.toggle('on', !v);
+  };
+  document.getElementById('glOn').onclick  = ()=>glSet(true);
+  document.getElementById('glOff').onclick = ()=>glSet(false);
 
   // Switching units re-renders the sheet, keeping whatever is typed so far.
   document.getElementById('uImp').onclick = ()=>{ commitBody(); S.settings.unitSystem='imperial'; touchProfile(); save(); sheetGuard=null; openSettings(); };
