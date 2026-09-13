@@ -1514,6 +1514,54 @@ function altWeight(g){
     : 'That\u2019s '+(Math.round(g/G_PER_OZ*100)/100)+' oz';
 }
 
+/* ---------- taking a portion label apart, and putting it back ----------
+   Every writer in this file builds the same shape: an optional count, an
+   optional named portion, and — always last, always present when a weight is
+   known — the weight itself.
+
+       172 g
+       1 breast \u00b7 172 g
+       2 \u00d7 1 breast \u00b7 344 g
+       1.5 of 4 servings \u00b7 320 g
+
+   Editing an entry by weight or by servings means moving the count and
+   rewriting that label, so it has to come apart cleanly and go back together
+   in the same form it arrived in. `form` remembers which of the two count
+   styles was used, because "2 \u00d7 of 4 servings" is not a sentence.
+
+   Anything that doesn't match is returned whole as `named` with a count of 1,
+   which is the safe reading: a label we don't understand is a label we must
+   not silently reshape. */
+function splitPortion(p){
+  let s = String(p||'').trim(), grams = 0, qty = 1, named = '', form = 'x';
+  const parts = s.split(' \u00b7 ');
+  const last = (parts[parts.length-1] || '').trim();
+  // Only a bare weight is claimed as the weight segment. "170 g Greek yogurt"
+  // is a name, and stripping it would delete the food.
+  if (parts.length > 0 && /^\d+(?:\.\d+)?\s*(?:g|gram|grams|oz|ounce|ounces)$/i.test(last)){
+    grams = parseGrams(parts.pop());
+    s = parts.join(' \u00b7 ').trim();
+  }
+  let m;
+  if ((m = s.match(/^(\d+(?:\.\d+)?)\s*\u00d7\s*(.+)$/))){
+    qty = parseFloat(m[1]) || 1; named = m[2].trim();
+  } else if ((m = s.match(/^(\d+(?:\.\d+)?)\s+(of\s+.+)$/i))){
+    qty = parseFloat(m[1]) || 1; named = m[2].trim(); form = 'of';
+  } else {
+    named = s;
+  }
+  return {qty, named, grams, form};
+}
+function joinPortion(qty, named, grams, u, form){
+  let n = '';
+  if (named){
+    n = form === 'of'
+      ? trimNum(qty)+' '+named
+      : (Math.abs(qty - 1) < 1e-9 ? '' : trimNum(qty)+' \u00d7 ')+named;
+  }
+  return [n, grams > 0 ? weightLabel(grams, u) : ''].filter(Boolean).join(' \u00b7 ');
+}
+
 /* ============================================================
    Apple Shortcut hand-off:  yoursite.github.io/?active=512
    ============================================================ */
@@ -1693,25 +1741,163 @@ function renderTrend(){
     : '';
 }
 
-/* ---------- edit a logged entry ---------- */
+/* ---------- edit a logged entry ----------
+   A logged entry is a quantity, not just a number. "I had one and a half of
+   those" and "it was six ounces, not four" are the two corrections people
+   actually make, and until now both had to be done as arithmetic in your head
+   before typing a calorie total.
+
+   So the sheet drives everything off one scale factor against the entry as it
+   stood when you opened it, the same way the portion picker drives its own two
+   boxes. How many and Weight move together and pull the calories with them.
+
+   Calories deliberately do NOT push back. Typing 300 where it said 280 is you
+   correcting the number, not telling us you ate more, and rescaling the weight
+   would stamp the entry with a portion you never ate. It does re-base the rate,
+   though, so correcting the number and then doubling the servings gives 600. */
 function editEntry(meal, idx){
   const e = day(viewDate).meals[meal.id][idx];
   if (!e) return;
+
+  const P    = splitPortion(e.portion);
+  const cal0 = Math.max(0, Math.round(+e.cal || 0));
+  const g0   = gramsOf(e);
+  const qty0 = P.qty > 0 ? P.qty : 1;
+  // Weight per serving is fixed by what you logged; the calorie rate is not,
+  // because you're allowed to tell us the calorie number was wrong.
+  let qty = qty0, cal = cal0, rateCal = cal0, rateQty = qty0, name = e.name || '';
+  // Nothing to scale on a zero-calorie entry with no weight — that one still
+  // gets the plain calorie box it has always had.
+  const scalable = g0 > 0 || cal0 > 0;
+  const origNote = [e.portion, e.src].filter(Boolean).join(' \u00b7 ');
+
   openSheet(sheetHead('Edit entry')+
     '<div class="field"><label>Name</label><input id="en" autocomplete="off"></div>'+
-    '<div class="field"><label>Calories</label><input id="ec" type="number" inputmode="numeric"></div>'+
-    '<button class="cta" id="eSave">Save</button>'+
-    (e.portion || e.src ? '<p class="note">Logged as '+escapeHTML([e.portion,e.src].filter(Boolean).join(' \u00b7 '))+'.</p>' : ''));
-  const n = document.getElementById('en'), c = document.getElementById('ec');
-  n.value = e.name; c.value = e.cal;
-  c.focus(); c.select();
-  document.getElementById('eSave').onclick = ()=>{
-    const v = Math.round(Number(c.value));
-    if (!n.value.trim() || !isFinite(v) || v < 0){ toast('Needs a name and a number'); return; }
-    e.name = n.value.trim(); e.cal = v;
-    bumpUp(e);                  // so the change travels to your other devices
-    save(); render(); closeSheet(true); toast('Updated');
-  };
+    '<div id="eBody"></div>');
+
+  const nEl = document.getElementById('en');
+  nEl.value = name;
+  nEl.oninput = ()=>{ name = nEl.value; };
+
+  const host = document.getElementById('eBody');
+  let first = true;
+
+  function grams(){ return g0 * (qty / qty0); }
+
+  function draw(){
+    const u = foodUnit(), g = grams();
+    // A count only earns its place when it counts something. On a plain weight
+    // the weight box already is the quantity, and two boxes that move together
+    // and mean the same thing is one box too many.
+    const qtyField = (P.named || g0 <= 0)
+      ? '<div class="field" style="margin:0"><label>'+
+          (P.named ? 'How many' : 'Multiplier')+'</label>'+
+          '<input id="eq" type="number" inputmode="decimal" step="0.25" min="0" value="'+trimNum(qty)+'"></div>'
+      : '';
+    const wField = g0 > 0
+      ? '<div class="field" style="margin:0"><label>Weight</label>'+
+          '<div class="row" style="gap:8px">'+
+            '<input id="eg" type="number" inputmode="decimal" step="'+(u==='oz'?'0.1':'1')+'" value="'+fmtAmt(toUnit(g,u),u)+'">'+
+            '<select id="eu" style="flex:0 0 72px" aria-label="Weight unit">'+
+              '<option value="g"'+(u==='g'?' selected':'')+'>g</option>'+
+              '<option value="oz"'+(u==='oz'?' selected':'')+'>oz</option></select>'+
+          '</div></div>'
+      : '';
+
+    host.innerHTML =
+      (scalable
+        ? (qtyField && wField
+            ? '<div class="row" style="margin-bottom:6px">'+qtyField+wField+'</div>'
+            : '<div style="margin-bottom:6px">'+qtyField+wField+'</div>')+
+          '<p class="note" id="eAlt" style="margin:0 0 12px"></p>'
+        : '')+
+      '<div class="field"><label>Calories</label><input id="ec" type="number" inputmode="numeric"></div>'+
+      '<button class="cta" id="eSave">Save</button>'+
+      '<p class="note" id="eWas"></p>';
+
+    const qEl = host.querySelector('#eq');
+    const gEl = host.querySelector('#eg');
+    const cEl = host.querySelector('#ec');
+    const uEl = host.querySelector('#eu');
+
+    if (uEl) uEl.onchange = ev=>{
+      // Same food, same weight, same calories — only the box changes. And it
+      // sticks as your default afterwards, like everywhere else.
+      S.settings.foodUnit = ev.target.value === 'oz' ? 'oz' : 'g';
+      touchProfile(); save(); draw();
+    };
+    if (qEl) qEl.oninput = ev=>{
+      qty = Math.max(0, parseFloat(ev.target.value) || 0);
+      cal = Math.round(rateCal * (rateQty > 0 ? qty / rateQty : 0));
+      sync('q');
+    };
+    if (gEl) gEl.oninput = ev=>{
+      const v = Math.max(0, parseFloat(ev.target.value) || 0);
+      qty = qty0 * (fromUnit(v, foodUnit()) / g0);
+      cal = Math.round(rateCal * (rateQty > 0 ? qty / rateQty : 0));
+      sync('g');
+    };
+    cEl.oninput = ev=>{
+      const v = Math.round(parseFloat(ev.target.value));
+      cal = isFinite(v) ? Math.max(0, v) : NaN;
+      // Re-base, so a corrected number stays corrected when you then change
+      // how much of it you had.
+      if (isFinite(cal) && qty > 0){ rateCal = cal; rateQty = qty; }
+      preview();
+    };
+
+    // Whichever box you're typing in is left alone; the others follow.
+    function sync(from){
+      const uu = foodUnit(), g = grams();
+      if (from !== 'g' && gEl) gEl.value = fmtAmt(toUnit(g,uu), uu);
+      if (from !== 'q' && qEl) qEl.value = trimNum(qty);
+      cEl.value = isFinite(cal) ? cal : '';
+      const alt = host.querySelector('#eAlt');
+      if (alt) alt.textContent = g > 0 ? altWeight(g) : '';
+      preview();
+    }
+
+    // What the entry will actually read as once saved, so a rewritten label is
+    // never a surprise that only shows up back on the day list.
+    function preview(){
+      const was = host.querySelector('#eWas');
+      if (!was) return;
+      if (changed()){
+        const p = joinPortion(qty, P.named, grams(), foodUnit(), P.form);
+        was.textContent = p ? 'Will read as '+[p, e.src].filter(Boolean).join(' \u00b7 ')+'.' : '';
+      } else {
+        was.textContent = origNote ? 'Logged as '+origNote+'.' : '';
+      }
+    }
+
+    host.querySelector('#eSave').onclick = ()=>{
+      const nm = name.trim();
+      const v = Math.round(Number(cal));
+      if (!nm || !isFinite(v) || v < 0){ toast('Needs a name and a number'); return; }
+      if (scalable && !(qty > 0)){ toast('How many needs a number above zero'); return; }
+      e.name = nm; e.cal = v;
+      // Untouched quantity means an untouched label. Someone who only fixed a
+      // typo or a calorie count gets exactly what they got before.
+      if (changed()){
+        const g = grams();
+        if (g > 0) e.g = Math.round(g);
+        e.portion = joinPortion(qty, P.named, g, foodUnit(), P.form);
+      }
+      bumpUp(e);                  // so the change travels to your other devices
+      save(); render(); closeSheet(true); toast('Updated');
+    };
+
+    sync();
+    if (first){
+      first = false;
+      const focusOn = qEl || gEl || cEl;
+      focusOn.focus(); if (focusOn.select) focusOn.select();
+    }
+  }
+
+  function changed(){ return scalable && Math.abs(qty - qty0) > 1e-9; }
+
+  draw();
 }
 
 /* ---------- saved foods ---------- */
@@ -3169,11 +3355,61 @@ const RECIPE_SCHEMA =
   'Respond with ONLY a JSON object, no markdown fences and no other text:\n'+
   '{"name":"short recipe name","servings":integer,"totalCalories":integer,'+
   '"perServing":integer,"totalGrams":integer or null,'+
+  '"rawGrams":integer or null,"yieldPct":integer or null,'+
+  '"cookNote":"a few words on the cooking, or empty",'+
+  '"heaviest":[["ingredient",grams]] or [],'+
   '"basis":"one short sentence on how you got there"}\n'+
-  'totalGrams is what the finished dish weighs once it is cooked, not the sum of '+
-  'the raw ingredients \u2014 roasting, simmering and draining drive off a lot of '+
-  'water. Return null rather than a guess if the recipe does not give you enough '+
-  'to work it out.';
+  'totalGrams is ONLY for a finished cooked weight the recipe itself states. '+
+  'Null otherwise \u2014 do not guess it.\n'+
+  'rawGrams and yieldPct are how the cooked weight gets worked out when nothing '+
+  'states it, and you should fill them in for any recipe you can read. rawGrams '+
+  'is everything that goes into the pot or the tin, weighed as it goes in and '+
+  'added up: solids, and also water, stock, milk and oil. yieldPct is what '+
+  'percentage of rawGrams the finished dish still weighs. Roughly: 100 for a '+
+  'salad, a smoothie or a no-bake; 88 to 95 for baking; 70 to 80 for a roast or '+
+  'a pan-fry; 55 to 75 for anything simmered uncovered; lower again where fat or '+
+  'liquid is poured off. If the recipe boils pasta, rice or pulses in water it '+
+  'never lists, leave that water out of rawGrams and let yieldPct go above 100 '+
+  'to cover what gets taken up. cookNote says which of those it was, in a few '+
+  'words. heaviest lists up to six ingredients as ["name",grams] pairs, biggest '+
+  'first, and those grams must be part of rawGrams.';
+
+/* ---------- cooked weight, reckoned from the ingredients ----------
+   A finished weight is a hard thing to guess at in one number and an easy thing
+   to get wrong by a factor of two, which is why the old prompt asked for one
+   and then told the model not to guess. Split in two it is a different job:
+   adding up what goes in is arithmetic, and how much of it survives the heat is
+   a small number with well-known bands.
+
+   Both halves still have to be believable before anything reaches the screen.
+   A yield outside the band is a misread rather than an unusual dish, and a
+   breakdown that adds up to more than the total is a breakdown that would
+   argue with the figure printed next to it, so it is dropped rather than shown.
+
+   Above 100 is not a mistake: pasta and rice boiled in water the recipe never
+   lists come out heavier than they went in. */
+const YIELD_MIN = 20, YIELD_MAX = 300;
+function recipeWorking(j){
+  const raw = Math.round(Number(j && j.rawGrams));
+  const yp  = Math.round(Number(j && j.yieldPct));
+  if (!isFinite(raw) || raw <= 0) return null;
+  if (!isFinite(yp) || yp < YIELD_MIN || yp > YIELD_MAX) return null;
+  const grams = Math.round(raw * yp / 100);
+  if (!(grams > 0)) return null;
+  // Pairs are what the schema asks for; objects are what a model sometimes
+  // sends anyway. Both are cheap to accept and neither is worth an error.
+  let heaviest = (Array.isArray(j.heaviest) ? j.heaviest : [])
+    .map(p => Array.isArray(p)
+      ? {item:String(p[0]||'').trim(), g:Math.round(Number(p[1]))}
+      : {item:String((p&&p.item)||'').trim(), g:Math.round(Number(p&&p.g))})
+    .filter(p => p.item && isFinite(p.g) && p.g > 0)
+    .sort((a,b) => b.g - a.g)
+    .slice(0,6);
+  if (heaviest.reduce((a,p)=>a+p.g, 0) > raw*1.05) heaviest = [];
+  return {raw, yieldPct:yp, grams,
+          note:String((j && j.cookNote) || '').trim().slice(0,80),
+          heaviest};
+}
 
 async function askClaudeRecipe(text, url){
   const prompt = url
@@ -3190,6 +3426,8 @@ async function askClaudeRecipe(text, url){
 
   const sv = Math.max(1, Math.round(Number(j.servings)) || 1);
   const gTot = Math.round(Number(j.totalGrams));
+  const stated = (isFinite(gTot) && gTot > 0) ? gTot : 0;
+  const work = stated > 0 ? null : recipeWorking(j);
   const tot = Math.round(Number(j.totalCalories));
   const per = Math.round(Number(j.perServing));
   const goodTot = isFinite(tot) && tot > 0, goodPer = isFinite(per) && per > 0;
@@ -3204,8 +3442,11 @@ async function askClaudeRecipe(text, url){
     basis: j.basis || '',
     source: url ? hostOf(url) : '',
     servingGrams: 0,
-    totalGrams: (isFinite(gTot) && gTot > 0) ? gTot : 0,
-    weightSrc: (isFinite(gTot) && gTot > 0) ? 'estimated' : ''
+    // A weight the recipe states beats one worked out from the ingredients, so
+    // the working is only reckoned, and only kept, when nothing stated it.
+    totalGrams: stated > 0 ? stated : (work ? work.grams : 0),
+    weightSrc: (stated > 0 || work) ? 'estimated' : '',
+    working: work
   };
 }
 /* The page is the better source for the name, the ingredients and the yield;
@@ -3221,6 +3462,10 @@ function mergeRecipe(rec, est){
   } else if (!rec.totalGrams && est.totalGrams > 0){
     rec.totalGrams = est.totalGrams;
     rec.weightSrc = 'estimated';
+    // The working only travels with the number it produced. Where the page
+    // published a serving weight the estimate is not what is on screen, and
+    // showing its arithmetic beside a figure it did not generate would be a lie.
+    rec.working = est.working || null;
   }
   rec.perServing = (rec.servings && est.total)
     ? Math.round(est.total/rec.servings) : est.perServing;
@@ -3228,6 +3473,26 @@ function mergeRecipe(rec, est){
   if (!rec.servings){ rec.servings = est.servings; rec.servingsText = rec.servingsText || est.servingsText; }
   if (!rec.name) rec.name = est.name;
   return rec;
+}
+
+/* The arithmetic, in a line. A guess you cannot inspect is a guess you cannot
+   correct, and the scale field sitting directly above this is the correction. */
+function workingHTML(wk, u){
+  // Whole units here, the way the batch line already does it: two decimal
+  // places of ounces on a breakdown would be noise standing where precision
+  // is not on offer anyway.
+  const say = g => Math.round(toUnit(g,u)).toLocaleString()+' '+u;
+  const move = wk.yieldPct > 100
+    ? 'taking up water to about '+wk.yieldPct+'% of that'
+    : wk.yieldPct >= 99
+      ? 'with next to nothing cooking off'
+      : 'of which about '+wk.yieldPct+'% survives the cooking';
+  return '<b>Working:</b> '+escapeHTML(say(wk.raw))+' of ingredients, '+escapeHTML(move)+
+    (wk.note ? ' ('+escapeHTML(wk.note)+')' : '')+
+    ' \u2192 '+escapeHTML(say(wk.grams))+'.'+
+    (wk.heaviest.length
+      ? '<br>'+wk.heaviest.map(p=>escapeHTML(p.item+' '+say(p.g))).join(' \u00b7 ')
+      : '');
 }
 
 function showRecipe(rec){
@@ -3256,6 +3521,9 @@ function showRecipe(rec){
   if (sheetState.rGrams == null) sheetState.rGrams = hasW ? Math.round(gTot/sv0) : 0;
 
   const rate = hasW ? rateLabel(total, gTot) : '';
+  // Shown only while the working is what produced the number beside it: a
+  // figure off a scale replaces it outright, and a published one never needed it.
+  const wk = (!gWeighed && wSrc === 'estimated' && rec.working) ? rec.working : null;
   const prov = wSrc === 'weighed' ? 'weighed'
     : wSrc === 'published' ? 'weight from the recipe'
     : wSrc === 'estimated' ? 'cooked weight estimated' : '';
@@ -3276,6 +3544,7 @@ function showRecipe(rec){
         escapeHTML(Math.round(toUnit(gTot,u)).toLocaleString()+' '+u)+' all in'+
         (prov ? ' \u00b7 '+escapeHTML(prov) : '')+'</p>'
       : '')+
+    (wk ? '<p class="note" id="rwork" style="margin:-8px 0 12px">'+workingHTML(wk, u)+'</p>' : '')+
     // Always offered, whatever the recipe did or did not say. A number off a
     // scale is the only one here that is not a guess, and it is the only way
     // to get a rate at all when nothing could estimate one.
@@ -3339,6 +3608,8 @@ function showRecipe(rec){
   wEl.oninput = ()=>{
     const g = Math.max(0, fromUnit(parseFloat(wEl.value)||0, foodUnit()));
     sheetState.rWeighed = Math.round(g);
+    const work = document.getElementById('rwork');
+    if (work) work.style.display = g > 0 ? 'none' : '';
     const line = document.getElementById('rrate');
     if (line && g > 0){
       line.innerHTML = '<b>'+escapeHTML(rateLabel(total, g))+'</b> \u00b7 '+
