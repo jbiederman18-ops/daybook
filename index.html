@@ -377,7 +377,7 @@ header{padding:30px 0 4px}
 /* ---------- sheet ---------- */
 .scrim{position:fixed;inset:0;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity .22s;z-index:40}
 .scrim.open{opacity:1;pointer-events:auto}
-.sheet{position:fixed;left:0;right:0;bottom:0;z-index:50;background:var(--surface);border-radius:22px 22px 0 0;transform:translateY(106%);transition:transform .28s cubic-bezier(.32,.72,0,1);max-height:92vh;max-height:92dvh;display:flex;flex-direction:column;border-top:var(--panel-border) solid var(--ink);overflow:hidden;box-shadow:0 -8px 40px rgba(0,0,0,.45)}
+.sheet{position:fixed;left:0;right:0;bottom:var(--kb,0px);z-index:50;background:var(--surface);border-radius:22px 22px 0 0;transform:translateY(106%);transition:transform .28s cubic-bezier(.32,.72,0,1),bottom .22s cubic-bezier(.32,.72,0,1),max-height .22s cubic-bezier(.32,.72,0,1);max-height:92vh;max-height:calc(92dvh - var(--kb,0px));display:flex;flex-direction:column;border-top:var(--panel-border) solid var(--ink);overflow:hidden;box-shadow:0 -8px 40px rgba(0,0,0,.45)}
 .sheet::before{content:'';position:absolute;top:0;left:0;right:0;height:var(--strip-h);background-image:var(--strip);background-size:var(--strip-size);border-bottom:var(--border-w) solid var(--ink);z-index:4}
 .sheet.open{transform:translateY(0)}
 .sheet-in{max-width:560px;width:100%;margin:0 auto;padding:0 18px calc(20px + env(safe-area-inset-bottom,0px));overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
@@ -416,7 +416,7 @@ header{padding:30px 0 4px}
 .stickysave{position:sticky;bottom:0;background:linear-gradient(to top,var(--surface) 62%,transparent);padding:14px 0 6px;margin-top:18px;z-index:3}
 .stickysave .cta{margin-top:0}
 .divider h3{font-family:var(--display);font-size:11.5px;font-weight:var(--display-weight);letter-spacing:var(--display-track);text-transform:uppercase;color:var(--ink);margin:16px 0 12px}
-.toast{position:fixed;left:50%;bottom:calc(26px + env(safe-area-inset-bottom,0px));transform:translate(-50%,80px);background:var(--toast);color:var(--toast-ink);padding:11px 18px;border:var(--border-w) solid var(--ink);border-radius:var(--pill);font-size:14px;font-weight:700;z-index:80;opacity:0;transition:all .25s;pointer-events:none;box-shadow:var(--lift)}
+.toast{position:fixed;left:50%;bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom,0px));transform:translate(-50%,80px);background:var(--toast);color:var(--toast-ink);padding:11px 18px;border:var(--border-w) solid var(--ink);border-radius:var(--pill);font-size:14px;font-weight:700;z-index:80;opacity:0;transition:all .25s;pointer-events:none;box-shadow:var(--lift)}
 .toast.on{transform:translate(-50%,0);opacity:1}
 .toast{display:flex;align-items:center;gap:14px;max-width:calc(100vw - 32px)}
 .toast.act{pointer-events:auto}
@@ -2183,6 +2183,42 @@ function toast(msg, action){
    Sheet
    ============================================================ */
 let lastFocus = null, sheetGuard = null;
+/* ---------- the software keyboard ----------
+   iOS does not shrink the layout viewport when the keyboard opens, so a
+   position:fixed sheet stays pinned to a bottom that is now underneath the
+   keys. Safari's own scroll-into-view can't rescue it either, because
+   scrolling the page does not move a fixed element. The visual viewport is
+   the only thing on the platform that knows the keyboard is there.
+
+   --kb is the height it covers, and everything anchored to the bottom of the
+   screen is positioned against it. Zero when there is no keyboard, so nothing
+   below depends on this running. */
+function trackKeyboard(){
+  const vv = window.visualViewport;
+  if (!vv) return;
+  const apply = ()=>{
+    const kb = Math.round(window.innerHeight - vv.height - vv.offsetTop);
+    /* Safari's own bottom toolbar accounts for about 50px of difference
+       between the two viewports, and treating that as a keyboard makes the
+       sheet twitch every time the page scrolls. No keyboard is this short. */
+    document.documentElement.style.setProperty('--kb', (kb > 60 ? kb : 0)+'px');
+  };
+  vv.addEventListener('resize', apply);
+  vv.addEventListener('scroll', apply);
+  apply();
+  /* Shrinking the sheet is only half of it. The field you tapped can still be
+     below the fold of the sheet's own scroller — which is the case that looks
+     like nothing happened at all. */
+  document.addEventListener('focusin', e=>{
+    const el = e.target;
+    if (!el || !el.closest || !el.closest('.sheet-in')) return;
+    // After the keyboard animation, or it scrolls to the pre-keyboard layout.
+    setTimeout(()=>{
+      try { el.scrollIntoView({block:'center', behavior:'smooth'}); } catch(x){}
+    }, 180);
+  });
+}
+
 function openSheet(html){
   const sh = document.getElementById('sheet');
   if (!sh.classList.contains('open')) lastFocus = document.activeElement;
@@ -4204,6 +4240,7 @@ document.addEventListener('keydown', e=>{ if (e.key === 'Escape') closeSheet(); 
   await load();
   applyTheme();
   readURL();
+  trackKeyboard();
   render();
   maybePull(true);
   loadPack();
