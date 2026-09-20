@@ -1620,7 +1620,10 @@ async function pullSync(){
         err = (j && j.error) || ('Firebase returned '+bad.status);
       } else {
         // Firebase hands back an object keyed by id; the merge wants a list.
-        const vals = o => (o && typeof o === 'object') ? Object.values(o) : [];
+        // The key rides along as the id, for records whose writer let
+        // Firebase choose one (a POST from the Siri Shortcut).
+        const vals = o => (o && typeof o === 'object')
+          ? Object.entries(o).map(([k,v])=>(v && typeof v === 'object') ? {...v, id: v.id || k} : v) : [];
         data = {
           ok: true,
           entries: vals(await re.json()),
@@ -1712,8 +1715,9 @@ function mergeRemote(d){
       if ((found.e.up||0) >= up) return;          // our copy is newer
       drop(found); ix.delete(r.id);
     }
-    if (!MEALS.some(m=>m.id === r.meal)) return;
-    const dk = normDate(r.date);
+    // No meal or date: file it by when it was written, like anything logged here.
+    const meal = MEALS.some(m=>m.id === r.meal) ? r.meal : guessMeal(new Date(up).getHours());
+    const dk = normDate(r.date) || todayKey(up);
     if (!dk) return;
     const rec = {
       id:r.id, name:r.name, cal:+r.cal||0,
@@ -1725,10 +1729,10 @@ function mergeRemote(d){
     const rg = +r.g || parseGrams(rec.portion);
     if (rg > 0) rec.g = Math.round(rg);
     Object.assign(rec, macCopy(r));
-    const arr = day(dk).meals[r.meal];
+    const arr = day(dk).meals[meal];
     arr.push(rec);
     ix.set(r.id, {arr, e:rec});
-    touched.add(dk+'|'+r.meal);
+    touched.add(dk+'|'+meal);
   });
   touched.forEach(key=>{
     const [dk, mid] = key.split('|');
