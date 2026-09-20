@@ -377,7 +377,7 @@ header{padding:30px 0 4px}
 /* ---------- sheet ---------- */
 .scrim{position:fixed;inset:0;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity .22s;z-index:40}
 .scrim.open{opacity:1;pointer-events:auto}
-.sheet{position:fixed;left:0;right:0;bottom:var(--kb,0px);z-index:50;background:var(--surface);border-radius:22px 22px 0 0;transform:translateY(106%);transition:transform .28s cubic-bezier(.32,.72,0,1),bottom .22s cubic-bezier(.32,.72,0,1),max-height .22s cubic-bezier(.32,.72,0,1);max-height:92vh;max-height:calc(92dvh - var(--kb,0px));display:flex;flex-direction:column;border-top:var(--panel-border) solid var(--ink);overflow:hidden;box-shadow:0 -8px 40px rgba(0,0,0,.45)}
+.sheet{position:fixed;left:0;right:0;bottom:0;padding-bottom:var(--kb,0px);z-index:50;background:var(--surface);border-radius:22px 22px 0 0;transform:translateY(106%);transition:transform .28s cubic-bezier(.32,.72,0,1),padding-bottom .22s cubic-bezier(.32,.72,0,1);max-height:92vh;max-height:92dvh;display:flex;flex-direction:column;border-top:var(--panel-border) solid var(--ink);overflow:hidden;box-shadow:0 -8px 40px rgba(0,0,0,.45)}
 .sheet::before{content:'';position:absolute;top:0;left:0;right:0;height:var(--strip-h);background-image:var(--strip);background-size:var(--strip-size);border-bottom:var(--border-w) solid var(--ink);z-index:4}
 .sheet.open{transform:translateY(0)}
 .sheet-in{max-width:560px;width:100%;margin:0 auto;padding:0 18px calc(20px + env(safe-area-inset-bottom,0px));overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
@@ -692,6 +692,66 @@ header{padding:30px 0 4px}
 #caustics2{ background-image:var(--caustic-b); background-size:194px 194px;
             opacity:.3;  animation:driftB 47s linear infinite }
 @keyframes driftA{ from{transform:translate3d(0,0,0)} to{transform:translate3d(300px,-300px,0)} }
+/* ---------- the keyboard seam ----------
+   The sheet pads itself up by --kb rather than moving, so its material runs
+   on behind the keyboard. What's left is the scroller's own bottom edge,
+   which would cut a row in half against the keys: fade it instead. Not when
+   a sticky save bar is there, because that already has its own fade and a
+   mask would take the button with it. The safe-area padding is for the home
+   indicator, which the keyboard is covering, so it goes too. */
+html.kb-open .sheet-in{padding-bottom:28px}
+html.kb-open .sheet-in:not(:has(.stickysave)){
+  -webkit-mask-image:linear-gradient(to bottom,#000 calc(100% - 26px),transparent);
+          mask-image:linear-gradient(to bottom,#000 calc(100% - 26px),transparent);
+}
+html.kb-open[data-glass="on"] .stickysave{bottom:-28px;padding-bottom:34px}
+/* The save bar's plate can't reach past its scroller, so the sheet paints
+   the same plate behind the keyboard and the two read as one surface. */
+html.kb-open[data-glass="on"] .sheet:has(.stickysave)::after{
+  background:linear-gradient(to top,rgba(var(--tint-rgb),var(--plate)) var(--kb,0px),var(--glass) var(--kb,0px));
+}
+
+/* ---------- glass header: only a plate when something is under it ----------
+   The head's plate fades 72px past the title so scrolled rows don't cut off
+   against a line. At rest, though, nothing is scrolling -- and the fade lay
+   over the tab bar instead, washing it out. Same idea as iOS's own scroll-
+   edge appearance: clear at rest, material once content goes underneath. */
+[data-glass="on"] .sheet-head::before{transition:opacity .2s}
+[data-glass="on"] .griparea{transition:background-color .2s}
+[data-glass="on"] .sheet:not(.scrolled) .sheet-head::before{opacity:0}
+[data-glass="on"] .sheet:not(.scrolled) .griparea{
+  background-color:transparent;-webkit-backdrop-filter:none;backdrop-filter:none;
+}
+
+/* ---------- regulars: tap to adjust, + to log as last time ---------- */
+.res.rrow{padding:0;gap:8px}
+.rpick{flex:1;min-width:0;display:flex;align-items:center;gap:10px;padding:12px 0;text-align:left;color:inherit}
+.res.rrow.open{border-bottom:none}
+.res.rrow.open .nm{font-weight:700}
+.qadd{flex:none;width:34px;height:34px;border-radius:50%;display:grid;place-items:center;
+  background:var(--raised);color:var(--ink);border:var(--border-w) solid var(--ink);box-shadow:var(--lift);
+  transition:background-color .15s,color .15s,transform .1s}
+.qadd:active{transform:translateY(2px);box-shadow:none}
+.qadd.done{background:var(--accent);color:var(--ink-on)}
+[data-glass="on"] .qadd{border-color:var(--rim-low);
+  -webkit-backdrop-filter:blur(8px) saturate(140%);backdrop-filter:blur(8px) saturate(140%)}
+[data-glass="on"] .qadd.done{border-color:transparent}
+.radj{padding:2px 0 16px;border-bottom:var(--rule);animation:radjIn .18s ease-out}
+.radj .chips{margin:2px 0 12px}
+.radj .chip{flex:1;text-align:center;padding:7px 4px}
+.radj .row{margin-bottom:4px}
+.radj .field{margin:0}
+.radj .note{margin:8px 0 2px;min-height:1.55em}
+@keyframes radjIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.radj{animation:none}}
+
+/* A running total in the header while you add several things in a row. */
+.tally{display:inline-block;margin-left:10px;font-family:var(--body-font);font-size:12px;font-weight:800;
+  letter-spacing:0;text-transform:none;vertical-align:2px;padding:3px 9px;border-radius:var(--pill);
+  background:var(--accent);color:var(--ink-on);font-variant-numeric:tabular-nums}
+.tab{font-size:12.5px;letter-spacing:0}
+.qchip{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+.qchip.held{transform:scale(.96);transition:transform .12s}
 @keyframes driftB{ from{transform:translate3d(0,0,0)} to{transform:translate3d(-194px,-388px,0)} }
 </style>
 </head>
@@ -1710,7 +1770,7 @@ function render(){
     });
 
     // one-tap repeats: whatever you log most often at this time of day
-    const quick = quickPicks(m.id);
+    const quick = quickPicks(m.id, viewDate);
     if (quick.length){
       const strip = document.createElement('div');
       strip.className = 'quick';
@@ -1719,7 +1779,12 @@ function render(){
         c.className = 'qchip'+(q.type==='combo'?' combo':'');
         c.innerHTML = '<span class="qn"></span><span class="qc">'+q.cal.toLocaleString()+'</span>';
         c.querySelector('.qn').textContent = q.name;
+        if (q.type === 'food'){
+          c.title = 'Hold to change the amount';
+          holdToAdjust(c, ()=>adjustRegular(m, q.ref));
+        }
         c.onclick = ()=>{
+          if (c.__held) return;          // the hold already did something
           if (q.type === 'combo'){ logCombo(q.ref, m); return; }
           const e = stampNew({name:q.ref.name, cal:q.ref.cal, portion:q.ref.portion, g:gramsOf(q.ref)||undefined, src:q.ref.src});
           day(viewDate).meals[m.id].push(e);
@@ -2144,15 +2209,26 @@ function agoLabel(dk){
 }
 
 /* Top repeats for a meal slot: saved meals first, then single foods. */
-function quickPicks(mealId){
+function quickPicks(mealId, dk){
   const out = [];
-  S.combos.filter(c=>c.meal === mealId).slice(0,2)
+  /* A chip for something already in this meal is a suggestion you've already
+     taken. Matched on name, not portion: yogurt at a different weight is still
+     the yogurt you've had. A second helping is still in the add sheet. */
+  const d = dk && S.days[dk];
+  const had = new Set(((d && d.meals && d.meals[mealId]) || [])
+    .map(e=>String(e && e.name || '').trim().toLowerCase()).filter(Boolean));
+  const logged = n=>had.has(String(n || '').trim().toLowerCase());
+  S.combos.filter(c=>c.meal === mealId)
+    .filter(c=>!(c.items && c.items.length && c.items.every(i=>logged(i.name))))
+    .slice(0,2)
     .forEach(c=>out.push({type:'combo', name:c.name, cal:comboCal(c), ref:c}));
   /* These used to come only from starred foods with two or more uses, which
      meant the chips stayed empty unless you remembered to star things. Draw
-     from what you actually repeat instead. */
+     from what you actually repeat instead. Twelve deep, so skipping what's
+     logged still leaves enough to fill four. */
   const seen = new Set(out.map(o=>o.name));
-  recentFoods(mealId, 8).forEach(r=>{
+  recentFoods(mealId, 12).forEach(r=>{
+    if (logged(r.name)) return;
     if (out.length >= 4 || r.n < 2 || seen.has(r.name)) return;
     seen.add(r.name);
     out.push({type:'food', name:r.name, cal:r.cal, ref:r});
@@ -2202,6 +2278,8 @@ function trackKeyboard(){
        between the two viewports, and treating that as a keyboard makes the
        sheet twitch every time the page scrolls. No keyboard is this short. */
     document.documentElement.style.setProperty('--kb', (kb > 60 ? kb : 0)+'px');
+    // For the few rules that change shape, not just position, with a keyboard up.
+    document.documentElement.classList.toggle('kb-open', kb > 60);
   };
   vv.addEventListener('resize', apply);
   vv.addEventListener('scroll', apply);
@@ -2229,6 +2307,7 @@ function openSheet(html){
   document.body.classList.add('locked');
   document.querySelector('.wrap').setAttribute('aria-hidden','true');
   document.getElementById('sheetBody').scrollTop = 0;
+  sh.classList.remove('scrolled');
 }
 function closeSheet(force){
   // Settings registers a guard so a stray tap on the backdrop doesn't throw
@@ -2269,6 +2348,13 @@ document.getElementById('scrim').onclick = ()=>closeSheet();
   grip.addEventListener('pointercancel', end);
 })();
 
+/* Drives the glass header's plate: none at rest, material once rows are
+   passing underneath it. */
+(function(){
+  const sh = document.getElementById('sheet'), sb = document.getElementById('sheetBody');
+  sb.addEventListener('scroll', ()=>sh.classList.toggle('scrolled', sb.scrollTop > 2), {passive:true});
+})();
+
 function sheetHead(title){
   return '<div class="sheet-head"><h2>'+title+'</h2>'+
     '<button class="iconbtn" onclick="closeSheet(true)" aria-label="Close">'+
@@ -2277,15 +2363,17 @@ function sheetHead(title){
 
 /* ---------- add food ---------- */
 function openAdd(meal){
-  sheetState = { meal, tab:'search' };
+  sheetState = { meal, tab:'search', added:0 };
   drawAdd();
 }
 function drawAdd(){
+  // Recipe is part of Estimate now; anything still asking for it lands there.
+  if (sheetState.tab === 'recipe') sheetState.tab = 'estimate';
   const t = sheetState.tab;
   openSheet(
-    sheetHead(T('addTo', sheetState.meal.name)) +
+    sheetHead(escapeHTML(T('addTo', sheetState.meal.name))+tallyHTML()) +
     '<div class="tabs">'+
-      ['search','recipe','meals','saved','estimate','custom'].map(k=>
+      ['search','estimate','meals','saved','custom'].map(k=>
         '<button class="tab'+(t===k?' on':'')+'" data-tab="'+k+'">'+
         ({search:'Search',recipe:'Recipe',meals:'Meals',saved:'Foods',estimate:'Estimate',custom:'Custom'})[k]+'</button>').join('')+
     '</div><div id="tabBody"></div>'
@@ -2296,6 +2384,19 @@ function drawAdd(){
   ({search:tabSearch, recipe:tabRecipe, meals:tabMeals, saved:tabSaved, estimate:tabEstimate, custom:tabCustom})[t]();
 }
 const body = ()=>document.getElementById('tabBody');
+/* What you've added without closing the sheet, so a run of + taps has
+   something to show for itself besides a toast. */
+function tallyHTML(){
+  const n = sheetState && sheetState.added;
+  return n > 0 ? '<span class="tally">+'+n.toLocaleString()+'</span>' : '';
+}
+function paintTally(){
+  const h = document.querySelector('#sheetBody .sheet-head h2');
+  if (!h || !sheetState || !sheetState.meal) return;
+  const old = h.querySelector('.tally');
+  if (old) old.remove();
+  h.insertAdjacentHTML('beforeend', tallyHTML());
+}
 
 /* ---------- saved meals tab ---------- */
 function tabMeals(){
@@ -2751,22 +2852,203 @@ function photoFailed(out, msg, file){
   };
 }
 
-/* One tap logs it: the portion is already known, so there is nothing left
-   to decide. That is the whole point of the list. */
+/* Two ways in. The row opens in place with last time's amount already set,
+   because "the same food, a different amount" is the correction people
+   actually make. The + beside it is the old one tap: last time's portion,
+   logged, and the sheet stays open so the next regular is one more tap. */
 function recentRow(r){
-  const b = document.createElement('button');
-  b.className = 'res';
-  b.innerHTML = '<div class="txt"><span class="nm"></span><span class="sub"></span></div>'+
-    '<span class="kc">'+r.cal.toLocaleString()+'</span>';
-  b.querySelector('.nm').textContent = r.name;
-  b.querySelector('.sub').textContent =
+  const row = document.createElement('div');
+  row.className = 'res rrow';
+  row.dataset.key = r.key || foodKey(r);
+  row.innerHTML =
+    '<button class="rpick" aria-expanded="false"><div class="txt"><span class="nm"></span><span class="sub"></span></div>'+
+    '<span class="kc">'+r.cal.toLocaleString()+'</span></button>'+
+    '<button class="qadd" aria-label="">'+PLUS_SVG+'</button>';
+  row.querySelector('.nm').textContent = r.name;
+  row.querySelector('.sub').textContent =
     [r.portion, r.n > 1 ? r.n+'×' : '', agoLabel(r.last)].filter(Boolean).join(' · ');
-  /* g had been dropped here, so re-logging from this list quietly produced an
-     entry with no weight — invisible unless you went looking for the rate.
-     gramsOf() matches what the quick-pick chips already do. */
-  b.onclick = ()=>addEntry({name:r.name, cal:r.cal, portion:r.portion,
-                            g:gramsOf(r)||undefined, src:r.src});
-  return b;
+  const qa = row.querySelector('.qadd');
+  qa.setAttribute('aria-label', 'Add '+r.name+' as last time');
+  row.querySelector('.rpick').onclick = ()=>openRelog(r, row);
+  let t;
+  qa.onclick = ()=>{
+    /* g had been dropped here once, so re-logging from this list quietly
+       produced an entry with no weight. gramsOf() matches the quick chips. */
+    addEntry({name:r.name, cal:r.cal, portion:r.portion,
+              g:gramsOf(r)||undefined, src:r.src}, {stay:true});
+    qa.classList.add('done'); qa.innerHTML = CHECK_SVG;
+    clearTimeout(t);
+    // Back to + so a second one is still one tap away.
+    t = setTimeout(()=>{ qa.classList.remove('done'); qa.innerHTML = PLUS_SVG; }, 1300);
+  };
+  return row;
+}
+const PLUS_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>';
+const CHECK_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+/* ---------- the same food, a different amount ----------
+   The arithmetic is editEntry's on purpose, so the two sheets can't disagree:
+   one scale factor against the food as it was last logged. Count and weight
+   move together and pull the calories with them. A typed calorie number is a
+   correction, not a portion, so it re-bases the rate and leaves the label
+   alone -- and a chip tapped afterwards scales the corrected number. */
+const RELOG_STEPS = [0.5, 1, 1.5, 2];
+function stepLabel(m){ return ({0.5:'\u00bd', 1.5:'1\u00bd'})[m] || String(m); }
+/* ---------- press and hold ----------
+   Tap a chip and it logs, as it always has. Hold it and you get the same
+   adjuster the add sheet uses, already open on that food. The flag is reset
+   on the next press rather than after the click, because iOS doesn't always
+   send a click at the end of a long press -- and a flag left set would eat
+   the next honest tap. */
+const HOLD_MS = 420;
+function holdToAdjust(el, fn){
+  let t = null, x0 = 0, y0 = 0;
+  const cancel = ()=>{ clearTimeout(t); t = null; el.classList.remove('held'); };
+  el.addEventListener('pointerdown', e=>{
+    el.__held = false;
+    x0 = e.clientX; y0 = e.clientY;
+    el.classList.add('held');
+    clearTimeout(t);
+    t = setTimeout(()=>{
+      t = null; el.__held = true; el.classList.remove('held');
+      buzz(15); fn();
+    }, HOLD_MS);
+  });
+  el.addEventListener('pointermove', e=>{
+    // A scroll that started on a chip is a scroll, not a hold.
+    if (t && Math.hypot(e.clientX - x0, e.clientY - y0) > 8) cancel();
+  });
+  ['pointerup','pointercancel','pointerleave'].forEach(ev=>el.addEventListener(ev, ()=>{ if (t) cancel(); }));
+  el.addEventListener('contextmenu', e=>e.preventDefault());
+}
+/* The add sheet for that meal, with this food's adjuster already open. It's
+   nearly always in the regulars list -- the chips are drawn from the same
+   ranking -- but if a cap pushed it off, it's put at the top rather than lost. */
+function adjustRegular(meal, r){
+  openAdd(meal);
+  const out = document.getElementById('results');
+  if (!out) return;
+  let row = Array.from(out.querySelectorAll('.rrow')).find(x=>x.dataset.key === r.key);
+  if (!row){
+    row = recentRow(r);
+    out.insertBefore(row, out.firstChild);
+  }
+  openRelog(r, row);
+}
+function closeRelog(){
+  document.querySelectorAll('#sheetBody .radj').forEach(p=>{
+    const row = p.__row;
+    if (row){
+      row.classList.remove('open');
+      const b = row.querySelector('.rpick');
+      if (b) b.setAttribute('aria-expanded', 'false');
+    }
+    p.remove();
+  });
+}
+function openRelog(r, row){
+  const wasOpen = row.classList.contains('open');
+  closeRelog();
+  if (wasOpen || !sheetState || !sheetState.meal) return;   // second tap folds it
+  // The search keyboard would sit on top of the thing you just opened.
+  const q = document.getElementById('q');
+  if (q && document.activeElement === q) q.blur();
+
+  const meal = sheetState.meal;
+  const P    = splitPortion(r.portion);
+  const cal0 = Math.max(0, Math.round(+r.cal || 0));
+  const g0   = gramsOf(r);
+  const qty0 = P.qty > 0 ? P.qty : 1;
+  let qty = qty0, cal = cal0, rateCal = cal0, rateQty = qty0;
+  const grams   = ()=> g0 > 0 ? g0 * (qty / qty0) : 0;
+  const changed = ()=> Math.abs(qty - qty0) > 1e-9;
+  const portion = ()=> changed() ? joinPortion(qty, P.named, grams(), foodUnit(), P.form) : (r.portion || '');
+
+  const panel = document.createElement('div');
+  panel.className = 'radj';
+  panel.__row = row;
+  row.classList.add('open');
+  row.querySelector('.rpick').setAttribute('aria-expanded', 'true');
+  row.after(panel);
+
+  function draw(){
+    const u = foodUnit(), g = grams();
+    // Weight when there is one: it's the precise answer, and the chips cover
+    // "two of them". A count only when a count is all there is.
+    const amount = g0 > 0
+      ? '<div class="field"><label>Weight</label><div class="row" style="gap:8px">'+
+          '<input id="rg" type="number" inputmode="decimal" step="'+(u==='oz'?'0.1':'1')+'" value="'+fmtAmt(toUnit(g,u),u)+'">'+
+          '<select id="ru" style="flex:0 0 64px" aria-label="Weight unit">'+
+            '<option value="g"'+(u==='g'?' selected':'')+'>g</option>'+
+            '<option value="oz"'+(u==='oz'?' selected':'')+'>oz</option></select></div></div>'
+      : P.named
+        ? '<div class="field"><label>How many</label>'+
+            '<input id="rq" type="number" inputmode="decimal" step="0.25" min="0" value="'+trimNum(qty)+'"></div>'
+        : '';
+    panel.innerHTML =
+      '<div class="chips">'+RELOG_STEPS.map(m=>
+        '<button class="chip" data-m="'+m+'">'+stepLabel(m)+'\u00d7</button>').join('')+'</div>'+
+      '<div class="row">'+amount+
+        '<div class="field"><label>Calories</label>'+
+          '<input id="rc" type="number" inputmode="numeric" min="0"></div></div>'+
+      '<p class="note" id="rPrev"></p>'+
+      '<button class="cta" id="rGo"></button>';
+
+    const gEl = panel.querySelector('#rg'), qEl = panel.querySelector('#rq');
+    const cEl = panel.querySelector('#rc'), uEl = panel.querySelector('#ru');
+    const follow = ()=>{ cal = Math.round(rateCal * (rateQty > 0 ? qty / rateQty : 0)); };
+
+    panel.querySelectorAll('.chip').forEach(c=>c.onclick = ()=>{
+      qty = qty0 * Number(c.dataset.m); follow(); sync();
+    });
+    if (uEl) uEl.onchange = ev=>{
+      // Same weight, same calories -- only the box changes, and it sticks.
+      S.settings.foodUnit = ev.target.value === 'oz' ? 'oz' : 'g';
+      touchProfile(); save(); draw();
+    };
+    if (gEl) gEl.oninput = ev=>{
+      const v = Math.max(0, parseFloat(ev.target.value) || 0);
+      qty = qty0 * (fromUnit(v, foodUnit()) / g0); follow(); sync('g');
+    };
+    if (qEl) qEl.oninput = ev=>{
+      qty = Math.max(0, parseFloat(ev.target.value) || 0); follow(); sync('q');
+    };
+    cEl.oninput = ev=>{
+      const v = Math.round(parseFloat(ev.target.value));
+      cal = isFinite(v) ? Math.max(0, v) : NaN;
+      if (isFinite(cal) && qty > 0){ rateCal = cal; rateQty = qty; }
+      sync('c');
+    };
+
+    // Whichever box you're typing in is left alone; everything else follows.
+    function sync(from){
+      const uu = foodUnit();
+      if (gEl && from !== 'g') gEl.value = fmtAmt(toUnit(grams(), uu), uu);
+      if (qEl && from !== 'q') qEl.value = trimNum(qty);
+      if (from !== 'c') cEl.value = isFinite(cal) ? cal : '';
+      panel.querySelectorAll('.chip').forEach(c=>
+        c.classList.toggle('on', Math.abs(qty - qty0 * Number(c.dataset.m)) < 1e-6));
+      const p = portion();
+      panel.querySelector('#rPrev').textContent = !changed()
+        ? (p ? 'Same as last time: '+p+'.' : 'Same as last time.')
+        : (p ? 'Logs as '+p+'.' : '');
+      panel.querySelector('#rGo').textContent =
+        T('addTo', meal.name)+(isFinite(cal) ? ' \u00b7 '+cal.toLocaleString() : '');
+    }
+
+    panel.querySelector('#rGo').onclick = ()=>{
+      const v = Math.round(Number(cal));
+      if (!isFinite(v) || v < 0){ toast('Calories need a number'); return; }
+      if (!(qty > 0)){ toast('Amount needs to be above zero'); return; }
+      const g = grams();
+      addEntry({name:r.name, cal:v, portion:portion(),
+                g: g > 0 ? Math.round(g) : undefined, src:r.src});
+    };
+    sync();
+  }
+  draw();
+  // After the keyboard (if any) has gone, so "nearest" measures the real space.
+  setTimeout(()=>{ try { panel.scrollIntoView({block:'nearest', behavior:'smooth'}); } catch(e){} }, 260);
 }
 
 /* Shown with an empty box. Twelve is about a screenful; the rest are one tap
@@ -2896,6 +3178,7 @@ function paintSearch(q){
       ? '<p class="note">'+escapeHTML(why)+'</p>'
       : '<div class="empty">Nothing on this device matches.<br>'+escapeHTML(why)+
         (online() ? '' : '<br>Or use the Custom tab and type the number in.')+'</div>';
+    if (online()) net.appendChild(estimateHandoff(q));
   } else {
     // A bare spinner on an empty panel when there is nothing else to read;
     // a quiet one under a heading when there already is.
@@ -2948,7 +3231,8 @@ async function runSearch(q){
     if (!fresh.length){
       net.innerHTML = localRows
         ? '<p class="note">The database had nothing to add to that.</p>'
-        : '<div class="empty">No matches. Try the Estimate tab.</div>';
+        : '<div class="empty">No matches in the database.</div>';
+      net.appendChild(estimateHandoff(q));
       return;
     }
     net.innerHTML = '';
@@ -2964,6 +3248,7 @@ async function runSearch(q){
       btn.onclick = ()=>openPortion(f, per100);
       net.appendChild(btn);
     });
+    net.appendChild(estimateHandoff(q));
   } catch(err){
     if (!alive()) return;
     // The local layer above is untouched, so a bad USDA response costs you
@@ -2975,6 +3260,7 @@ async function runSearch(q){
     retry.textContent = 'Try USDA again';
     retry.onclick = ()=>{ net.innerHTML = '<span class="spin"></span>'; runSearch(q); };
     net.appendChild(retry);
+    net.appendChild(estimateHandoff(q));
   }
 }
 function titleCase(s){
@@ -3143,28 +3429,110 @@ function tabSaved(){
 }
 
 /* ---------- AI estimate ---------- */
+/* ============================================================
+   Estimate -- one box for anything Search can't find
+   Recipe, Estimate and the camera were three doors to the same room: "the
+   database doesn't have this, work it out." One box now takes a short
+   description, a pasted recipe or a link, and says which it has taken it
+   for before you press anything, so the routing is never a surprise. The
+   photo button sits beside the go button.
+
+   The box keeps the Recipe tab's ids (rin / rgo / rout) so the recipe code
+   below, and anything that drives it, carries on unchanged.
+   ============================================================ */
+function estimateKind(s){
+  const v = String(s || '').trim();
+  if (!v) return '';
+  if (firstURL(v)) return 'link';
+  const lines = v.split('\n').filter(l=>l.trim()).length;
+  // An ingredient list is several lines, or one very long pasted paragraph.
+  return (lines >= 3 || v.length > 160) ? 'recipe' : 'describe';
+}
 function tabEstimate(){
-  if (!online()){
-    body().innerHTML = '<div class="empty">Estimating asks Claude, which needs a connection.<br><br>'+
-      'Search still works from the copy on this device, or type a number into Custom.</div>';
-    return;
-  }
-  if (!S.settings.anthropicKey){
-    body().innerHTML = '<div class="empty">Add your Anthropic API key in Settings to estimate anything the database doesn\u2019t have.<br><br>'+
-      '<button class="cta ghost" onclick="closeSheet(true);openSettings()">Open settings</button></div>';
-    return;
-  }
   body().innerHTML =
-    '<div class="field"><label>Describe what you ate</label>'+
-    '<input id="desc" placeholder="two slices of homemade banana bread" autocomplete="off"></div>'+
-    '<button class="cta" id="go">Estimate calories</button>'+
-    '<div id="est"></div>'+
-    '<p class="note">Estimates are a best guess from a description. Anything you can find in the database will be more accurate.</p>';
-  const d = document.getElementById('desc');
-  d.focus();
-  const run = ()=>estimate(d.value.trim());
-  document.getElementById('go').onclick = run;
-  d.onkeydown = e=>{ if(e.key==='Enter') run(); };
+    (online() ? '' : '<div class="warn" style="margin-top:0">Estimating asks Claude, which needs a connection. '+
+      'Search still works from this device, or type a number into Custom.</div>')+
+    '<div class="field"><label>Describe it, paste a recipe, or paste a link</label>'+
+    '<textarea id="rin" rows="3" placeholder="two slices of homemade banana bread&#10;&#10;\u2026or a whole recipe, or a link to one" autocomplete="off"></textarea></div>'+
+    '<p class="note" id="ekind" style="margin:-4px 0 10px;min-height:1.55em"></p>'+
+    '<div class="searchrow" style="margin-bottom:0">'+
+      '<button class="cta" id="rgo" style="margin-top:0;flex:1"></button>'+
+      '<button class="camera" id="cam" aria-label="Estimate from a photo" title="Estimate from a photo">'+
+        '<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">'+
+        '<path d="M3 8.5h3.2l1.6-2.2h8.4l1.6 2.2H21v11H3z"/><circle cx="12" cy="13.6" r="3.4"/></svg>'+
+      '</button>'+
+      '<input type="file" id="camFile" accept="image/*" style="display:none">'+
+    '</div>'+
+    '<div id="est"></div><div id="rout"></div><div id="results"></div>'+
+    (S.settings.anthropicKey ? ''
+      : '<p class="note">Descriptions, photos, and recipes that don\u2019t publish their own numbers need an Anthropic API key in Settings.</p>')+
+    '<p class="note">A best guess, not a lookup. Anything you can find in Search will be more accurate.</p>';
+
+  const ta = document.getElementById('rin');
+  const go = document.getElementById('rgo');
+  const kind = document.getElementById('ekind');
+  const clear = ()=>['est','rout','results'].forEach(id=>{
+    const el = document.getElementById(id); if (el) el.innerHTML = '';
+  });
+  wireCamera();
+  // A photo replaces whatever the box last worked out, rather than stacking under it.
+  document.getElementById('camFile').addEventListener('change', ()=>{
+    ['est','rout'].forEach(id=>{ const el = document.getElementById(id); if (el) el.innerHTML = ''; });
+  });
+
+  ta.value = sheetState.rtext || '';
+  const paint = ()=>{
+    const k = estimateKind(ta.value);
+    go.textContent = (k === 'link' || k === 'recipe') ? 'Read the recipe' : 'Estimate calories';
+    kind.textContent =
+      k === 'link'     ? 'Reads the recipe at '+(hostOf(firstURL(ta.value)) || 'that link')+'.' :
+      k === 'recipe'   ? 'Reads this as a recipe \u2014 servings and weight come next.' :
+      k === 'describe' ? 'Estimates what you describe.' : '';
+  };
+  const run = ()=>{
+    const v = ta.value.trim(), k = estimateKind(v);
+    if (!k){ toast('Describe it, or paste a recipe or a link'); return; }
+    clear();
+    if (k === 'describe'){ sheetState.recipe = null; estimate(v); }
+    else readRecipe(v);
+  };
+  ta.oninput = ()=>{ sheetState.rtext = ta.value; paint(); };
+  ta.onkeydown = e=>{
+    // Return adds a line to a recipe; a one-line description is finished.
+    if (e.key === 'Enter' && estimateKind(ta.value) === 'describe' && ta.value.indexOf('\n') < 0){
+      e.preventDefault(); ta.blur(); run();
+    }
+  };
+  go.onclick = run;
+  paint();
+
+  if (sheetState.autoEst){
+    // Handed over from Search with the words already typed: don't make you
+    // press the button to ask the question you already asked.
+    sheetState.autoEst = false;
+    run();
+  } else if (sheetState.recipe){
+    // Coming back to the tab shouldn't throw away what you already worked out.
+    showRecipe(sheetState.recipe);
+  } else if (!ta.value){
+    ta.focus();
+  }
+}
+
+/* Search came up short: carry the words over rather than making you retype them. */
+function estimateHandoff(q){
+  const b = document.createElement('button');
+  b.className = 'cta ghost';
+  b.style.marginTop = '12px';
+  b.textContent = 'Estimate \u201c'+q+'\u201d instead';
+  b.onclick = ()=>{
+    sheetState.rtext = q;
+    sheetState.recipe = null;
+    sheetState.autoEst = true;
+    sheetState.tab = 'estimate';
+    drawAdd();
+  };
+  return b;
 }
 
 /* One way in to the API, shared by Estimate and Recipe. Tools are optional —
@@ -3260,23 +3628,8 @@ async function estimate(desc){
 /* ============================================================
    Recipes — paste the text, or paste a link
    ============================================================ */
-function tabRecipe(){
-  body().innerHTML =
-    '<div class="field"><label>Paste a recipe, or a link to one</label>'+
-    '<textarea id="rin" placeholder="https://\u2026&#10;&#10;or paste the ingredient list straight in" autocomplete="off"></textarea></div>'+
-    '<button class="cta" id="rgo">Read it</button>'+
-    '<div id="rout"></div>'+
-    '<p class="note">Links are read off the page directly, and through your CORS proxy when the site blocks that. '+
-    'Pasted text always works and needs no proxy. If the page publishes its own nutrition figures those are used as they are; '+
-    'otherwise the ingredients go to Claude for an estimate.</p>';
-  const ta = document.getElementById('rin');
-  ta.value = sheetState.rtext || '';
-  ta.oninput = ()=>{ sheetState.rtext = ta.value; };
-  ta.focus();
-  document.getElementById('rgo').onclick = ()=>readRecipe(ta.value.trim());
-  // Coming back to the tab shouldn't throw away what you already worked out.
-  if (sheetState.recipe) showRecipe(sheetState.recipe);
-}
+// The old name, for anything that still calls it.
+function tabRecipe(){ sheetState.tab = 'estimate'; tabEstimate(); }
 
 /* Treat it as a link only when a link is essentially all that was pasted —
    otherwise a recipe that happens to cite a source would go down the wrong path. */
@@ -3871,18 +4224,39 @@ function tabCustom(){
   }
 }
 
-function addEntry(e){
+/* opts.stay keeps the sheet open, for adding several regulars in a row.
+   Every add now gets an Undo, the same as the quick chips always had --
+   one-tap logging is only safe if one tap also takes it back. */
+function addEntry(e, opts){
   if (!sheetState || !sheetState.meal) return;
   if (!isFinite(e.cal)){ toast('That came out as an invalid number'); return; }
   e.cal = Math.max(0, Math.round(e.cal));
-  // Hold on to the meal: closeSheet() clears sheetState, and the toast below
-  // still needs the name.
-  const meal = sheetState.meal;
-  day(viewDate).meals[meal.id].push(stampNew(e));
+  const stay = !!(opts && opts.stay);
+  // Hold on to the meal and the day: closeSheet() clears sheetState, and
+  // the toast and its Undo still need both.
+  const meal = sheetState.meal, dk = viewDate;
+  const entry = stampNew(e);
+  day(dk).meals[meal.id].push(entry);
   buzz(10);
   bumpUse(e, meal.id);
-  save(); render(); closeSheet(true);
-  toast(T('added', e.cal.toLocaleString(), meal.name.toLowerCase()));
+  if (stay){
+    sheetState.added = (sheetState.added || 0) + e.cal;
+    paintTally();
+    save(); render();
+  } else {
+    save(); render(); closeSheet(true);
+  }
+  toast(T('added', e.cal.toLocaleString(), meal.name.toLowerCase()), {label:'Undo', run(){
+    const list = day(dk).meals[meal.id];
+    const at = list.indexOf(entry);
+    if (at < 0) return;
+    bury(entry, 'entry'); list.splice(at, 1); save(); render();
+    if (stay && sheetState && sheetState.meal === meal){
+      sheetState.added = Math.max(0, (sheetState.added || 0) - e.cal);
+      paintTally();
+    }
+  }});
+  return entry;
 }
 
 /* ---------- daily base ---------- */
