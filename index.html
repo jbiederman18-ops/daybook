@@ -985,6 +985,7 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
 [data-glass="on"] .logfield{border-color:var(--rim-low);-webkit-backdrop-filter:blur(8px) saturate(140%);backdrop-filter:blur(8px) saturate(140%)}
 [data-glass="on"] .mbar{box-shadow:inset 0 1px 2px rgba(0,0,0,.25),inset 0 0 0 1px var(--rim-low)}
 [data-glass="on"] .mdot{border-color:transparent}
+.kbproxy{position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0;margin:0;font-size:16px;pointer-events:none;z-index:-1}
 </style>
 </head>
 <body>
@@ -1055,6 +1056,7 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
   <div class="sheet-in" id="sheetBody"></div>
 </div>
 <div class="toast" id="toast"></div>
+<input id="kbProxy" class="kbproxy" aria-hidden="true" tabindex="-1" autocomplete="off" autocorrect="off" enterkeyhint="search">
 
 <script>
 "use strict";
@@ -2290,13 +2292,44 @@ function logChip(q, m){
   }});
 }
 function openLog(){ openAdd(currentMeal()); }
+/* After the slide-up, not during it: a field that is still below the screen
+   when it takes focus is one iOS scrolls the page to reach. */
+function focusWhenSettled(proxy){
+  const sh = document.getElementById('sheet');
+  let done = false;
+  const go = ()=>{
+    if (done) return;
+    done = true;
+    sh.removeEventListener('transitionend', onEnd);
+    const q = document.getElementById('q');
+    if (!q || !sheetState || document.activeElement !== proxy){
+      if (document.activeElement === proxy) proxy.blur();
+      return;
+    }
+    const typed = proxy.value;
+    proxy.value = '';
+    try { q.focus({preventScroll:true}); } catch(e){ q.focus(); }
+    if (typed){
+      q.value = typed;
+      q.dispatchEvent(new Event('input'));
+    }
+  };
+  const onEnd = e=>{ if (e.target === sh && e.propertyName === 'transform') go(); };
+  sh.addEventListener('transitionend', onEnd);
+  setTimeout(go, 420);           // no transition to wait for, or it was skipped
+}
 (function(){
   /* Focus has to happen inside the tap for iOS to raise the keyboard, so it
      is done here rather than left to the sheet. */
   document.getElementById('logOpen').onclick = ()=>{
+    const proxy = document.getElementById('kbProxy');
+    proxy.value = '';
+    try { proxy.focus({preventScroll:true}); } catch(e){ proxy.focus(); }
     openLog();
-    const q = document.getElementById('q');
-    if (q) q.focus();
+    // Closing the sheet hands focus back to whatever had it on the way in.
+    // That's the proxy now, and focusing it would put the keyboard back up.
+    lastFocus = document.getElementById('logOpen');
+    focusWhenSettled(proxy);
   };
   document.getElementById('dockCam').onclick = ()=>{
     openLog();
@@ -2917,6 +2950,9 @@ function trackKeyboard(){
   document.addEventListener('focusin', e=>{
     const el = e.target;
     if (!el || !el.closest || !el.closest('.sheet-in')) return;
+    // The search box is the first thing in the sheet; centring it only ever
+    // scrolls something that didn't need scrolling.
+    if (el.id === 'q') return;
     // After the keyboard animation, or it scrolls to the pre-keyboard layout.
     setTimeout(()=>{
       try { el.scrollIntoView({block:'center', behavior:'smooth'}); } catch(x){}
