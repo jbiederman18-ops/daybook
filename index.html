@@ -752,6 +752,171 @@ html.kb-open[data-glass="on"] .sheet:has(.stickysave)::after{
 .tab{font-size:12.5px;letter-spacing:0}
 .qchip{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
 .qchip.held{transform:scale(.96);transition:transform .12s}
+/* ============================================================
+   THE STAGE -- day and night
+   ------------------------------------------------------------
+   The themes used to paint their colour across everything: the page, the
+   panel, the header band. Now the background is a quiet neutral -- a near-
+   black at night, a soft paper white by day -- and each theme's colour is
+   kept at full strength but spent only on small things that mean
+   something. Two roles, per theme:
+
+     --accent-ink  information: "left of", section headings, the gear
+     --hot         what you can tap or have selected: tabs, chips, and the
+                   glow under the main button
+
+   A third axis alongside theme and glass, not a replacement for either:
+   data-mode is resolved from Settings (Auto / Day / Night). Every rule
+   here is gated on it, and it sits after the glass block so that where
+   the two disagree about a surface, the stage wins.
+
+   Each theme keeps a trace of its own temperature in the neutral --
+   violet for WrestleMania, cool for Speed Racer, sea for Aquaman, ivory
+   and true black for John Wick -- so they are still told apart at a glance
+   by more than their accents, without the background becoming colour.
+   ============================================================ */
+[data-theme][data-mode]{
+  --page-bg:linear-gradient(180deg,var(--stage-top) 0%,var(--page) 100%);
+  --hero-ink:var(--ink);
+  --big-shadow:none;
+  --strip-h:3px;
+  --hot-wash:color-mix(in srgb,var(--hot) 15%,transparent);
+}
+[data-theme][data-mode="night"]{
+  --surface:color-mix(in srgb,var(--page) 94%,#fff);
+  --surface-2:color-mix(in srgb,var(--page) 85%,#fff);
+  --raised:color-mix(in srgb,var(--page) 90%,#fff);
+  --bg:var(--page);
+  --line:rgba(255,255,255,.08); --edge:rgba(255,255,255,.11);
+  --ink:#F3F2F7; --ink-dim:rgba(236,234,244,.66); --ink-faint:rgba(226,224,236,.44);
+  --hero-flat:rgba(255,255,255,.025);
+  --bar-track:rgba(255,255,255,.09);
+  --chip-bg:rgba(255,255,255,.06);
+  --toast:#23222B; --toast-ink:#F3F2F7;
+  --warn-bg:#2B1219; --warn-ink:#FF9DB0;
+  --combo-bg:rgba(255,255,255,.05);
+  --lift:0 1px 2px rgba(0,0,0,.4);
+  --panel-lift:0 22px 50px rgba(0,0,0,.5);
+  --press:brightness(1.2);
+  --scrim:rgba(0,0,0,.6);
+  --seg-edge:rgba(0,0,0,.35);
+}
+[data-theme][data-mode="day"]{
+  --surface:#FFFFFF;
+  --surface-2:color-mix(in srgb,var(--page),#000 5%);
+  --raised:#FFFFFF;
+  --bg:color-mix(in srgb,var(--page),#000 3%);
+  --line:rgba(12,12,32,.08); --edge:rgba(12,12,32,.12);
+  --ink:#15141B; --ink-dim:rgba(21,20,27,.66); --ink-faint:rgba(21,20,27,.46);
+  --hero-flat:rgba(0,0,0,.018);
+  --bar-track:rgba(0,0,0,.07);
+  --chip-bg:rgba(0,0,0,.04);
+  --toast:#1D1C23; --toast-ink:#FFFFFF;
+  --warn-bg:#FFF0F3; --warn-ink:#A3122A;
+  --combo-bg:rgba(0,0,0,.035);
+  --lift:0 1px 2px rgba(20,20,40,.08);
+  --panel-lift:0 14px 36px rgba(20,20,40,.09);
+  --press:brightness(.95);
+  --scrim:rgba(18,18,28,.3);
+  --seg-edge:rgba(255,255,255,.7);
+  --hot-wash:color-mix(in srgb,var(--hot) 11%,transparent);
+}
+/* Glass on a flat background: the blur has nothing colourful left to
+   pull through, so the material reads as a faint frosting at night and
+   a milky pane by day. Rims are set directly here -- by day a white rim
+   is invisible and a derived dark one would make the specular highlight
+   a shadow. */
+[data-glass="on"][data-mode="night"]{
+  --tint-rgb:255,255,255; --rim-rgb:255,255,255; --hero-rgb:255,255,255;
+  --g-tint:.045; --g-rim:.2; --g-sat:100%; --g-blur:20px; --g-depth:.45; --plate:.08;
+  --rim:rgba(255,255,255,.2); --rim-low:rgba(255,255,255,.1);
+  --raised:rgba(255,255,255,.06);
+}
+[data-glass="on"][data-mode="day"]{
+  --tint-rgb:255,255,255; --rim-rgb:15,15,40; --hero-rgb:0,0,0;
+  --g-tint:.84; --g-rim:.1; --g-sat:100%; --g-blur:20px; --g-depth:.08; --plate:.8;
+  --rim:rgba(15,15,40,.1); --rim-low:rgba(15,15,40,.09);
+  --raised:rgba(15,15,40,.045);
+}
+[data-glass="on"][data-mode="day"] .wrap::after{display:none}
+
+/* ---- per theme: temperature of the neutral, and the lights ---- */
+[data-theme="mania"][data-mode="night"]{ --page:#0C0B11; --stage-top:#16141D;
+  --accent:#FFC800; --accent-ink:#FFC800; --hot:#FF2D9E; --hot-ink:#FF62B6; --ink-on:#150B2A;
+  --cta-glow:rgba(255,45,158,.3); }
+[data-theme="mania"][data-mode="day"]{ --page:#F3F2F7; --stage-top:#FAF9FC;
+  --accent:#FFC800; --accent-ink:#A67500; --hot:#FF2D9E; --hot-ink:#CC127A; --ink-on:#150B2A;
+  --cta-glow:rgba(255,45,158,.24); }
+
+[data-theme="speed"][data-mode="night"]{ --page:#0A0C12; --stage-top:#13161F;
+  --accent:#00C8F5; --accent-ink:#3BD8FF; --hot:#FF2D87; --hot-ink:#FF62A6; --ink-on:#06121F;
+  --good:#3B6BFF; --cta-glow:rgba(255,51,85,.3); }
+[data-theme="speed"][data-mode="day"]{ --page:#F1F3F8; --stage-top:#F9FAFD;
+  --accent:#00C8F5; --accent-ink:#0071B8; --hot:#FF2D87; --hot-ink:#CF1266; --ink-on:#06121F;
+  --good:#3B6BFF; --cta-glow:rgba(255,51,85,.22); }
+
+[data-theme="aqua"][data-mode="night"]{ --page:#080D10; --stage-top:#10181C;
+  --accent:#F0A02A; --accent-ink:#F5B942; --hot:#35B8F0; --hot-ink:#66CDF6; --ink-on:#06222C;
+  --cta-glow:rgba(240,160,42,.28); }
+[data-theme="aqua"][data-mode="day"]{ --page:#EFF4F5; --stage-top:#F8FBFB;
+  --accent:#F0A02A; --accent-ink:#9E5E00; --hot:#1FA3DB; --hot-ink:#0B6F9E; --ink-on:#06222C;
+  --cta-glow:rgba(240,160,42,.24); }
+
+[data-theme="wick"][data-mode="night"]{ --page:#0A0A0A; --stage-top:#141414;
+  --accent:#C9A227; --accent-ink:#D9B64A; --hot:#C9A227; --hot-ink:#E3C766; --ink-on:#0B0B0D;
+  --cta:linear-gradient(180deg,#B3202B 0%,#7E121A 100%); --cta-ink:#F7F2E7;
+  --cta-glow:rgba(179,32,43,.32); --big-shadow:0 0 22px rgba(201,162,39,.22); }
+[data-theme="wick"][data-mode="day"]{ --page:#F4F2ED; --stage-top:#FBFAF7;
+  --accent:#C9A227; --accent-ink:#7F6310; --hot:#B08A1C; --hot-ink:#7F6310; --ink-on:#0B0B0D;
+  --cta:linear-gradient(180deg,#B3202B 0%,#7E121A 100%); --cta-ink:#F7F2E7;
+  --cta-glow:rgba(179,32,43,.2); }
+
+/* ---- the fields go quiet ---- */
+[data-theme][data-mode] .hero{background:var(--hero-flat);border-color:var(--line)}
+[data-theme][data-mode] .hero::after{display:none}
+[data-theme][data-mode] .remain .big{color:var(--ink)}
+[data-theme][data-mode] .remain.over .big{color:var(--over)}
+[data-theme][data-mode] .mathline{color:var(--ink-dim);opacity:1}
+[data-theme][data-mode] .mathline b{color:var(--ink)}
+[data-theme][data-mode] .mathline button{color:var(--ink-dim)}
+[data-theme][data-mode] .qchip{font-weight:500;background:var(--chip-bg);box-shadow:none}
+[data-theme][data-mode] .qchip .qc{color:var(--ink-faint)}
+[data-theme][data-mode] .savemeal{background:transparent;box-shadow:none;border-color:transparent;
+  color:var(--ink-faint);font-weight:700;-webkit-backdrop-filter:none;backdrop-filter:none}
+[data-theme][data-mode] .cta.ghost{background:var(--raised);color:var(--ink)}
+[data-theme][data-mode] .wrap::before,[data-theme][data-mode] .sheet::before{border-bottom:none}
+[data-theme][data-mode] .caustic{opacity:.35}
+[data-theme][data-mode="day"] .caustic{display:none}
+
+/* Every control that drew its border in --ink. On a quiet background a
+   full-strength outline on every chip is the loudest thing on screen. */
+[data-theme][data-mode] .wrap,[data-theme][data-mode] input,[data-theme][data-mode] select,
+[data-theme][data-mode] textarea,[data-theme][data-mode] .arrow,[data-theme][data-mode] .gear,
+[data-theme][data-mode] .dot,[data-theme][data-mode] .addbtn,[data-theme][data-mode] .qchip,
+[data-theme][data-mode] .tbar,[data-theme][data-mode] .tabs,[data-theme][data-mode] .chip,
+[data-theme][data-mode] .toast,[data-theme][data-mode] .camera,[data-theme][data-mode] .shot,
+[data-theme][data-mode] .swatch,[data-theme][data-mode] .qadd,[data-theme][data-mode] .themecard.on{
+  border-color:var(--edge);
+}
+[data-theme][data-mode] .sheet,[data-theme][data-mode] .trend{border-top-color:var(--edge)}
+[data-theme][data-mode] .bar{box-shadow:inset 0 0 0 1px var(--edge)}
+[data-theme][data-mode] .addbtn span.plus{border-color:transparent}
+
+/* ---- the lights: full strength, small doses ---- */
+[data-theme][data-mode] .remain .cap{color:var(--accent-ink);opacity:1}
+[data-theme][data-mode] .gear{background:var(--raised);color:var(--accent-ink);box-shadow:none}
+[data-theme][data-mode] .divider h3{color:var(--accent-ink)}
+[data-theme][data-mode] .tab.on,[data-theme][data-mode] .chip.on{
+  background:var(--hot-wash);color:var(--hot-ink);border-color:transparent;
+  box-shadow:inset 0 0 0 1.5px var(--hot);
+}
+[data-theme][data-mode] .themecard.on{box-shadow:inset 0 0 0 1.5px var(--hot)}
+[data-theme][data-mode] .cta:not(.ghost){border-color:transparent;box-shadow:0 6px 18px var(--cta-glow)}
+[data-theme][data-mode] input:focus,[data-theme][data-mode] select:focus,
+[data-theme][data-mode] textarea:focus,[data-theme][data-mode] button:focus-visible{
+  outline:2px solid var(--accent);outline-offset:1px;
+}
+[data-theme][data-mode] .tally{background:var(--accent);color:var(--ink-on)}
 @keyframes driftB{ from{transform:translate3d(0,0,0)} to{transform:translate3d(-194px,-388px,0)} }
 </style>
 </head>
@@ -841,6 +1006,7 @@ const DEFAULTS = {
   proxy:'',                  // optional CORS proxy prefix
   theme:'speed',             // 'speed' | 'aqua' | 'wick' | 'mania'
   glass:true,                // Liquid Glass material, orthogonal to the theme
+  mode:'auto',               // 'auto' | 'day' | 'night' -- the stage, orthogonal to both
   unitSystem:'imperial',     // 'imperial' (ft/in/lb) or 'metric'  — your body stats
   foodUnit:'g',              // 'g' or 'oz' — which weight leads when logging food
   syncUrl:'', syncToken:''   // optional, powers the iOS widget
@@ -852,7 +1018,7 @@ let S = { settings:{...DEFAULTS}, days:{}, saved:[], combos:[],
 
 /* Body stats sync between devices. Keys and the proxy stay local on purpose:
    they're per-device secrets and the relay is only guarded by a shared word. */
-const PROFILE_KEYS = ['sex','age','heightCm','weightKg','goalDelta','baseMode','manualBase','unitSystem','foodUnit','theme','glass'];
+const PROFILE_KEYS = ['sex','age','heightCm','weightKg','goalDelta','baseMode','manualBase','unitSystem','foodUnit','theme','glass','mode'];
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function stampNew(e){ return {...e, id:uid(), up:Date.now()}; }
 /* Always move a record's clock forward. A device whose clock runs ahead can
@@ -934,14 +1100,37 @@ function T(key, ...args){
   if (v === undefined) return (COPY.speed[key] !== undefined ? COPY.speed[key] : '');
   return typeof v === 'function' ? v(...args) : v;
 }
+/* Auto follows the phone. Anything unrecognised -- a value from a newer
+   build, arriving by sync -- is treated as auto rather than guessed at. */
+function modeSetting(){ const m = S.settings.mode; return (m === 'day' || m === 'night') ? m : 'auto'; }
+function modeId(){
+  const m = modeSetting();
+  if (m !== 'auto') return m;
+  try { return matchMedia('(prefers-color-scheme: light)').matches ? 'day' : 'night'; }
+  catch(e){ return 'night'; }
+}
+/* The browser chrome matches the top of the stage, so the status bar and
+   the page meet without a seam. */
+const STAGE_TOP = {
+  mania:{night:'#16141D', day:'#FAF9FC'}, speed:{night:'#13161F', day:'#F9FAFD'},
+  aqua:{night:'#10181C', day:'#F8FBFB'},  wick:{night:'#141414', day:'#FBFAF7'}
+};
 function applyTheme(){
-  const id = themeId();
+  const id = themeId(), mode = modeId();
   document.documentElement.setAttribute('data-theme', id);
   document.documentElement.setAttribute('data-glass', glassOn() ? 'on' : 'off');
+  document.documentElement.setAttribute('data-mode', mode);
+  document.documentElement.style.colorScheme = mode === 'day' ? 'light' : 'dark';
   const meta = document.querySelector('meta[name="theme-color"]');
-  const t = THEMES.find(x=>x.id === id);
-  if (meta && t) meta.setAttribute('content', t.chrome);
+  const top = (STAGE_TOP[id] || STAGE_TOP.speed)[mode];
+  if (meta && top) meta.setAttribute('content', top);
 }
+// Auto should follow the phone at sunset without a reload.
+try {
+  const mq = matchMedia('(prefers-color-scheme: light)');
+  const onChange = ()=>{ if (modeSetting() === 'auto') applyTheme(); };
+  if (mq.addEventListener) mq.addEventListener('change', onChange); else mq.addListener(onChange);
+} catch(e){}
 
 /* Aquaman's caustics. Two turbulence fields at different frequencies;
    stitchTiles lets each tile seamlessly at its native size, so the CSS
@@ -4383,6 +4572,12 @@ function openSettings(){
       '<p class="note" style="margin-top:8px">Glass frosts the panel so the background shows through it. '+
       'Solid is the flat version of the same theme. If you have asked iOS to reduce transparency, '+
       'you get solid either way.</p></div>'+
+    '<div class="field" style="margin-top:14px"><label>Light</label>'+
+      '<div class="chips" style="margin:0">'+
+      '<button class="chip'+(modeSetting()==='auto'?' on':'')+'" id="mdAuto">Auto</button>'+
+      '<button class="chip'+(modeSetting()==='day'?' on':'')+'" id="mdDay">Day</button>'+
+      '<button class="chip'+(modeSetting()==='night'?' on':'')+'" id="mdNight">Night</button></div>'+
+      '<p class="note" style="margin-top:8px">Auto follows your phone\u2019s light and dark setting.</p></div>'+
 
     '<div class="divider"><h3>Daily base</h3></div>'+
     '<div class="chips"><button class="chip'+(s.baseMode!=='manual'?' on':'')+'" id="sCalc">Work it out for me</button>'+
@@ -4456,6 +4651,15 @@ function openSettings(){
   };
   document.getElementById('glOn').onclick  = ()=>glSet(true);
   document.getElementById('glOff').onclick = ()=>glSet(false);
+  const mdSet = v=>{
+    if (modeSetting() === v) return;
+    S.settings.mode = v; applyTheme(); touchProfile(); save();
+    [['mdAuto','auto'],['mdDay','day'],['mdNight','night']].forEach(([id, m])=>
+      document.getElementById(id).classList.toggle('on', v === m));
+  };
+  document.getElementById('mdAuto').onclick  = ()=>mdSet('auto');
+  document.getElementById('mdDay').onclick   = ()=>mdSet('day');
+  document.getElementById('mdNight').onclick = ()=>mdSet('night');
 
   // Switching units re-renders the sheet, keeping whatever is typed so far.
   document.getElementById('uImp').onclick = ()=>{ commitBody(); S.settings.unitSystem='imperial'; touchProfile(); save(); sheetGuard=null; openSettings(); };
