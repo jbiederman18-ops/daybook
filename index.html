@@ -332,6 +332,10 @@ header{padding:30px 0 4px}
 .mathline{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;font-weight:600;color:var(--hero-ink);opacity:.78}
 .mathline b{color:var(--hero-ink);font-weight:800}
 .mathline button{color:var(--hero-ink);border-bottom:2px dotted currentColor}
+/* The words stay the size they are; the finger gets 44 px. Sideways it only
+   reaches half the gap, so neighbours never overlap. */
+.mathline button{position:relative}
+.mathline button::after{content:'';position:absolute;top:-12px;bottom:-12px;left:-7px;right:-7px}
 
 /* ---------- meals ---------- */
 .meal{border-top:var(--meal-rule);padding:16px 0 8px}
@@ -1070,9 +1074,11 @@ const Store = {
     if (window.storage){ try { const r = await window.storage.get(k); return r ? r.value : null; } catch(e){ return null; } }
     try { return localStorage.getItem(k); } catch(e){ return null; }
   },
+  /* Resolves true when the write landed. It used to swallow every failure,
+     so a full localStorage lost each change after the first silently. */
   async set(k,v){
-    if (window.storage){ try { await window.storage.set(k,v); } catch(e){} return; }
-    try { localStorage.setItem(k,v); } catch(e){}
+    if (window.storage){ try { await window.storage.set(k,v); return true; } catch(e){ return false; } }
+    try { localStorage.setItem(k,v); return true; } catch(e){ return false; }
   }
 };
 
@@ -1385,8 +1391,43 @@ let dataRev = 0;
 function persist(){
   dataRev++;
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(()=>Store.set('daybook', JSON.stringify(S)), 180);
+  saveTimer = setTimeout(writeNow, 180);
 }
+let storageWarned = false;
+function writeNow(){
+  clearTimeout(saveTimer);
+  saveTimer = null;
+  const json = JSON.stringify(S);
+  Store.set('daybook', json).then(ok=>{
+    /* The food-search cache is rebuilt by searching; the log isn't. When the
+       device is full, the cache goes first and the log gets a second try. */
+    if (!ok && !window.storage){
+      try {
+        if (localStorage.getItem(SEEN_KEY) !== null){
+          localStorage.removeItem(SEEN_KEY);
+          localStorage.setItem('daybook', json);
+          ok = true;
+        }
+      } catch(e){}
+    }
+    if (ok){ storageWarned = false; return; }
+    if (storageWarned) return;
+    storageWarned = true;
+    toast(S.settings.syncUrl
+      ? 'This device couldn\u2019t save \u2014 storage is full. Sync still has your log.'
+      : 'This device couldn\u2019t save \u2014 storage is full. Export a backup from Settings.');
+  });
+}
+/* Leaving the app used to strand up to 1.4 s of work: 180 ms before the log
+   reached storage and 1.2 s before it reached sync. iOS suspends a PWA the
+   moment it leaves the screen, so an entry logged just before swiping home
+   stayed on this phone until the app was next opened. Write and push now. */
+function flushNow(){
+  if (saveTimer) writeNow();
+  if (syncTimer){ clearTimeout(syncTimer); syncTimer = null; pushSync(false, true); }
+}
+document.addEventListener('visibilitychange', ()=>{ if (document.hidden) flushNow(); });
+window.addEventListener('pagehide', flushNow);
 function save(){
   persist();
   queueSync();
@@ -1397,7 +1438,7 @@ function save(){
 function queueSync(){
   if (!S.settings.syncUrl) return;
   clearTimeout(syncTimer);
-  syncTimer = setTimeout(pushSync, 1200);
+  syncTimer = setTimeout(()=>{ syncTimer = null; pushSync(); }, 1200);
 }
 /* Everything that changed since `since`. Deletes ride along as tombstones,
    which is what lets one device's deletion survive another's stale copy. */
@@ -1447,15 +1488,15 @@ function collectChanges(since){
 /* Pushes changes plus the widget's summary. Fire-and-forget: the app never
    waits on it and never breaks if it fails. */
 let pushing = null;
-async function pushSync(full){
+async function pushSync(full, keep){
   if (!S.settings.syncUrl) return;
   // Serialise pushes. Two in flight would both stamp lastPush, and the slower
   // one's cursor would hide the faster one's changes from the next push.
   if (pushing){ try { await pushing; } catch(e){} }
-  pushing = doPush(full);
+  pushing = doPush(full, keep);
   try { await pushing; } finally { pushing = null; }
 }
-async function doPush(full){
+async function doPush(full, keep){
   const k = todayKey();
   const at = Date.now();
   const since = full ? 0 : (S.sync.lastPush||0);
@@ -1500,10 +1541,12 @@ async function doPush(full){
     if (ch.profile) patch['profile'] = ch.profile;
     patch['summary'] = payload.summary;
     try {
+      const pb = JSON.stringify(patch);
       const r = await fetch(dbURL('/'), {
         method:'PATCH',
         headers:{'Content-Type':'application/json'},
-        body: JSON.stringify(patch)
+        body: pb,
+        keepalive: !!keep && pb.length < 60000
       });
       if (r.ok) landed = true;
       else {
@@ -1788,6 +1831,71 @@ function mergeRemote(d){
     S.settings.profileUp = +pr.updated;
   }
 }
+/* How much of this device's space the app is using. Browsers allow about
+   5 MB here; a year of logging is roughly 1.5 MB. */
+function storeNote(){
+  const el = document.getElementById('storeNote');
+  if (!el || window.storage) return;
+  let chars = 0;
+  try { ['daybook', SEEN_KEY].forEach(k=>{ chars += (localStorage.getItem(k) || '').length; }); } catch(e){ return; }
+  const mb = chars / 1e6;
+  el.textContent = 'Using '+(mb < 0.1 ? 'under 0.1' : mb.toFixed(1))+' MB of about 5 MB on this device.'+
+    (mb > 4 ? ' That\u2019s nearly full \u2014 export a backup.' : '');
+}
+/* ---------- import ----------
+   A backup goes through the same last-write-wins merge as a pull, so it can
+   only add what's missing or bring back something newer. It can't roll the
+   log back, and a delete made since the backup stays deleted. Keys and
+   device settings are never in a backup, so nothing here touches them. */
+function backupRows(b){
+  const entries = [], library = [], days = [];
+  Object.keys(b.days || {}).forEach(dk=>{
+    const d = b.days[dk] || {}, date = normDate(dk);
+    if (!date) return;
+    if (d.activeUp) days.push({date, active:d.active||0, updated:d.activeUp});
+    MEALS.forEach(m=>((d.meals && d.meals[m.id]) || []).forEach(e=>{
+      if (e && e.id) entries.push({...e, date, meal:m.id, updated:e.up||1, deleted:0});
+    }));
+  });
+  (b.saved || []).forEach(f=>{ if (f && f.id) library.push({...f, kind:'food', updated:f.up||1, deleted:0}); });
+  (b.combos || []).forEach(c=>{ if (c && c.id) library.push({...c, kind:'combo', items:c.items||[], updated:c.up||1, deleted:0}); });
+  Object.entries(b.graves || {}).forEach(([id, g])=>{
+    if (!g || !g.up) return;
+    const row = {id, updated:g.up, deleted:1};
+    if (g.kind === 'entry') entries.push(row); else library.push({...row, kind:g.kind});
+  });
+  let profile = null;
+  if (b.settings && b.settings.profileUp){
+    profile = {updated:b.settings.profileUp};
+    PROFILE_KEYS.forEach(k=>profile[k] = b.settings[k]);
+  }
+  return {entries, library, days, profile};
+}
+function countLog(){
+  let n = 0;
+  Object.keys(S.days).forEach(dk=>MEALS.forEach(m=>{ n += (S.days[dk].meals[m.id]||[]).length; }));
+  return n;
+}
+function importBackup(b){
+  if (!b || typeof b !== 'object' || !b.days || typeof b.days !== 'object'){
+    toast('That file isn\u2019t a Daybook backup');
+    return 0;
+  }
+  const e0 = countLog(), s0 = S.saved.length + S.combos.length;
+  mergeRemote(backupRows(b));
+  const de = countLog() - e0, ds = S.saved.length + S.combos.length - s0;
+  recentCache = null;
+  save(); render();
+  if (de > 0 || ds > 0){
+    // Merged rows keep their old timestamps, which are behind the push
+    // cursor, so an ordinary push would skip them. Send the lot once.
+    if (S.settings.syncUrl) pushSync(true);
+    toast('Imported '+de+' entr'+(de === 1 ? 'y' : 'ies')+(ds ? ' and '+ds+' saved item'+(ds === 1 ? '' : 's') : ''));
+  } else {
+    toast('Nothing new in that backup \u2014 you already have all of it');
+  }
+  return de + ds;
+}
 function parseItems(v){
   if (Array.isArray(v)) return v;
   try { const a = JSON.parse(v||'[]'); return Array.isArray(a) ? a : []; } catch(e){ return []; }
@@ -2022,39 +2130,6 @@ function currentMeal(){ return MEALS.find(m=>m.id === guessMeal()) || MEALS[3]; 
 function dayWord(){ return viewDate === todayKey() ? 'today' : prettyDate(viewDate); }
 function addLabel(){ return T('addTo', dayWord()); }
 
-/* Voice logging. Siri dictates, the Shortcut hands the sentence over in the
-   URL, and the estimating is the app's own rather than the Shortcut's. */
-async function logSpoken(text, mealId, dateStr){
-  const meal = MEALS.find(m=>m.id === mealId) || MEALS.find(m=>m.id === guessMeal());
-  const key  = dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr) ? dateStr : todayKey();
-  if (!S.settings.anthropicKey){
-    toast('Add your Anthropic key in Settings to log by voice');
-    return;
-  }
-  toast('Working out \u201c'+text+'\u201d\u2026');
-  let items;
-  try { items = estItems(await askClaude(estimatePrompt(text)), text); }
-  catch(err){ toast(err.message); return; }
-  if (!items.length){ toast('Could not read a number out of that'); return; }
-
-  // "Two eggs and toast" is two entries now, each with its own macros.
-  const added = items.map(it=>stampNew({name:it.name, cal:it.cal, portion:it.portion, src:'Siri', ...it.mac}));
-  added.forEach(e=>{ day(key).meals[meal.id].push(e); bumpUse(e, meal.id); });
-  buzz(10);
-  save(); render();
-  /* Spoken entries are the likeliest of any to come out wrong, and you were
-     not looking at the screen when it happened. The undo is not optional. */
-  const total = added.reduce((a,e)=>a+e.cal, 0);
-  toast(total.toLocaleString()+' kcal logged'+(added.length > 1 ? ' \u00b7 '+added.length+' items' : ''), {label:'Undo', run:()=>{
-    const arr = day(key).meals[meal.id];
-    added.forEach(e=>{
-      const i = arr.findIndex(x=>x.id === e.id);
-      if (i > -1){ bury(arr[i], 'entry'); arr.splice(i, 1); }
-    });
-    save(); render();
-  }});
-}
-
 function readURL(){
   const q = new URLSearchParams(location.search);
   const a = q.get('active') ?? q.get('activeEnergy') ?? q.get('ae');
@@ -2076,7 +2151,11 @@ function readURL(){
      and a duplicate you didn't type is worse than a log you have to redo. */
   if (hit || spoken) history.replaceState({}, '', location.pathname);
   if (hit) save();
-  if (spoken) logSpoken(spoken, q.get('meal'), dk);
+  /* Voice logging lives in the daybook-siri worker now. A leftover ?log=
+     link opens here, usually in Safari rather than the installed app, so it
+     no longer logs unseen: the text goes into the bar as an estimate you
+     look at before adding. */
+  if (spoken) setTimeout(()=>{ openLog(); goEstimate(spoken); }, 300);
 }
 
 /* ============================================================
@@ -2162,7 +2241,7 @@ function renderMacros(){
       '<div class="mbar"><div class="mfill" style="width:'+pct(mac.s,sc)+'%;background:'+(sOver ? 'var(--over)' : 'var(--m-sug)')+'"></div></div>'+
     '</button>'+
     '<div class="msplit" id="mSplit">'+
-      '<span><i class="mdot" style="background:var(--m-prot)"></i>Protein'+share(kp)+'</span>'+
+      '<span><i class="mdot" style="background:var(--m-prot)"></i>Protein <b>'+Math.round(mac.p)+' g</b>'+share(kp)+'</span>'+
       '<span><i class="mdot" style="background:var(--m-carb)"></i>Carbs <b>'+Math.round(mac.c)+' g</b>'+share(kc)+'</span>'+
       '<span><i class="mdot" style="background:var(--m-fat)"></i>Fat <b>'+Math.round(mac.f)+' g</b>'+share(kf)+'</span>'+
     '</div>'+cover;
@@ -5277,6 +5356,9 @@ function openSettings(){
     'The number lands in today\u2019s allowance and the URL cleans itself up.</p>'+
 
     '<button class="cta ghost" id="exportBtn" style="margin-top:18px">Export my data</button>'+
+    '<button class="cta ghost" id="importBtn" style="margin-top:8px">Import a backup</button>'+
+    '<input type="file" id="importFile" accept="application/json,.json" hidden>'+
+    '<p class="note" id="storeNote"></p>'+
     '<div class="stickysave"><button class="cta" id="saveSet">Save settings</button></div>');
 
   // A stray tap on the backdrop used to discard everything typed here.
@@ -5458,8 +5540,21 @@ function openSettings(){
     dirty = false;
     touchProfile(); save(); render(); closeSheet(true); toast('Settings saved');
   };
+  const fileIn = document.getElementById('importFile');
+  document.getElementById('importBtn').onclick = ()=>fileIn.click();
+  fileIn.onchange = async ()=>{
+    const f = fileIn.files && fileIn.files[0];
+    fileIn.value = '';
+    if (!f) return;
+    let b = null;
+    try { b = JSON.parse(await f.text()); } catch(e){}
+    importBackup(b);
+  };
+  storeNote();
   document.getElementById('exportBtn').onclick = ()=>{
-    const blob = new Blob([JSON.stringify(S,null,2)],{type:'application/json'});
+    // Keys and the Firebase secret stay on the device; a backup file travels.
+    const safe = {...S, settings:{...S.settings, anthropicKey:'', usdaKey:'', syncToken:''}};
+    const blob = new Blob([JSON.stringify(safe,null,2)],{type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
     a.download = 'daybook-'+todayKey()+'.json';
