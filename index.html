@@ -1104,7 +1104,8 @@ const DEFAULTS = {
   foodUnit:'g',              // 'g' or 'oz' — which weight leads when logging food
   proteinPerLb:0.8,          // protein target, grams per lb of body weight
   sugarCap:90,               // total sugar, grams a day
-  syncUrl:'', syncToken:''   // optional, powers the iOS widget
+  syncUrl:'', syncToken:'',  // optional, powers the iOS widget
+  ouraUrl:'', ouraToken:''   // optional: the daybook-siri worker and its LOG_TOKEN
 };
 
 let S = { settings:{...DEFAULTS}, days:{}, saved:[], combos:[],
@@ -1950,7 +1951,7 @@ async function load(){
 function hydrate(){
   let dirty = false;
   // A key saved before this cleaning existed may still carry a stray newline.
-  ['usdaKey','anthropicKey','proxy','syncUrl'].forEach(k=>{
+  ['usdaKey','anthropicKey','proxy','syncUrl','ouraUrl'].forEach(k=>{
     const tidy = cleanKey(S.settings[k]);
     if (tidy !== S.settings[k]){ S.settings[k] = tidy; dirty = true; }
   });
@@ -3455,7 +3456,8 @@ function tabSearch(){
    the API and is dropped. A thumbnail would bloat localStorage and the sync
    sheet for something with no value once the entry exists.
    ============================================================ */
-const PHOTO_EDGE = 1024;      // long edge sent to the API
+const PHOTO_EDGE = 1568;      // long edge sent to the API -- the most the model
+                              // reads at full detail, which label small print needs
 const PHOTO_Q    = 0.8;       // JPEG quality
 
 function wireCamera(){
@@ -3512,7 +3514,7 @@ async function photoEstimate(file){
 
   out.innerHTML = '<div class="divider" style="margin-top:4px"><h3>From your photo</h3></div>'+
     '<div style="text-align:center;padding:22px 0"><span class="spin"></span>'+
-    '<p class="note" style="margin-top:10px">Reading the photo\u2026</p></div>';
+    '<p class="note" style="margin-top:10px">Reading the photo\u2026 a plate gets an estimate, a nutrition label gets read.</p></div>';
 
   let shot;
   try { shot = await shrinkImage(file); }
@@ -3529,7 +3531,21 @@ async function photoEstimate(file){
   const prompt = [
     { type:'image', source:{ type:'base64', media_type:'image/jpeg', data: shot.b64 } },
     { type:'text', text:
-      'This is a photo of food about to be eaten.\n'+
+      'First decide which of two things this photo shows.\n\n'+
+      'A) A NUTRITION LABEL: a Nutrition Facts panel, a nutrition information table, or calorie and macro '+
+      'figures printed on packaging. Then do NOT estimate \u2014 read the printed numbers exactly as they appear.\n'+
+      '- Use the per-serving figures. If there are per-serving and per-container columns, use per serving. '+
+      'If the label only gives per 100 g or 100 ml, use those, with serving "100 g" (or "100 ml") and serving_g 100 (null for ml).\n'+
+      '- Carbs are Total Carbohydrate. Sugar is Total Sugars (natural plus added), never Added Sugars on its own.\n'+
+      '- name: the product name if it is visible anywhere in the photo, otherwise a short description.\n'+
+      '- confidence: "high" if every number you used was clearly legible, "low" if any was blurred, cut off or guessed.\n'+
+      '- Any number you cannot read is null. Never invent one.\n'+
+      'Respond with ONLY this JSON, no markdown fences and no other text:\n'+
+      '{"kind":"label","name":"product name","serving":"serving size as printed, e.g. 2/3 cup (55g)",'+
+      '"serving_g":grams per serving if the label prints one else null,"servings_per_container":number or null,'+
+      '"calories":integer per serving,"protein_g":number,"carbs_g":number,"fat_g":number,"sugar_g":number,'+
+      '"confidence":"high|low","basis":"one short sentence on what you read"}\n\n'+
+      'B) Otherwise it is a photo of food about to be eaten. Then:\n'+
       'Give ONE combined estimate for everything edible on the plate, not a per-item breakdown.\n'+
       'Judge portion size from visual cues \u2014 plate and cutlery size, bowl depth, how full it is.\n'+
       'Give weights in '+unit+'.\n'+
@@ -3538,7 +3554,7 @@ async function photoEstimate(file){
       'If there is no food in the photo, set calories to 0 and say so in basis.\n'+
       'Respond with ONLY a JSON object, no markdown fences and no other text:\n'+
       'Macros are grams for everything on the plate; sugar is total sugars, natural plus added.\n'+
-      '{"name":"short name for the whole plate","calories":integer,"portion":"the portion you assumed",'+
+      '{"kind":"food","name":"short name for the whole plate","calories":integer,"portion":"the portion you assumed",'+
       '"protein_g":number,"carbs_g":number,"fat_g":number,"sugar_g":number,'+
       '"confidence":"high|medium|low","basis":"one short sentence on what you saw and how you got there"}'
     }
@@ -3549,6 +3565,7 @@ async function photoEstimate(file){
   catch(err){ return photoFailed(out, err.message, file); }
   if (!sheetState) return;
 
+  if (String(j.kind||'').toLowerCase() === 'label') return labelResult(out, j, shot, file);
   const cal = Math.round(Number(j.calories));
   if (!isFinite(cal)) return photoFailed(out, 'Could not read a number from the estimate.', file);
   if (cal <= 0){
@@ -3592,6 +3609,101 @@ async function photoEstimate(file){
       portion: j.portion || '',
       src: 'Photo',
       ...macFromJSON(j, v/cal)
+    });
+  };
+  document.getElementById('pretry').onclick = ()=>{
+    const f = document.getElementById('camFile');
+    if (f){ f.value = ''; f.click(); }
+  };
+}
+
+/* ---------- a photo of a nutrition label ----------
+   The label's numbers are facts, not guesses, so the only question left is
+   how much you had. Servings and weight are two views of the same amount and
+   move together; calories per serving stays editable in case the model
+   misread a digit. Correcting it leaves the macros alone -- they were read
+   off the label separately and a misread calorie figure says nothing about
+   them. */
+function labelResult(out, j, shot, file){
+  const per0 = (j.calories === null || j.calories === undefined || j.calories === '') ? NaN : Math.round(Number(j.calories));
+  if (!isFinite(per0) || per0 < 0){
+    return photoFailed(out, 'That looks like a nutrition label, but the calories couldn\u2019t be read. '+
+      'Try again closer and straight on, with the panel flat and in good light.', file);
+  }
+  const num = v=>{ const n = Number(v); return isFinite(n) && n > 0 ? n : 0; };
+  const sg  = num(j.serving_g);                 // grams per serving, 0 if unknown
+  const spc = num(j.servings_per_container);
+  const mac = macFromJSON(j);                   // per serving, as printed
+  const u = foodUnit();
+  const name = String(j.name || 'Packaged food').trim();
+  const printed = String(j.serving || '').trim();
+  // "2/3 cup (55g)" -> "2/3 cup". A serving that is only a weight has no name
+  // of its own, and the weight goes on the end of the label anyway.
+  let named = printed.replace(/\([^)]*\)/g,'').trim();
+  if (!named || /^\d+(?:\.\d+)?\s*(?:g|grams?|oz|ounces?|ml)$/i.test(named)) named = '1 serving';
+  const low = String(j.confidence||'').toLowerCase() === 'low';
+
+  out.innerHTML =
+    '<div class="divider" style="margin-top:4px"><h3>From the label</h3></div>'+
+    '<img class="shot" src="'+shot.preview+'" alt="">'+
+    '<div style="display:flex;align-items:baseline;gap:8px;margin:12px 0 6px">'+
+      '<span class="num" id="lcal" style="font-size:34px;font-weight:700">'+per0.toLocaleString()+'</span>'+
+      '<span style="color:var(--ink-dim);font-size:13px">calories</span>'+
+      '<span class="conf '+(low ? 'low' : 'high')+'">'+(low ? 'check the numbers' : 'read from label')+'</span>'+
+    '</div>'+
+    '<p style="margin:0 0 4px;font-size:14.5px">'+escapeHTML(name)+'</p>'+
+    '<p class="note" style="margin-top:2px">'+escapeHTML(['Per serving: '+per0+' cal',
+      printed, spc ? trimNum(spc)+' servings per package' : ''].filter(Boolean).join(' \u00b7 '))+'</p>'+
+    '<p class="note" id="lmac" style="margin-top:2px"></p>'+
+    (low ? '<div class="warn" style="margin-top:10px">Part of the label was hard to read'+
+      (j.basis ? ' \u2014 '+escapeHTML(j.basis) : '')+'. Worth checking against the package.</div>' : '')+
+    '<div class="chips" style="margin-top:14px">'+
+      '<button class="chip" data-q="0.5">\u00bd serving</button>'+
+      '<button class="chip" data-q="1">1</button>'+
+      '<button class="chip" data-q="2">2</button>'+
+      (spc && spc !== 1 && spc !== 2 ? '<button class="chip" data-q="'+spc+'">Whole package</button>' : '')+
+    '</div>'+
+    '<div class="row">'+
+      '<div class="field"><label>Servings</label><input id="lsv" type="number" inputmode="decimal" step="0.25" min="0" value="1"></div>'+
+      (sg ? '<div class="field"><label>Or weight ('+u+')</label><input id="lwt" type="number" inputmode="decimal" min="0" value="'+fmtAmt(toUnit(sg,u),u)+'"></div>' : '')+
+    '</div>'+
+    '<div class="field"><label>Calories per serving \u2014 fix it if a digit was misread</label>'+
+      '<input id="lper" type="number" inputmode="numeric" value="'+per0+'"></div>'+
+    '<button class="cta" id="paddBtn">'+escapeHTML(addLabel())+'</button>'+
+    '<button class="cta ghost" id="pretry">Try another photo</button>';
+
+  const sv = document.getElementById('lsv');
+  const wt = document.getElementById('lwt');
+  const perIn = document.getElementById('lper');
+  const qty = ()=>{ const q = Number(sv.value); return isFinite(q) && q > 0 ? q : 0; };
+  const perServing = ()=>{ const p = Math.round(Number(perIn.value)); return isFinite(p) && p >= 0 ? p : per0; };
+  const paint = ()=>{
+    const q = qty();
+    document.getElementById('lcal').textContent = Math.round(perServing()*q).toLocaleString();
+    document.getElementById('lmac').textContent = macLine(macCopy(mac, q));
+    document.querySelectorAll('[data-q]').forEach(b=>b.classList.toggle('on', Math.abs(Number(b.dataset.q) - q) < 1e-9));
+  };
+  sv.oninput = ()=>{ if (wt && qty() > 0) wt.value = fmtAmt(toUnit(sg*qty(), u), u); paint(); };
+  if (wt) wt.oninput = ()=>{
+    const w = Number(wt.value);
+    if (isFinite(w) && w > 0) sv.value = trimNum((u === 'oz' ? w*G_PER_OZ : w) / sg);
+    paint();
+  };
+  perIn.oninput = paint;
+  document.querySelectorAll('[data-q]').forEach(b=>b.onclick = ()=>{ sv.value = trimNum(Number(b.dataset.q)); sv.oninput(); });
+  paint();
+
+  document.getElementById('paddBtn').onclick = ()=>{
+    const q = qty();
+    if (!(q > 0)){ toast('How many servings?'); sv.focus(); return; }
+    const grams = sg ? sg*q : 0;
+    addEntry({
+      name: name,
+      cal: perServing()*q,
+      portion: joinPortion(q, named, grams, u, 'x'),
+      g: grams > 0 ? Math.round(grams) : undefined,
+      src: 'Label',
+      ...macCopy(mac, q)
     });
   };
   document.getElementById('pretry').onclick = ()=>{
@@ -5241,14 +5353,72 @@ document.getElementById('editBase').onclick = ()=>{
   draw();
 };
 
-/* ---------- active energy ---------- */
+/* ---------- active energy ----------
+   Pull from Oura asks the daybook-siri worker to run its Oura sync now
+   rather than waiting for the next quarter-hour cron, then pulls from
+   Firebase so the number arrives the way every other device sees it. The app
+   never holds the Oura token; it only holds the worker's LOG_TOKEN. */
+function ouraBase(){
+  return cleanKey(S.settings.ouraUrl || '').replace(/\/+$/,'').replace(/\/oura$/i,'');
+}
+function ouraReady(){ return !!(ouraBase() && S.settings.ouraToken); }
+async function pullOura(){
+  if (!ouraReady()) throw new Error('Add the worker address and log token under Settings \u2192 Oura first.');
+  if (!S.settings.syncUrl) throw new Error('The Oura number travels through your sync database, so sync needs setting up in Settings first.');
+  if (!online()) throw new Error('You\u2019re offline.');
+  const url = ouraBase()+'/oura?token='+encodeURIComponent(S.settings.ouraToken);
+  let said = '';
+  try {
+    const r = await fetch(url, {cache:'no-store'});
+    said = (await r.text()).trim();
+  } catch(e){
+    /* The worker answers without CORS headers unless you've added them, so
+       the browser won't let us read its reply. The request still arrives and
+       the worker still writes before it answers -- so send it blind and let
+       the pull below show what landed. */
+    try { await fetch(url, {mode:'no-cors', cache:'no-store'}); }
+    catch(e2){ throw new Error('Could not reach your worker. Check the address in Settings.'); }
+  }
+  if (said && /siri logger is running/i.test(said))
+    throw new Error('That worker doesn\u2019t have the Oura sync in it yet. Redeploy the version with the /oura route.');
+  if (said && !/^Active calories written/i.test(said)) throw new Error(said);
+  if (!(await pullSync())) throw new Error('The worker ran, but pulling from sync failed: '+(S.sync.err || 'unknown error')+'.');
+  return said;
+}
 document.getElementById('editActive').onclick = ()=>{
+  const ready = ouraReady();
   openSheet(sheetHead('Active energy')+
+    (ready ? '<button class="cta" id="aeOura" style="margin-top:0">Pull from Oura</button>'+
+             '<p class="note" id="aeNote" style="min-height:1.55em"></p>' : '')+
     '<div class="field"><label>Active calories burned on '+prettyDate(viewDate).toLowerCase()+'</label>'+
     '<input id="ae" type="number" inputmode="numeric" value="'+Math.round(day(viewDate).active||0)+'"></div>'+
-    '<button class="cta" id="aeSave">Save</button>'+
-    '<p class="note">Normally the Apple Shortcut fills this in. Enter it by hand if you haven\u2019t run it yet.</p>');
-  document.getElementById('ae').focus();
+    '<button class="cta'+(ready ? ' ghost' : '')+'" id="aeSave">Save</button>'+
+    '<p class="note">'+(ready
+      ? 'Oura also syncs on its own every quarter hour. A number typed here is replaced at the next sync.'
+      : 'Normally the Apple Shortcut fills this in. To pull from your Oura ring from inside the app, add your worker under Settings \u2192 Oura.')+'</p>');
+  if (!ready) document.getElementById('ae').focus();
+  if (ready){
+    const btn = document.getElementById('aeOura');
+    btn.onclick = async ()=>{
+      const note = document.getElementById('aeNote');
+      const dk = viewDate, before = Math.round(peek(dk).active||0);
+      btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
+      note.textContent = 'Asking Oura\u2026';
+      try {
+        await pullOura();
+        const now = Math.round(peek(dk).active||0);
+        const ae = document.getElementById('ae');
+        if (ae) ae.value = now;
+        note.textContent = now === before
+          ? 'Up to date \u2014 '+now.toLocaleString()+' active calories '+(dk === todayKey() ? 'so far today' : 'that day')+'.'
+          : 'Updated from Oura: '+now.toLocaleString()+' active calories.';
+        render();
+      } catch(err){
+        note.textContent = err.message;
+      }
+      if (document.getElementById('aeOura')){ btn.disabled = false; btn.textContent = 'Pull from Oura'; }
+    };
+  }
   document.getElementById('aeSave').onclick = ()=>{
     day(viewDate).active = Math.max(0, Math.round(Number(document.getElementById('ae').value)||0));
     day(viewDate).activeUp = Date.now();
@@ -5347,6 +5517,11 @@ function openSettings(){
     '<div class="divider"><h3>Offline</h3></div>'+
     '<p class="note" id="packNote"></p>'+
     '<button class="cta ghost" id="packBtn" style="margin-top:6px">Update food pack</button>'+
+
+    '<div class="divider"><h3>Oura</h3></div>'+
+    '<div class="field"><label>Worker address</label><input id="ou" value="'+escapeHTML(s.ouraUrl||'')+'" placeholder="https://daybook-siri.your-name.workers.dev" autocomplete="off"></div>'+
+    '<div class="field"><label>Log token</label><input id="ot" value="'+escapeHTML(s.ouraToken||'')+'" placeholder="the LOG_TOKEN you gave the worker" autocomplete="off"></div>'+
+    '<p class="note">The same daybook-siri worker your Siri Shortcut uses. With these filled in, tapping <b>moved</b> on the main screen gives you a <b>Pull from Oura</b> button. Needs sync set up above, because that\u2019s the road the number travels.</p>'+
 
     '<div class="divider"><h3>Apple Health</h3></div>'+
     '<p class="note">Build a Shortcut with three steps, then run it each morning or automate it:<br><br>'+
@@ -5535,7 +5710,9 @@ function openSettings(){
       model:document.getElementById('model').value,
       proxy:cleanKey(document.getElementById('px').value),
       syncUrl:cleanKey(document.getElementById('su').value),
-      syncToken:cleanToken(document.getElementById('st').value)
+      syncToken:cleanToken(document.getElementById('st').value),
+      ouraUrl:cleanKey(document.getElementById('ou').value),
+      ouraToken:cleanToken(document.getElementById('ot').value)
     });
     dirty = false;
     touchProfile(); save(); render(); closeSheet(true); toast('Settings saved');
@@ -5553,7 +5730,7 @@ function openSettings(){
   storeNote();
   document.getElementById('exportBtn').onclick = ()=>{
     // Keys and the Firebase secret stay on the device; a backup file travels.
-    const safe = {...S, settings:{...S.settings, anthropicKey:'', usdaKey:'', syncToken:''}};
+    const safe = {...S, settings:{...S.settings, anthropicKey:'', usdaKey:'', syncToken:'', ouraToken:''}};
     const blob = new Blob([JSON.stringify(safe,null,2)],{type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
