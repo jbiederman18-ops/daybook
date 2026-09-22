@@ -4,12 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Daybook</title>
-<meta name="theme-color" content="#13161F">
+<meta name="theme-color" content="#2E4FB0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Daybook">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1024 1024'%3E %3Cdefs%3E %3ClinearGradient id='bg' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%23171A24'/%3E%3Cstop offset='1' stop-color='%230A0C12'/%3E%3C/linearGradient%3E %3ClinearGradient id='st' x1='0' y1='0' x2='1' y2='0'%3E%3Cstop offset='0' stop-color='%2300D0F5'/%3E%3Cstop offset='.34' stop-color='%233B6BFF'/%3E%3Cstop offset='.66' stop-color='%238A3CFF'/%3E%3Cstop offset='1' stop-color='%23FF2D87'/%3E%3C/linearGradient%3E %3C/defs%3E %3Crect width='1024' height='1024' rx='230' fill='url(%23bg)'/%3E %3Crect x='196' y='258' width='632' height='22' rx='11' fill='url(%23st)'/%3E %3Crect x='196' y='398' width='632' height='108' rx='54' fill='%23FFFFFF' fill-opacity='.09'/%3E %3Crect x='196' y='398' width='452' height='108' rx='54' fill='%23F3F2F7'/%3E %3Crect x='196' y='578' width='632' height='72' rx='36' fill='%23FFFFFF' fill-opacity='.09'/%3E %3Crect x='196' y='578' width='520' height='72' rx='36' fill='%2312C971'/%3E %3Crect x='196' y='704' width='632' height='72' rx='36' fill='%23FFFFFF' fill-opacity='.09'/%3E %3Crect x='196' y='704' width='236' height='72' rx='36' fill='%238B5CF6'/%3E %3C/svg%3E">
-<link rel="apple-touch-icon" sizes="180x180" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAALQAAAC0CAYAAAA9zQYyAAAACXBIWXMAAC4jAAAuIwF4pT92AAANuklEQVR4nO2deXRU5RnG53Q7bTYmM/fe2Wcy+ySZZCb7ahIiGEgiIqBAUARBiyIFlLggooKKIFQr1rZY22JbS8ESQq7V1uqptT241Nae9nSxh1YPaKvWurSCIvj03ElSUbGc6pjvm+vzx+//5Hl/75Nv7jKxONwREGbgMEkGFtE/AGEGDgpNCVgEETY0JYiYPgMeOSQYAolkU+gwCDNwmCQDi8MVBmEGDpNkYNFcYRBmoJkkAwotwRBImEJTAi6CxoamBJrJM+CRQ4IhkDCFpgRcBI0NTQk0k2fAI4cEQyDhbAodAmEGmkkyoNASDIGEKDQl4CJobGhKoJk8A4vmDIEwA80kGVBoCYZAQtkTWnWGQJiBapIMKLQEQyAhCk0JuAgqG5oSqCbPwKI6gyDMQDVJBhRagiGQIIWmBFwElQ1NCVSTZ8AjhwRDIEEKTQm4CCobmhKoJs/AojqCIMxANUkGFFqCIZAghaYEXAT1WA2tOEpAmIFikgwotARDICUUmhJwERQ2NCVQTJ4BjxwSDIGUUGhKwEVQ2NCUQDF5BjxySDAEUkKhKQEXQWFDUwLF5BlYFC0AWSg8Yxk+d8N25G3cifwNO1GwficK1w2g6NoBWK8ZgHXNAGxXDcC2egDKqgEoKwegXboL2iW74OzfBddFg3BfOAjPskF4vzAI3wWD8J8/iMCiQZR8fhDBc3YjtGA3wmfvRmTebkTnDiF2xhDifUNIzBpC2cwhlJ02hOT0ISSn6aicqiM1RUf6ZB3VvTpqenXUduuo79bROFlH0yQdzV06Wk/S0TZRR/sEHR0TdHR26pjQqWPieB0ndeiY1K6ju01HT5uO3lYdU1p1TG3RcWqzjmlNOmY06jitQcfMeh2z6nX01eqYU6vjzBodc6t1zKvSMT+t4+yUjoWpIZxbOYhFlTuxuPIuLKncjqWV27C84k5cVPFt9FdsxSXJb+Ky5O24PHkbrkh+DVclv4I15V/GNeWbcV3Zl3B92Y3YULYRG8s24Itl1+Om0utwc+k1uKV0DW5NXImvJq7AlsTl+HriMnwjcQm+Fe/HHfGL8J3YctwZW4ptsSXYEVuMbbFzsTjQJdybo5FG6MLp5+ATj7+GTz52AJ9++AA+84sD+OxDB/C5nx5E/v0HUXjfQRTdexDWu19H8e7XYd/1OpQfvA5t+xtwbHsDru++Ac8dh+D91iH4bz+EwJZDCH71TYS+/CYiN7+J2E1vIr7pMEo3HEbZ9YeRvPYwKtYcQeqqI0hfcQTVK4+g9tK3UNf/FhoufAuNy4DmJUDrYqDtPKBjEdD5eWDCOUDXQmDyAqBnPnDyPGDqWcC0M4EZZwCnzwFmzQbmzALOnAmcdRowfwawcDpw7jRg0VTg/FOAJVOApb3A8h7gom6gfxJwaRew8iRg1QRg9YnA1Z3A2g7g2nZgXRuwvhXY2HoEN7Ycws0tB3Bry7/wteaX8fXmF/HNpudxR9Oz+G7TPmxrfAo7GvdiZ8OTGGz4A+5u+C3urX8C99U/jgfqHsWDdXvw87qHsKf2p3i09n48XvNjPFFzD35Xo+MP1bvwZPUPsLdqO56q+h72VX0Hz6a34rn07fhHagteSn0Fr6ZuwYHKL+GNyk04XLEB83wdwv2RTui8ZesodI4KfV1wmjxC27UAZMCaasWn7nuKDZ1jQj9TfiWqXEnh/owijdAGNl8C1qZJsDZ3w9rUjWKDxmFsDSPU92Sw141Q2wPFoKYHSnUPVIOqYbT0CKkeOAwqR6jogdMg2ZvBVd4LV9kw7tIREr3wGMSH8Y7giw3jN4gOExihJDJMcIRQ+G3CBqFeREaIGgR7ERulpBfxERIGgV6UjlBm4B+m3N+LpL8HSX83KvzdqPRPRqV/ElI+gy6kfSehKsNEVGeYgBrfiajN0Ik633jUZ+hAg7c9Q6O3DU0ZTkCztxUtGVrQ6m3OcIK3CW3eRrR5GtHuacjQ4alHu6cWXkdYuDfSCk2YgZ1CUwIWQYANTQkCpsyARw4JhkACFJoScBHsx25oPwgzsJskAwotwRCIn0JTAi6C/ZgNrfpBmIHdJBlQaAmGQPwUmhJwEexsaEpgN3kGFpvqB2EGNpNkQKElGALxU2hKwEWwHbuhfSDMwGaSDCi0BEMgPgpNCbgINjY0JbCZPIOcOnIojgDC0YqPFR5/LPN7i8ImwdxNI7TLE8b5iy/Erl334C979+Hll/6Nf7168GPHM/ufw549j2P9DTehfXwX4mVVY0oskUYwUg6XN5J5AEhuoRUfZKRvzgL86Y97hcskG/944RVs3rwFycp6xEurxpxoLAWXOyzcj/dDSqHXrF2PV185IFwemXnwwT2orW8TInW8tApef1y4Jzkh9JIvXCxcllySWlRTx0ur4PZGhfsitdB1De3454uvChcll1i3/kZhQscSaaiOEtmE9kIWduwYFC5IrvG3Z19AXYNx9EgLoSRUKtybo7EUK17IQCBUxnb+gFJffOlqxErTwjCuLoj2ZxRphJ4771zhbZerDA7eI1Ropzsk3B/phL5i9TXCxchVHnvsN0KFdvuiwv2RTuiNm24RLkau8uSfnxIqtDcQF+6PdEKvvHyNcDFylUce+TUbWpFM6Nl9ZwsXI1e5664hnqEVyYQ2zmHPv/CScDlykaXLLhYndIJXOd5X6q1bvydcjlzj6aefRbqmRZjQ/mBCeBkejaXY7oUslFfU4fnnXhQuSS6xctWaTEsKIZ7OfHWAaG+OxlJs90Amzpx7Dl55+TXhouTK9efRW9AicBrXnyVw5mikE9pg8ZIVvGt4HJl3DfwQqVSjoGZOZZ5VF+1JzghtMLHrZOzZ80vhLSgb+/c9h9WrrxXWzKFIOTRnQLgfOSe0gfGwyfTpfbjttq14+OFf4a9/2Y9nnnn+Y8X+fX/Hb574PXYP3ov+/lWoqm5GNFY5poQi5fAF4nC4SoQ7kdNCE2ZQ/P8KbbV7QJiBWRyg0BIMgXgoNCXgIljZ0JTAavIMeOSQYAjEk02h3SDMwGqSDCxWmxuEGVhNkgGFlmAIxE2hKQEXwcqGpgRWk2fAI4cEQyBu8wtd7PRBnVADra8d6rzx5ANkoJ01HtqUZjhiicyzyx8WhyuYedJOtBu5JbTigba4C8oDF8D2yHKShQzse5bBtWk2onV1mWeZPyyRWEXmeWjhrkgvtCHz5j5K/BEtsvrD8xBuaciK1AaBYEI+ocfZ3JAFrb+XMn/Ef5XU7QsRLU0hGs8Oxtv6or05Gss4mwsyUBwKwfbQUgo9Bscs/1kTEY1XZgXj+FGseIT7M4o0QmuzT6DMY/SZwbm5L2tCGxhvsoj2Rz6hV/RQ6DESWtuxMKtCu30R4f7IJ/TyyRR6rITetiCrQru8YYmELnZBBtRTmyn0GAnt2jQrqy/RGtemRfszijRCW91+2HnteUyELpnekTWZw9Fk5nKZaH+kE9pAPbuTLf1RfyDcMjer7WzcPRTtjbRCG2iXn0KpP6qz850LEEnXZE1mtzci3BfphTZQpzRB+f4Cip0lkZUfLYZ3xRREy6uyIrLxn69kOjdLL/QoxdEw7B1VULpqyQfIQD2xGmp1GVRXAKrD/6FRNOObRj3CvTiO0E4QZjDOJBlQaAmGQJwUmhJwEcYdq6GLip0gzKDIJBlQaAmGQJwUmhJwEYrY0JSgyOQZWIqsThBmUGSSDKQW2utKIRWdgtrSmWNKdXwG4sEOaI4SKJqPaMMZ2FVf5kEk0V7knNBNyfm4eOqvcMMZB4SydtbfMLvzVpQmGjKvGpGKTAbGy7HGnUNJhXZAJma13ypc5Hdz2fTfobJ8PCKxJIm9nYHLExLuy7uRSuiu2kuEy/t+rJj6KGKZl0IpdeSoDBzOgHBvpBRaVcJYO/vvwsX9X0xu6qfQsXcudChSlrlDJ9of6YRuqVwoXNjjsaT3JxQ69t6/UKrDJ9wf6YQ+tfkG4cIej9Wn76XQsfcK7XQHhfsjndDTWjcJF/Z4XHX60xQ6JveHQ2mE7khfIFzY47H8lJ9R6Nh7hdYyl/AkEbrQ6oAMOJ2lWNf3knBp/xennHA1wrEkib2dQShanvk+DNH+jCKN0AbTW78oXNr3Y9WMPyGWqKHMsXcutMMdFO6NtEKPK3Zj0eS7hcv7bq6euR91qSmUOfZOmb2BmHBn3iv0OA0yYdy+7Gm4Gmtnib8mvWHOv3Fe9xBS5Z0IR8tJdDiDYHj4rW/RrhwL6YQepdjmRTp+KjrTSzGxZsWY05ycj6CvKvOBh/j/m4Fd9Qh3IyeFJsygkEJTgsKPeQZsaAmGQDQKTQm4CIVsaEpQaPIMeOSQYAhEo9CUgItQyIamBIUmz8BSME4FYQYFJsmAQkswBKJSaErARSg4ZkMXqSDMoMAkGVBoCYZAVApNCbgIBWxoSlBg8gx45JBgCESl0JSAi1DAhqYEBSbPwFJQpIAwgwKTZEChJRgCUSg0JeAiFLChKUGByTOw5BcpIMwg3yQZUGgJhkCULApdqIAwg3yTZEChJRgCUSg0JeAi5LOhKUG+yTOw5BfaQZhBvkkyoNASDIHYKTQl4CLks6EpQb7JM+CRQ4IhEDuFpgRchHw2NCXIN3kGPHJIMARiz57QeYV2EGaQZ5IMLHkFdhBmkGeSDCx5BTYQZpBnkgwotARDIDYKTQm4CHlsaEqQZ/IMeOSQYAjElrUM/gPyFpDJW2O9HAAAAABJRU5ErkJggg==">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23101433'/%3E%3Crect x='9' y='17' width='40' height='8' rx='4' fill='%2300B4F0'/%3E%3Crect x='17' y='28' width='38' height='8' rx='4' fill='%23FFC400'/%3E%3Crect x='9' y='39' width='30' height='8' rx='4' fill='%23FF2D87'/%3E%3C/svg%3E">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -375,7 +374,7 @@ header{padding:30px 0 4px}
 .tbar{width:100%;border-radius:6px 6px 0 0;background:var(--surface-2);min-height:8px;border:var(--border-w) solid var(--ink);box-shadow:var(--bar-gloss);transition:height .3s}
 .tlab{position:absolute;bottom:-19px;left:0;right:0;text-align:center;font-size:11px;font-weight:700;color:var(--ink-faint)}
 .tline{position:absolute;left:0;right:0;border-top:2px dashed var(--ink-faint);pointer-events:none}
-.tline b{position:absolute;right:0;top:-9px;background:var(--surface);padding-left:6px;font-size:10.5px;color:var(--ink-dim);font-weight:800;font-variant-numeric:tabular-nums}
+.tline b{position:absolute;left:0;top:-9px;background:var(--surface);padding-right:6px;font-size:10.5px;color:var(--ink-dim);font-weight:800;font-variant-numeric:tabular-nums}
 .tsum{display:flex;justify-content:space-between;font-size:12.5px;font-weight:600;color:var(--ink-faint);margin-top:14px}
 .tsum b{color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums}
 
@@ -665,6 +664,12 @@ header{padding:30px 0 4px}
   mask-image:linear-gradient(to top,#000 0 96px,rgba(0,0,0,.5) 132px,
              rgba(0,0,0,.16) 154px,transparent 176px);
 }
+/* The Save button's footer is a footer, not a window: the sheet's own
+   surface, nearly opaque, so the settings scrolling underneath stop showing
+   through. Separate from --plate on purpose -- the plate is a tint. */
+[data-glass="on"] .stickysave::before{
+  background:color-mix(in srgb,var(--surface) 90%,transparent);
+}
 [data-glass="on"] .tline b{
   background:rgba(var(--tint-rgb),var(--plate)); color:var(--ink);
   -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px);
@@ -887,7 +892,7 @@ html.kb-open[data-glass="on"] .sheet:has(.stickysave)::after{
 [data-theme][data-mode] .qchip{font-weight:500;background:var(--chip-bg);box-shadow:none}
 [data-theme][data-mode] .qchip .qc{color:var(--ink-faint)}
 [data-theme][data-mode] .savemeal{background:transparent;box-shadow:none;border-color:transparent;
-  color:var(--ink-faint);font-weight:700;-webkit-backdrop-filter:none;backdrop-filter:none}
+  color:var(--accent-ink);font-weight:800;-webkit-backdrop-filter:none;backdrop-filter:none}
 [data-theme][data-mode] .cta.ghost{background:var(--raised);color:var(--ink)}
 [data-theme][data-mode] .wrap::before,[data-theme][data-mode] .sheet::before{border-bottom:none}
 [data-theme][data-mode] .caustic{opacity:.35}
@@ -949,6 +954,24 @@ html.kb-open[data-glass="on"] .sheet:has(.stickysave)::after{
 .mname .mdot{margin-right:0}
 .msplit{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;font-weight:600;color:var(--ink-faint)}
 .msplit b{color:var(--ink);font-weight:800;font-variant-numeric:tabular-nums}
+.msplit:empty{display:none}
+.hero .msplit{margin:-2px 0 10px;color:var(--hero-ink);opacity:.78}
+.hero .msplit b{color:var(--hero-ink)}
+[data-glass="on"] .hero .msplit{color:var(--ink-dim);opacity:1}
+[data-glass="on"] .hero .msplit b{color:var(--ink)}
+[data-theme][data-mode] .hero .msplit{color:var(--ink-dim);opacity:1}
+[data-theme][data-mode] .hero .msplit b{color:var(--ink)}
+/* USDA trouble: one line and a link, details folded away. */
+.fdcerr{font-size:12.5px;color:var(--ink-dim);line-height:1.55;margin:10px 0 0}
+.fdcerr p{margin:0}
+.fdcerr b{color:var(--over);font-weight:800}
+.fdcerr button[data-retry]{color:var(--ink);font-weight:800;border-bottom:2px dotted currentColor;margin-left:2px}
+.fdcerr details{margin-top:4px;color:var(--ink-faint)}
+.fdcerr summary{cursor:pointer;font-size:12px}
+.fdcerr details p{margin-top:4px;word-break:break-word}
+/* 7-day trend: a day's own target, and days with nothing logged. */
+.ttick{position:absolute;left:-3px;right:-3px;height:0;border-top:2px solid var(--ink-dim);pointer-events:none}
+.bars .tbar.none{min-height:0;height:4px;width:34%;margin:0 auto;border:none;box-shadow:none;background:var(--ink-faint);opacity:.45;border-radius:2px}
 .mcover{font-size:12.5px;color:var(--ink-faint);margin:10px 0 0;font-weight:500}
 .mcover button{color:var(--ink);font-weight:800;border-bottom:2px dotted currentColor}
 .nudge{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
@@ -1017,6 +1040,7 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
         <span class="cap" id="remainCap">left</span>
       </div>
       <div class="bar" id="bar"></div>
+      <div class="msplit" id="mSplit"></div>
       <div class="mathline">
         <span><button id="editBase"><b class="num" id="baseNum">—</b> base</button></span>
         <span>+ <button id="editActive"><b class="num" id="activeNum">0</b> moved</button></span>
@@ -1033,7 +1057,7 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
     <h2 id="trendHead">Last 7 days</h2>
     <div class="bars" id="bars"></div>
     <div class="tsum">
-      <span>Daily average <b id="avg7">—</b></span>
+      <span><span id="avgLab">Daily average</span> <b id="avg7">—</b></span>
       <span id="vsTarget"></span>
     </div>
     <div class="tsum" id="mavg"></div>
@@ -1105,8 +1129,9 @@ const DEFAULTS = {
   foodUnit:'g',              // 'g' or 'oz' — which weight leads when logging food
   proteinPerLb:0.8,          // protein target, grams per lb of body weight
   sugarCap:90,               // total sugar, grams a day
+  activityBase:'tracker',    // 'tracker': base is resting burn, moved covers the rest; 'none': sedentary x1.2
+  movedPct:100,              // share of moved (active calories) that counts toward the day
   syncUrl:'', syncToken:'',  // optional, powers the iOS widget
-  ouraUrl:'', ouraToken:'',  // optional: the daybook-siri worker and its LOG_TOKEN
   healthShortcut:''          // name of the Shortcut that sends Health's Active Energy
 };
 
@@ -1116,7 +1141,7 @@ let S = { settings:{...DEFAULTS}, days:{}, saved:[], combos:[],
 
 /* Body stats sync between devices. Keys and the proxy stay local on purpose:
    they're per-device secrets and the relay is only guarded by a shared word. */
-const PROFILE_KEYS = ['sex','age','heightCm','weightKg','goalDelta','baseMode','manualBase','unitSystem','foodUnit','theme','glass','mode','proteinPerLb','sugarCap'];
+const PROFILE_KEYS = ['sex','age','heightCm','weightKg','goalDelta','baseMode','manualBase','unitSystem','foodUnit','theme','glass','mode','proteinPerLb','sugarCap','activityBase','movedPct'];
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function stampNew(e){ return {...e, id:uid(), up:Date.now()}; }
 /* Always move a record's clock forward. A device whose clock runs ahead can
@@ -1378,15 +1403,25 @@ function bmr(){
   const base = 10*Number(s.weightKg) + 6.25*Number(s.heightCm) - 5*Number(s.age);
   return s.sex === 'female' ? base - 161 : base + 5;
 }
-// Sedentary multiplier only (1.2). Apple Health's Active Energy is added
-// on top, so applying a real activity factor here would double-count it.
-function calcBase(){ return Math.round(bmr()*1.2 + Number(S.settings.goalDelta||0)); }
+/* A tracker's Active Energy is every calorie above resting -- workouts and
+   the walk to the car alike. So with a tracker the base is resting burn
+   alone, and the old 1.2 sedentary factor would count that everyday
+   movement twice (~0.2 x BMR, a few hundred a day). Without one, the 1.2
+   stands in for it. */
+function baseFactor(){ return S.settings.activityBase === 'none' ? 1.2 : 1.0; }
+function calcBase(){ return Math.round(bmr()*baseFactor() + Number(S.settings.goalDelta||0)); }
 function baseTarget(){
   return S.settings.baseMode === 'manual'
     ? Math.max(0, Math.round(Number(S.settings.manualBase)||0))
     : calcBase();
 }
-function target(key){ return baseTarget() + Math.round(peek(key).active||0); }
+/* Trackers tend to run high, so you can choose to count only part of it. */
+function movedPct(){
+  const v = Number(S.settings.movedPct);
+  return isFinite(v) && v > 0 && v <= 100 ? v : 100;
+}
+function moved(key){ return Math.round((peek(key).active||0) * movedPct()/100); }
+function target(key){ return baseTarget() + moved(key); }
 
 /* ---------- persistence ---------- */
 let saveTimer = null, syncTimer = null;
@@ -1514,6 +1549,7 @@ async function doPush(full, keep){
       eaten: eaten(k),
       remaining: target(k) - eaten(k),
       active: Math.round(day(k).active||0),
+      moved: moved(k),
       base: baseTarget(),
       meals: MEALS.map(m=>({name:m.name, cal:mealTotal(k,m.id)})),
       protein: Math.round(dayMacros(k).p),
@@ -1953,7 +1989,9 @@ async function load(){
 function hydrate(){
   let dirty = false;
   // A key saved before this cleaning existed may still carry a stray newline.
-  ['usdaKey','anthropicKey','proxy','syncUrl','ouraUrl'].forEach(k=>{
+  // Oura direct is retired; its address and token have nothing left to do.
+  delete S.settings.ouraUrl; delete S.settings.ouraToken;
+  ['usdaKey','anthropicKey','proxy','syncUrl'].forEach(k=>{
     const tidy = cleanKey(S.settings[k]);
     if (tidy !== S.settings[k]){ S.settings[k] = tidy; dirty = true; }
   });
@@ -2174,7 +2212,7 @@ function render(){
   document.getElementById('remainNum').textContent = Math.abs(left).toLocaleString();
   document.getElementById('remainCap').textContent = left < 0 ? T('over') : T('left')+' '+tgt.toLocaleString();
   document.getElementById('baseNum').textContent = baseTarget().toLocaleString();
-  document.getElementById('activeNum').textContent = Math.round(peek(viewDate).active||0).toLocaleString();
+  document.getElementById('activeNum').textContent = moved(viewDate).toLocaleString();
   document.getElementById('eatenNum').textContent = ate.toLocaleString();
 
   /* The budget bar, split by where the calories came from rather than which
@@ -2222,6 +2260,9 @@ function renderMacros(){
   const share = v => ks > 0 ? ' '+Math.round(v/ks*100)+'%' : '';
   const toGo = Math.max(0, pt - Math.round(mac.p));
   const sOver = mac.s > sc;
+  const sHint = !mac.cal ? '' : sOver
+    ? 'over by '+Math.round(mac.s - sc)+' g'
+    : Math.max(0, sc - Math.round(mac.s))+' g left';
   const hint = !mac.cal ? '' : toGo > 0 ? toGo+' g to go' : 'target hit';
 
   let cover = '';
@@ -2239,15 +2280,19 @@ function renderMacros(){
         '<span class="mval" id="mProt"><b>'+Math.round(mac.p)+'</b> / '+pt+' g</span></div>'+
       '<div class="mbar"><div class="mfill" style="width:'+pct(mac.p,pt)+'%;background:var(--m-prot)"></div></div>'+
       '<div class="mline"><span class="mname"><i class="mdot" style="background:var(--m-sug)"></i>Sugar'+
-        (sOver ? ' <em>over the cap</em>' : '')+'</span>'+
+        (sHint ? ' <em>'+sHint+'</em>' : '')+'</span>'+
         '<span class="mval'+(sOver ? ' over' : '')+'" id="mSug"><b>'+Math.round(mac.s)+'</b> / '+sc+' g</span></div>'+
       '<div class="mbar"><div class="mfill" style="width:'+pct(mac.s,sc)+'%;background:'+(sOver ? 'var(--over)' : 'var(--m-sug)')+'"></div></div>'+
-    '</button>'+
-    '<div class="msplit" id="mSplit">'+
-      '<span><i class="mdot" style="background:var(--m-prot)"></i>Protein <b>'+Math.round(mac.p)+' g</b>'+share(kp)+'</span>'+
+    '</button>'+cover;
+
+  /* The key to the calorie bar's colours, directly under it. Protein's grams
+     are already on its own bar, so here it's just its share. */
+  const split = document.getElementById('mSplit');
+  if (split) split.innerHTML = ks > 0
+    ? '<span><i class="mdot" style="background:var(--m-prot)"></i>Protein'+share(kp)+'</span>'+
       '<span><i class="mdot" style="background:var(--m-carb)"></i>Carbs <b>'+Math.round(mac.c)+' g</b>'+share(kc)+'</span>'+
-      '<span><i class="mdot" style="background:var(--m-fat)"></i>Fat <b>'+Math.round(mac.f)+' g</b>'+share(kf)+'</span>'+
-    '</div>'+cover;
+      '<span><i class="mdot" style="background:var(--m-fat)"></i>Fat <b>'+Math.round(mac.f)+' g</b>'+share(kf)+'</span>'
+    : '';
 
   host.querySelector('#mTargets').onclick = openTargets;
   const fb = host.querySelector('#mFill');
@@ -2506,40 +2551,57 @@ function renderTrend(){
   const keys = [];
   for (let i=6;i>=0;i--) keys.push(shiftKey(viewDate,-i));
   const vals = keys.map(k=>eaten(k));
-  const tgt = baseTarget();
-  const peak = Math.max(...vals, tgt, 1) * 1.12;
+  /* Each day is judged against its own target -- base plus what you moved
+     that day -- the same number the top of the screen uses. The dashed line
+     is the base; a day you moved gets a tick at its own target, so a green
+     bar above the line is never a contradiction. */
+  const base = baseTarget();
+  const tgts = keys.map(k=>target(k));
+  const peak = Math.max(...vals, ...tgts, 1) * 1.12;
 
   const ZONE = 96; // bar area height in px (.bars 118px minus 22px label row)
   const line = document.createElement('div');
   line.className = 'tline';
-  line.style.bottom = (22 + Math.min(ZONE, tgt/peak*ZONE)) + 'px';
-  line.innerHTML = '<b>'+tgt.toLocaleString()+'</b>';
+  line.style.bottom = (22 + Math.min(ZONE, base/peak*ZONE)) + 'px';
+  line.innerHTML = '<b>'+base.toLocaleString()+'</b>';
+  line.title = 'Base';
   host.appendChild(line);
 
   keys.forEach((k,i)=>{
     const col = document.createElement('button');
     col.className = 'tcol';
-    const v = vals[i];
-    const over = v > target(k);
+    const v = vals[i], t = tgts[i];
+    const over = v > t;
     const [,, dd] = k.split('-');
     const dObj = new Date(k.split('-')[0], k.split('-')[1]-1, dd);
-    col.innerHTML =
-      '<div class="tbar" style="height:'+Math.max(2, v/peak*100)+'%;background:'+
-        (v===0 ? 'var(--surface-2)' : over ? 'var(--over)' : 'var(--good)')+'"></div>'+
+    // Nothing logged is a mark on the floor, not a short bar that reads as
+    // a very light day.
+    const bar = v === 0
+      ? '<div class="tbar none"></div>'
+      : '<div class="tbar" style="height:'+Math.max(2, v/peak*100)+'%;background:'+
+          (over ? 'var(--over)' : 'var(--good)')+'"></div>';
+    const tick = t !== base && t > 0
+      ? '<i class="ttick" style="bottom:'+Math.min(ZONE, t/peak*ZONE)+'px"></i>' : '';
+    col.innerHTML = bar + tick +
       '<div class="tlab">'+dObj.toLocaleDateString(undefined,{weekday:'narrow'})+'</div>';
-    col.title = prettyDate(k)+': '+v.toLocaleString();
+    col.title = prettyDate(k)+': '+v.toLocaleString()+' of '+t.toLocaleString();
     col.setAttribute('aria-label', col.title);
     col.onclick = ()=>{ viewDate = k; render(); };
     host.appendChild(col);
   });
 
-  const logged = vals.filter(v=>v>0);
-  const avg = logged.length ? Math.round(logged.reduce((a,b)=>a+b,0)/logged.length) : 0;
-  document.getElementById('avg7').textContent = logged.length ? avg.toLocaleString() : '—';
-  const diff = avg - tgt;
+  /* Today isn't over, so it stays out of the averages: a half-logged day
+     pulled every one of them down until bedtime. */
+  const today = todayKey();
+  const done = keys.map((k,i)=>({k, v:vals[i], t:tgts[i]})).filter(x=>x.v > 0 && x.k !== today);
+  const lab = document.getElementById('avgLab');
+  if (lab) lab.textContent = keys.includes(today) ? 'Average before today' : 'Daily average';
+  const avg = done.length ? Math.round(done.reduce((a,x)=>a+x.v,0)/done.length) : 0;
+  document.getElementById('avg7').textContent = done.length ? avg.toLocaleString() : '—';
+  const diff = done.length ? Math.round(done.reduce((a,x)=>a+(x.v-x.t),0)/done.length) : 0;
   /* Only days where most of the calories carry macros: a day that is mostly
      unknown would drag the average down and read as a protein problem. */
-  const mdays = keys.map(k=>dayMacros(k)).filter(m=>m.cal > 0 && m.known >= 0.8*m.cal);
+  const mdays = done.map(x=>dayMacros(x.k)).filter(m=>m.cal > 0 && m.known >= 0.8*m.cal);
   const mavg = document.getElementById('mavg');
   if (mavg){
     if (mdays.length){
@@ -2551,8 +2613,8 @@ function renderTrend(){
       mavg.innerHTML = '';
     }
   }
-  document.getElementById('vsTarget').innerHTML = logged.length
-    ? (diff >= 0 ? '<b>+'+diff.toLocaleString()+'</b> vs base' : '<b>'+diff.toLocaleString()+'</b> vs base')
+  document.getElementById('vsTarget').innerHTML = done.length
+    ? '<b>'+(diff >= 0 ? '+' : '')+diff.toLocaleString()+'</b> vs target'
     : '';
 }
 
@@ -3352,43 +3414,79 @@ function fdcURLs(path){
   return [['proxy', viaProxy], ['direct', direct]];
 }
 
-/* Throws a structured error so the UI can say what actually went wrong. */
-async function fdcFetch(path){
-  let last = null;
+/* Throws a structured error so the UI can say what actually went wrong.
+   USDA's search fails on and off: the very URL that gets a 400 works a moment
+   later. So a 400, a 5xx or a dropped connection is tried twice more before
+   anyone sees it. A rejected key (401/403) or a rate limit (429) is final --
+   asking again only makes those worse. */
+let FDC_WAITS = [400, 1200];
+function fdcFinal(e){ return !!e && e.kind === 'http' && [401, 403, 429].includes(e.status); }
+function fdcAbort(){ return new DOMException('Aborted', 'AbortError'); }
+function fdcPause(ms, signal){
+  return new Promise((res, rej)=>{
+    if (signal && signal.aborted) return rej(fdcAbort());
+    const t = setTimeout(res, ms);
+    if (signal) signal.addEventListener('abort', ()=>{ clearTimeout(t); rej(fdcAbort()); }, {once:true});
+  });
+}
+/* One pass over the routes. Every route's answer rides along on the error,
+   so a failing proxy isn't hidden behind whatever the direct call said. */
+async function fdcOnce(path, signal){
+  const tried = [];
   for (const [route, url] of fdcURLs(path)){
     try {
-      const r = await fetch(url, { headers:{ 'Accept':'application/json' } });
+      const r = await fetch(url, { headers:{ 'Accept':'application/json' }, signal });
       if (!r.ok){
         let detail = '';
         try { detail = (await r.text()).slice(0, 300); } catch(e){}
-        last = { kind:'http', status:r.status, route, detail };
+        tried.push({ kind:'http', status:r.status, route, detail });
         continue;
       }
       return await r.json();
     } catch(err){
-      last = { kind:'network', route, message:String(err && err.message || err) };
+      if (err && err.name === 'AbortError') throw err;
+      tried.push({ kind:'network', route, message:String(err && err.message || err) });
     }
   }
-  throw last || { kind:'network', route:'direct', message:'unknown' };
+  const last = tried[tried.length-1] || { kind:'network', route:'direct', message:'unknown' };
+  throw { ...last, tried };
+}
+async function fdcFetch(path, opts){
+  const signal = opts && opts.signal;
+  for (let i = 0; ; i++){
+    try { return await fdcOnce(path, signal); }
+    catch(e){
+      if (e && e.name === 'AbortError') throw e;
+      e.attempts = i + 1;
+      if (i >= FDC_WAITS.length || (e.tried || [e]).some(fdcFinal)) throw e;
+      await fdcPause(FDC_WAITS[i], signal);
+    }
+  }
 }
 
-/* Turns that into something readable instead of always blaming CORS. */
+/* One line and a retry link. What each route actually said is folded away
+   underneath, for when it keeps happening. */
 function fdcErrorHTML(e){
-  const via = e.route === 'proxy' ? 'through your Cloudflare Worker' : 'calling USDA directly';
-  if (e.kind === 'http'){
-    if (e.status === 429) return '<div class="warn"><b>USDA is rate limiting you.</b><br>'+
-      'Their limit is 1,000 requests an hour per key. It resets on the hour. '+
-      'If this keeps happening quickly, the shared Cloudflare IP may be throttled — try clearing the proxy field in Settings.</div>';
-    if (e.status === 403 || e.status === 401) return '<div class="warn"><b>USDA rejected the key.</b><br>'+
-      'Check the key in Settings for stray spaces. Detail: '+escapeHTML(e.detail || '')+'</div>';
-    if (e.status >= 500) return '<div class="warn"><b>Error '+e.status+' '+via+'.</b><br>'+
-      (e.route === 'proxy' ? 'Your Worker returned an error. Check its logs in the Cloudflare dashboard, or clear the proxy field to go direct.' : 'USDA\u2019s server is having trouble. Try again shortly.')+
-      (e.detail ? '<br><br>'+escapeHTML(e.detail) : '')+'</div>';
-    return '<div class="warn"><b>Error '+e.status+' '+via+'.</b>'+
-      (e.detail ? '<br><br>'+escapeHTML(e.detail) : '')+'</div>';
+  const via = r => r === 'proxy' ? 'through your Cloudflare Worker' : 'calling USDA directly';
+  const what = x => x.kind === 'http'
+    ? 'Error '+x.status+' '+via(x.route)
+    : 'Couldn\u2019t connect '+via(x.route)+(x.message ? ' ('+x.message+')' : '');
+  let head = 'USDA didn\u2019t answer.', tip = '';
+  if (e.kind === 'http' && e.status === 429){
+    head = 'USDA is rate limiting you.';
+    tip = 'The limit is 1,000 searches an hour per key; it resets on the hour.';
+  } else if (e.kind === 'http' && (e.status === 401 || e.status === 403)){
+    head = 'USDA rejected the key.';
+    tip = 'Check it in Settings for stray spaces.';
+  } else if (e.kind === 'network' && !online()){
+    head = 'You\u2019re offline.';
   }
-  return '<div class="warn"><b>Couldn\u2019t reach USDA '+via+'.</b><br>'+
-    'Either you\u2019re offline or the request was blocked. '+escapeHTML(e.message||'')+'</div>';
+  const tries = e.attempts > 1 ? ', '+e.attempts+' tries' : '';
+  const lines = (e.tried && e.tried.length ? e.tried : [e])
+    .map(x=>escapeHTML(what(x))+(x.detail ? ': '+escapeHTML(x.detail) : ''));
+  return '<div class="fdcerr"><p><b>'+escapeHTML(head)+'</b>'+(tip ? ' '+escapeHTML(tip) : '')+
+    ' <button type="button" data-retry>Try again</button></p>'+
+    '<details><summary>'+escapeHTML(what(e))+tries+'</summary><p>'+lines.join('<br>')+'</p></details></div>';
 }
 function searchHint(){
   const local = (PACK ? PACK.length : 0) + SEEN.length;
@@ -3437,7 +3535,7 @@ function tabSearch(){
     // A pasted link is a recipe, not a search term.
     if (firstURL(v)){ goEstimate(v); return; }
     paintSearch(v);
-    if (v) t = setTimeout(()=>runSearch(v), 260);
+    if (v.length >= MIN_Q) t = setTimeout(()=>runSearch(v), 260);
   };
   q.onkeydown = e=>{
     if (e.key === 'Enter'){
@@ -3446,7 +3544,7 @@ function tabSearch(){
       const v = q.value.trim();
       // "Two eggs, toast and a latte" is a sentence, not a food name.
       if (isSentence(v) && canEstimate()){ goEstimate(v); return; }
-      runSearch(v);
+      runSearch(v, true);
     }
   };
 }
@@ -3959,7 +4057,9 @@ function showRecents(out, expanded){
 /* Protein, carbs, fat and sugar per 100 g, read off a USDA record. Search
    results carry nutrientNumber; the detail endpoint nests it under nutrient.
    Foundation foods report sugar under a different number from the rest. */
-const MAC_NUT = {p:[['203'],[1003]], c:[['205'],[1005]], f:[['204'],[1004]], s:[['269','269.3'],[2000,1063]]};
+/* Some Foundation records give carbohydrate only "by summation" (205.2 /
+   1050) rather than "by difference", and read as macros-unknown without it. */
+const MAC_NUT = {p:[['203'],[1003]], c:[['205','205.2'],[1005,1050]], f:[['204'],[1004]], s:[['269','269.3'],[2000,1063]]};
 function macPer100(food){
   const ns = (food && food.foodNutrients) || [];
   const out = {};
@@ -4036,6 +4136,13 @@ function kcalOf(food){
 
 const searchCache = new Map();
 let searchSeq = 0;
+/* The request behind the words on screen. A new keystroke cancels the old
+   one instead of leaving it running: typing "chicken breast" used to put
+   three or four searches in flight at once. */
+let searchAbort = null;
+/* Below this, USDA only answers with noise, so the database waits for a
+   third letter (Enter still searches whatever is typed). */
+const MIN_Q = 3;
 
 function divider(host, text){
   const d = document.createElement('div');
@@ -4096,6 +4203,7 @@ function paintSearch(q){
   const out = document.getElementById('results');
   if (!out) return null;
   searchSeq++;                       // anything already in flight is now stale
+  if (searchAbort){ searchAbort.abort(); searchAbort = null; }
   if (!q){ showRecents(out); return null; }
 
   out.innerHTML = '<div id="rLocal"></div><div id="rNet"></div>';
@@ -4114,6 +4222,8 @@ function paintSearch(q){
       : '<div class="empty">Nothing on this device matches.<br>'+escapeHTML(why)+
         (online() ? '' : '<br>Or use the Custom tab and type the number in.')+'</div>';
     if (online()) net.appendChild(estimateHandoff(q));
+  } else if (q.length < MIN_Q){
+    net.innerHTML = local.rows ? '' : '<p class="note">Keep typing to search the database.</p>';
   } else {
     // A bare spinner on an empty panel when there is nothing else to read;
     // a quiet one under a heading when there already is.
@@ -4124,7 +4234,7 @@ function paintSearch(q){
   return local;
 }
 
-async function runSearch(q){
+async function runSearch(q, force){
   const out = document.getElementById('results');
   if (!out) return;
   if (!q){ paintSearch(''); return; }
@@ -4133,6 +4243,11 @@ async function runSearch(q){
   if (!out.querySelector('#rNet')) paintSearch(q);
   const net = out.querySelector('#rNet');
   if (!net || !online() || !S.settings.usdaKey) return;
+  if (q.length < MIN_Q && !force) return;
+  if (!net.querySelector('.spin')) net.innerHTML = '<span class="spin"></span>';
+  if (searchAbort) searchAbort.abort();
+  const ac = new AbortController();
+  searchAbort = ac;
 
   const seq = searchSeq;
   const alive = ()=> seq === searchSeq && document.body.contains(net);
@@ -4145,7 +4260,7 @@ async function runSearch(q){
   try {
     let d = searchCache.get(q);
     if (!d){
-      d = await fdcFetch(path);
+      d = await fdcFetch(path, {signal:ac.signal});
       searchCache.set(q, d);
       if (searchCache.size > 60) searchCache.delete(searchCache.keys().next().value);
     }
@@ -4186,17 +4301,16 @@ async function runSearch(q){
     });
     net.appendChild(estimateHandoff(q));
   } catch(err){
+    if (err && err.name === 'AbortError') return;   // a newer search took over
     if (!alive()) return;
     // The local layer above is untouched, so a bad USDA response costs you
     // the extra results and nothing else.
     net.innerHTML = fdcErrorHTML(err);
-    const retry = document.createElement('button');
-    retry.className = 'cta ghost';
-    retry.style.marginTop = '10px';
-    retry.textContent = 'Try USDA again';
-    retry.onclick = ()=>{ net.innerHTML = '<span class="spin"></span>'; runSearch(q); };
-    net.appendChild(retry);
+    const retry = net.querySelector('[data-retry]');
+    if (retry) retry.onclick = ()=>{ net.innerHTML = '<span class="spin"></span>'; runSearch(q, true); };
     net.appendChild(estimateHandoff(q));
+  } finally {
+    if (searchAbort === ac) searchAbort = null;
   }
 }
 function titleCase(s){
@@ -5321,7 +5435,9 @@ document.getElementById('editBase').onclick = ()=>{
           '<span class="num" style="font-size:38px;font-weight:700">'+calcBase().toLocaleString()+'</span>'+
           '<span style="color:var(--ink-dim);font-size:13px">calories a day</span></div>'+
         '<p class="note">From your stats in Settings: resting burn '+Math.round(bmr()).toLocaleString()+
-          ', sedentary baseline, then your goal adjustment. Active calories from Health are added on top of this.</p>'+
+          (baseFactor() > 1
+            ? ', a sedentary allowance for everyday movement, then your goal adjustment. Anything you log as moved is added on top.'
+            : ' plus your goal adjustment. Your tracker\u2019s active calories are added on top, and they already include everyday movement.')+'</p>'+
         '<button class="cta" id="bDone" style="margin-top:16px">Done</button>';
       host.querySelector('#bDone').onclick = ()=>{ save(); render(); closeSheet(); };
     } else {
@@ -5355,38 +5471,6 @@ document.getElementById('editBase').onclick = ()=>{
   draw();
 };
 
-/* ---------- active energy ----------
-   Pull from Oura asks the daybook-siri worker to run its Oura sync now
-   rather than waiting for the next quarter-hour cron, then pulls from
-   Firebase so the number arrives the way every other device sees it. The app
-   never holds the Oura token; it only holds the worker's LOG_TOKEN. */
-function ouraBase(){
-  return cleanKey(S.settings.ouraUrl || '').replace(/\/+$/,'').replace(/\/oura$/i,'');
-}
-function ouraReady(){ return !!(ouraBase() && S.settings.ouraToken); }
-async function pullOura(){
-  if (!ouraReady()) throw new Error('Add the worker address and log token under Settings \u2192 Oura first.');
-  if (!S.settings.syncUrl) throw new Error('The Oura number travels through your sync database, so sync needs setting up in Settings first.');
-  if (!online()) throw new Error('You\u2019re offline.');
-  const url = ouraBase()+'/oura?token='+encodeURIComponent(S.settings.ouraToken);
-  let said = '';
-  try {
-    const r = await fetch(url, {cache:'no-store'});
-    said = (await r.text()).trim();
-  } catch(e){
-    /* The worker answers without CORS headers unless you've added them, so
-       the browser won't let us read its reply. The request still arrives and
-       the worker still writes before it answers -- so send it blind and let
-       the pull below show what landed. */
-    try { await fetch(url, {mode:'no-cors', cache:'no-store'}); }
-    catch(e2){ throw new Error('Could not reach your worker. Check the address in Settings.'); }
-  }
-  if (said && /siri logger is running/i.test(said))
-    throw new Error('That worker doesn\u2019t have the Oura sync in it yet. Redeploy the version with the /oura route.');
-  if (said && !/^Active calories written/i.test(said)) throw new Error(said);
-  if (!(await pullSync())) throw new Error('The worker ran, but pulling from sync failed: '+(S.sync.err || 'unknown error')+'.');
-  return said;
-}
 /* ---------- active calories from Apple Health ----------
    A web app can't read Health, but it can start a Shortcut that does. The
    Shortcut sends the number to the worker, which writes it to Firebase. iOS
@@ -5402,7 +5486,8 @@ function runHealthShortcut(){
   if (!name){ toast('Add your Shortcut\u2019s name under Settings \u2192 Active calories'); return; }
   if (!S.settings.syncUrl){ toast('Set up sync in Settings first \u2014 that\u2019s how the number gets back here'); return; }
   const dk = todayKey();
-  healthWait = {at:Date.now(), dk, up:peek(dk).activeUp||0, busy:false};
+  healthWait = {at:Date.now(), dk, up:peek(dk).activeUp||0,
+                prof:S.settings.profileUp||0, kg:+S.settings.weightKg, busy:false};
   openShortcutURL('shortcuts://run-shortcut?name='+encodeURIComponent(name));
 }
 function healthNote(t){ const n = document.getElementById('aeNote'); if (n) n.textContent = t; }
@@ -5417,13 +5502,20 @@ async function healthReturned(){
     if (pause) await new Promise(r=>setTimeout(r, pause));
     if (healthWait !== w) return;
     await pullSync();
-    if ((peek(w.dk).activeUp||0) > w.up){
+    const gotActive = (peek(w.dk).activeUp||0) > w.up;
+    const gotWeight = (S.settings.profileUp||0) > w.prof && +S.settings.weightKg !== w.kg;
+    if (gotActive || gotWeight){
       healthWait = null;
       const n = Math.round(peek(w.dk).active||0);
       const ae = document.getElementById('ae');
       if (ae && viewDate === w.dk) ae.value = n;
-      healthNote('Updated from Health: '+n.toLocaleString()+' active calories today.');
-      toast('Moved: '+n.toLocaleString()+' from Health');
+      const kg = +S.settings.weightKg;
+      const wt = S.settings.unitSystem === 'metric' ? round1(kg)+' kg' : kgToLb(kg)+' lb';
+      const bits = [];
+      if (gotActive) bits.push(n.toLocaleString()+' active calories today');
+      if (gotWeight) bits.push('weight '+wt);
+      healthNote('Updated from Health: '+bits.join(', ')+'.');
+      toast(gotActive ? 'Moved: '+n.toLocaleString()+' from Health' : 'Weight: '+wt+' from Health');
       render();
       return;
     }
@@ -5438,44 +5530,22 @@ document.addEventListener('visibilitychange', healthReturned);
 window.addEventListener('focus', healthReturned);
 
 document.getElementById('editActive').onclick = ()=>{
-  const ready = ouraReady();
   const health = healthReady();
+  const raw = Math.round(peek(viewDate).active||0), pct = movedPct();
+  const share = pct < 100
+    ? ' Counting '+pct+'% of it: '+moved(viewDate).toLocaleString()+' of '+raw.toLocaleString()+'.' : '';
   openSheet(sheetHead('Active energy')+
-    (health ? '<button class="cta" id="aeHealth" style="margin-top:0">Update from Health</button>' : '')+
-    (ready ? '<button class="cta'+(health ? ' ghost' : '')+'" id="aeOura" style="margin-top:'+(health ? '8px' : '0')+'">Pull from Oura</button>' : '')+
-    (health || ready ? '<p class="note" id="aeNote" style="min-height:1.55em"></p>' : '')+
+    (health ? '<button class="cta" id="aeHealth" style="margin-top:0">Update from Health</button>'+
+      '<p class="note" id="aeNote" style="min-height:1.55em"></p>' : '')+
     '<div class="field"><label>Active calories burned on '+prettyDate(viewDate).toLowerCase()+'</label>'+
     '<input id="ae" type="number" inputmode="numeric" value="'+Math.round(day(viewDate).active||0)+'"></div>'+
-    '<button class="cta'+(ready || health ? ' ghost' : '')+'" id="aeSave">Save</button>'+
+    '<button class="cta'+(health ? ' ghost' : '')+'" id="aeSave">Save</button>'+
     '<p class="note">'+(health
       ? 'Update from Health hops over to Shortcuts for a second \u2014 tap back to Daybook and the number fills in. A number typed here is replaced the next time it runs.'
-      : ready
-      ? 'A number typed here is replaced the next time Oura syncs.'
-      : 'To fill this from Apple Health with a tap, add your Shortcut\u2019s name under Settings \u2192 Active calories.')+'</p>');
-  if (!ready && !health) document.getElementById('ae').focus();
+      : 'To fill this from Apple Health with a tap, add your Shortcut\u2019s name under Settings \u2192 Active calories.')+
+      share+'</p>');
+  if (!health) document.getElementById('ae').focus();
   if (health) document.getElementById('aeHealth').onclick = runHealthShortcut;
-  if (ready){
-    const btn = document.getElementById('aeOura');
-    btn.onclick = async ()=>{
-      const note = document.getElementById('aeNote');
-      const dk = viewDate, before = Math.round(peek(dk).active||0);
-      btn.disabled = true; btn.innerHTML = '<span class="spin"></span>';
-      note.textContent = 'Asking Oura\u2026';
-      try {
-        await pullOura();
-        const now = Math.round(peek(dk).active||0);
-        const ae = document.getElementById('ae');
-        if (ae) ae.value = now;
-        note.textContent = now === before
-          ? 'Up to date \u2014 '+now.toLocaleString()+' active calories '+(dk === todayKey() ? 'so far today' : 'that day')+'.'
-          : 'Updated from Oura: '+now.toLocaleString()+' active calories.';
-        render();
-      } catch(err){
-        note.textContent = err.message;
-      }
-      if (document.getElementById('aeOura')){ btn.disabled = false; btn.textContent = 'Pull from Oura'; }
-    };
-  }
   document.getElementById('aeSave').onclick = ()=>{
     day(viewDate).active = Math.max(0, Math.round(Number(document.getElementById('ae').value)||0));
     day(viewDate).activeUp = Date.now();
@@ -5576,14 +5646,17 @@ function openSettings(){
     '<button class="cta ghost" id="packBtn" style="margin-top:6px">Update food pack</button>'+
 
     '<div class="divider"><h3>Active calories</h3></div>'+
-    '<div class="field"><label>Health Shortcut name</label><input id="hs" value="'+escapeHTML(s.healthShortcut||'')+'" placeholder="Daybook Moved" autocomplete="off" autocapitalize="words"></div>'+
+    '<div class="field"><label>Movement</label><div class="chips" style="margin:0">'+
+      '<button class="chip'+(s.activityBase!=='none'?' on':'')+'" id="abT">I wear a tracker</button>'+
+      '<button class="chip'+(s.activityBase==='none'?' on':'')+'" id="abN">No tracker</button></div>'+
+      '<p class="note" style="margin-top:8px">With a tracker, your base is resting burn plus your goal and <b>moved</b> covers the rest. Without one, the base includes a little for everyday movement.</p></div>'+
+    '<div class="field"><label>How much of moved to count</label><select id="mp">'+
+      opt(100,'All of it',movedPct())+opt(90,'90%',movedPct())+opt(75,'75%',movedPct())+opt(50,'Half',movedPct())+'</select></div>'+
+    '<p class="note">Trackers tend to overestimate. Counting less of it leaves a margin.</p>'+
+    '<div class="field" style="margin-top:16px"><label>Health Shortcut name</label><input id="hs" value="'+escapeHTML(s.healthShortcut||'')+'" placeholder="Daybook Moved" autocomplete="off" autocapitalize="words"></div>'+
     '<p class="note">Exactly as it\u2019s named in the Shortcuts app. With a name here, tapping <b>moved</b> gives you <b>Update from Health</b>: '+
     'the Shortcut reads today\u2019s Active Energy, sends it to your worker, and the number lands here when you come back. '+
-    'Needs sync set up above.</p>'+
-    '<div class="divider"><h3 style="font-size:12px">Oura direct (optional)</h3></div>'+
-    '<div class="field"><label>Worker address</label><input id="ou" value="'+escapeHTML(s.ouraUrl||'')+'" placeholder="https://daybook-siri.your-name.workers.dev" autocomplete="off"></div>'+
-    '<div class="field"><label>Log token</label><input id="ot" value="'+escapeHTML(s.ouraToken||'')+'" placeholder="the LOG_TOKEN you gave the worker" autocomplete="off"></div>'+
-    '<p class="note">Only if you\u2019ve connected Oura to the worker with its sign-in. Adds a <b>Pull from Oura</b> button.</p>'+
+    'If the Shortcut also sends your weight, your protein target follows it. Needs sync set up above.</p>'+
 
     '<button class="cta ghost" id="exportBtn" style="margin-top:18px">Export my data</button>'+
     '<button class="cta ghost" id="importBtn" style="margin-top:8px">Import a backup</button>'+
@@ -5645,10 +5718,21 @@ function openSettings(){
       heightCm: imp ? ftInToCm(el('ft').value||0, el('inch').value||0) : +el('ht').value,
       weightKg: imp ? lbToKg(el('wt').value||0) : +el('wt').value,
       goalDelta: +el('goal').value,
-      manualBase: Math.max(0, Math.round(+el('mb').value||0))
+      manualBase: Math.max(0, Math.round(+el('mb').value||0)),
+      activityBase: abChoice,
+      movedPct: +el('mp').value || 100
     };
   }
   function commitBody(){ Object.assign(S.settings, readBody()); }
+  let abChoice = S.settings.activityBase === 'none' ? 'none' : 'tracker';
+  const abSet = v=>{
+    abChoice = v;
+    document.getElementById('abT').classList.toggle('on', v !== 'none');
+    document.getElementById('abN').classList.toggle('on', v === 'none');
+    upd();
+  };
+  document.getElementById('abT').onclick = ()=>abSet('tracker');
+  document.getElementById('abN').onclick = ()=>abSet('none');
 
   // base mode toggle
   const mbWrap = document.getElementById('mbWrap');
@@ -5680,10 +5764,12 @@ function openSettings(){
       txt = 'Resting burn '+rest.toLocaleString()+' · daily base <b style="color:var(--ink)">'+calcBase().toLocaleString()+'</b>.';
     }
     document.getElementById('calcNote').innerHTML = txt +
-      ' Active calories from Health are added on top, so your workouts are never counted twice.';
+      (baseFactor() > 1
+        ? ' Includes a little for everyday movement; anything logged as moved is added on top.'
+        : ' Your tracker\u2019s active calories are added on top \u2014 they already cover everyday movement, so nothing is counted twice.');
     Object.assign(S.settings, old);
   };
-  ['sex','age','ft','inch','ht','wt','goal','mb'].forEach(id=>{
+  ['sex','age','ft','inch','ht','wt','goal','mb','mp'].forEach(id=>{
     const el = document.getElementById(id);
     if (!el) return;
     el.oninput = upd; el.onchange = upd;
@@ -5766,8 +5852,6 @@ function openSettings(){
       proxy:cleanKey(document.getElementById('px').value),
       syncUrl:cleanKey(document.getElementById('su').value),
       syncToken:cleanToken(document.getElementById('st').value),
-      ouraUrl:cleanKey(document.getElementById('ou').value),
-      ouraToken:cleanToken(document.getElementById('ot').value),
       healthShortcut:String(document.getElementById('hs').value||'').trim()
     });
     dirty = false;
@@ -5786,7 +5870,7 @@ function openSettings(){
   storeNote();
   document.getElementById('exportBtn').onclick = ()=>{
     // Keys and the Firebase secret stay on the device; a backup file travels.
-    const safe = {...S, settings:{...S.settings, anthropicKey:'', usdaKey:'', syncToken:'', ouraToken:''}};
+    const safe = {...S, settings:{...S.settings, anthropicKey:'', usdaKey:'', syncToken:''}};
     const blob = new Blob([JSON.stringify(safe,null,2)],{type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -5810,6 +5894,13 @@ document.addEventListener('keydown', e=>{ if (e.key === 'Escape') closeSheet(); 
   render();
   maybePull(true);
   loadPack();
+  /* Local-first means the log lives here, so ask the browser to treat it as
+     something to keep rather than a cache it may clear under pressure. */
+  try {
+    if (navigator.storage && navigator.storage.persist){
+      navigator.storage.persisted().then(p=>p || navigator.storage.persist()).catch(()=>{});
+    }
+  } catch(e){}
   if ('serviceWorker' in navigator && location.protocol.startsWith('http')){
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
