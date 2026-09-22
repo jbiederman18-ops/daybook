@@ -1105,7 +1105,8 @@ const DEFAULTS = {
   proteinPerLb:0.8,          // protein target, grams per lb of body weight
   sugarCap:90,               // total sugar, grams a day
   syncUrl:'', syncToken:'',  // optional, powers the iOS widget
-  ouraUrl:'', ouraToken:''   // optional: the daybook-siri worker and its LOG_TOKEN
+  ouraUrl:'', ouraToken:'',  // optional: the daybook-siri worker and its LOG_TOKEN
+  healthShortcut:''          // name of the Shortcut that sends Health's Active Energy
 };
 
 let S = { settings:{...DEFAULTS}, days:{}, saved:[], combos:[],
@@ -5385,18 +5386,73 @@ async function pullOura(){
   if (!(await pullSync())) throw new Error('The worker ran, but pulling from sync failed: '+(S.sync.err || 'unknown error')+'.');
   return said;
 }
+/* ---------- active calories from Apple Health ----------
+   A web app can't read Health, but it can start a Shortcut that does. The
+   Shortcut sends the number to the worker, which writes it to Firebase. iOS
+   switches to Shortcuts to run it; when you come back, the app pulls until
+   the new number shows up. The Shortcut always writes today, so that's the
+   day we watch, whatever day is on screen. */
+let healthWait = null;
+function healthReady(){ return !!String(S.settings.healthShortcut||'').trim(); }
+// Its own function so a test can see where it goes without leaving the page.
+function openShortcutURL(u){ location.href = u; }
+function runHealthShortcut(){
+  const name = String(S.settings.healthShortcut||'').trim();
+  if (!name){ toast('Add your Shortcut\u2019s name under Settings \u2192 Active calories'); return; }
+  if (!S.settings.syncUrl){ toast('Set up sync in Settings first \u2014 that\u2019s how the number gets back here'); return; }
+  const dk = todayKey();
+  healthWait = {at:Date.now(), dk, up:peek(dk).activeUp||0, busy:false};
+  openShortcutURL('shortcuts://run-shortcut?name='+encodeURIComponent(name));
+}
+function healthNote(t){ const n = document.getElementById('aeNote'); if (n) n.textContent = t; }
+async function healthReturned(){
+  const w = healthWait;
+  if (!w || w.busy || document.hidden) return;
+  if (Date.now() - w.at > 10*60000){ healthWait = null; return; }
+  w.busy = true;
+  healthNote('Checking for the new number\u2026');
+  // The Shortcut may still be finishing if you came straight back.
+  for (const pause of [0, 1500, 3000, 5000]){
+    if (pause) await new Promise(r=>setTimeout(r, pause));
+    if (healthWait !== w) return;
+    await pullSync();
+    if ((peek(w.dk).activeUp||0) > w.up){
+      healthWait = null;
+      const n = Math.round(peek(w.dk).active||0);
+      const ae = document.getElementById('ae');
+      if (ae && viewDate === w.dk) ae.value = n;
+      healthNote('Updated from Health: '+n.toLocaleString()+' active calories today.');
+      toast('Moved: '+n.toLocaleString()+' from Health');
+      render();
+      return;
+    }
+  }
+  if (healthWait !== w) return;
+  healthWait = null;
+  const msg = 'Nothing new arrived. Open the Shortcut in the Shortcuts app to see what it said.';
+  healthNote(msg);
+  if (!document.getElementById('aeNote')) toast(msg);
+}
+document.addEventListener('visibilitychange', healthReturned);
+window.addEventListener('focus', healthReturned);
+
 document.getElementById('editActive').onclick = ()=>{
   const ready = ouraReady();
+  const health = healthReady();
   openSheet(sheetHead('Active energy')+
-    (ready ? '<button class="cta" id="aeOura" style="margin-top:0">Pull from Oura</button>'+
-             '<p class="note" id="aeNote" style="min-height:1.55em"></p>' : '')+
+    (health ? '<button class="cta" id="aeHealth" style="margin-top:0">Update from Health</button>' : '')+
+    (ready ? '<button class="cta'+(health ? ' ghost' : '')+'" id="aeOura" style="margin-top:'+(health ? '8px' : '0')+'">Pull from Oura</button>' : '')+
+    (health || ready ? '<p class="note" id="aeNote" style="min-height:1.55em"></p>' : '')+
     '<div class="field"><label>Active calories burned on '+prettyDate(viewDate).toLowerCase()+'</label>'+
     '<input id="ae" type="number" inputmode="numeric" value="'+Math.round(day(viewDate).active||0)+'"></div>'+
-    '<button class="cta'+(ready ? ' ghost' : '')+'" id="aeSave">Save</button>'+
-    '<p class="note">'+(ready
-      ? 'Oura also syncs on its own every quarter hour. A number typed here is replaced at the next sync.'
-      : 'Normally the Apple Shortcut fills this in. To pull from your Oura ring from inside the app, add your worker under Settings \u2192 Oura.')+'</p>');
-  if (!ready) document.getElementById('ae').focus();
+    '<button class="cta'+(ready || health ? ' ghost' : '')+'" id="aeSave">Save</button>'+
+    '<p class="note">'+(health
+      ? 'Update from Health hops over to Shortcuts for a second \u2014 tap back to Daybook and the number fills in. A number typed here is replaced the next time it runs.'
+      : ready
+      ? 'A number typed here is replaced the next time Oura syncs.'
+      : 'To fill this from Apple Health with a tap, add your Shortcut\u2019s name under Settings \u2192 Active calories.')+'</p>');
+  if (!ready && !health) document.getElementById('ae').focus();
+  if (health) document.getElementById('aeHealth').onclick = runHealthShortcut;
   if (ready){
     const btn = document.getElementById('aeOura');
     btn.onclick = async ()=>{
@@ -5518,17 +5574,15 @@ function openSettings(){
     '<p class="note" id="packNote"></p>'+
     '<button class="cta ghost" id="packBtn" style="margin-top:6px">Update food pack</button>'+
 
-    '<div class="divider"><h3>Oura</h3></div>'+
+    '<div class="divider"><h3>Active calories</h3></div>'+
+    '<div class="field"><label>Health Shortcut name</label><input id="hs" value="'+escapeHTML(s.healthShortcut||'')+'" placeholder="Daybook Moved" autocomplete="off" autocapitalize="words"></div>'+
+    '<p class="note">Exactly as it\u2019s named in the Shortcuts app. With a name here, tapping <b>moved</b> gives you <b>Update from Health</b>: '+
+    'the Shortcut reads today\u2019s Active Energy, sends it to your worker, and the number lands here when you come back. '+
+    'Needs sync set up above.</p>'+
+    '<div class="divider"><h3 style="font-size:12px">Oura direct (optional)</h3></div>'+
     '<div class="field"><label>Worker address</label><input id="ou" value="'+escapeHTML(s.ouraUrl||'')+'" placeholder="https://daybook-siri.your-name.workers.dev" autocomplete="off"></div>'+
     '<div class="field"><label>Log token</label><input id="ot" value="'+escapeHTML(s.ouraToken||'')+'" placeholder="the LOG_TOKEN you gave the worker" autocomplete="off"></div>'+
-    '<p class="note">The same daybook-siri worker your Siri Shortcut uses. With these filled in, tapping <b>moved</b> on the main screen gives you a <b>Pull from Oura</b> button. Needs sync set up above, because that\u2019s the road the number travels.</p>'+
-
-    '<div class="divider"><h3>Apple Health</h3></div>'+
-    '<p class="note">Build a Shortcut with three steps, then run it each morning or automate it:<br><br>'+
-    '1. <b>Find Health Samples</b> — type Active Energy, today, sum.<br>'+
-    '2. <b>Text</b> — <code>'+escapeHTML(location.origin+location.pathname)+'?active=</code> followed by the result.<br>'+
-    '3. <b>Open URLs</b> — the text from step 2.<br><br>'+
-    'The number lands in today\u2019s allowance and the URL cleans itself up.</p>'+
+    '<p class="note">Only if you\u2019ve connected Oura to the worker with its sign-in. Adds a <b>Pull from Oura</b> button.</p>'+
 
     '<button class="cta ghost" id="exportBtn" style="margin-top:18px">Export my data</button>'+
     '<button class="cta ghost" id="importBtn" style="margin-top:8px">Import a backup</button>'+
@@ -5712,7 +5766,8 @@ function openSettings(){
       syncUrl:cleanKey(document.getElementById('su').value),
       syncToken:cleanToken(document.getElementById('st').value),
       ouraUrl:cleanKey(document.getElementById('ou').value),
-      ouraToken:cleanToken(document.getElementById('ot').value)
+      ouraToken:cleanToken(document.getElementById('ot').value),
+      healthShortcut:String(document.getElementById('hs').value||'').trim()
     });
     dirty = false;
     touchProfile(); save(); render(); closeSheet(true); toast('Settings saved');
