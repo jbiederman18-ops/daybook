@@ -5474,10 +5474,11 @@ document.getElementById('editBase').onclick = ()=>{
 /* ---------- active calories from Apple Health ----------
    A web app can't read Health, but it can start a Shortcut that does. The
    Shortcut sends the number to the worker, which writes it to Firebase. iOS
-   switches to Shortcuts to run it; when you come back, the app pulls until
-   the new number shows up. The Shortcut always writes today, so that's the
+   switches to Shortcuts to run it; when you come back, the app listens for
+   the new number and shows it the moment the worker writes it. The Shortcut always writes today, so that's the
    day we watch, whatever day is on screen. */
 let healthWait = null;
+let healthLive = null;          // the open EventSources while we wait
 function healthReady(){ return !!String(S.settings.healthShortcut||'').trim(); }
 // Its own function so a test can see where it goes without leaving the page.
 function openShortcutURL(u){ location.href = u; }
@@ -5486,42 +5487,122 @@ function runHealthShortcut(){
   if (!name){ toast('Add your Shortcut\u2019s name under Settings \u2192 Active calories'); return; }
   if (!S.settings.syncUrl){ toast('Set up sync in Settings first \u2014 that\u2019s how the number gets back here'); return; }
   const dk = todayKey();
-  healthWait = {at:Date.now(), dk, up:peek(dk).activeUp||0,
+  healthWait = {at:Date.now(), back:0, dk, up:peek(dk).activeUp||0,
                 prof:S.settings.profileUp||0, kg:+S.settings.weightKg, busy:false};
+  healthListen(healthWait);
   openShortcutURL('shortcuts://run-shortcut?name='+encodeURIComponent(name));
 }
 function healthNote(t){ const n = document.getElementById('aeNote'); if (n) n.textContent = t; }
+
+/* ---------- live: Firebase's REST streaming ----------
+   Polling meant the number could sit in Firebase for seconds before the
+   next pull. Instead, while we wait, the app holds two Server-Sent Event
+   streams open -- today's row and the profile -- and Firebase pushes the
+   worker's write the moment it lands. A stream first sends what's there
+   now, then every change after, as put (replace) and patch (merge) events
+   against a path inside the node.
+   iOS freezes the page while you're in Shortcuts and the streams die with
+   it, and a browser's own reconnect waits a few seconds, so coming back
+   opens them fresh: one round trip, and the current value is on screen.
+   The old pull loop still runs underneath as the fallback. */
+function streamApply(node, path, data, merge){
+  if (path === '/' || !path){
+    return merge ? {...(node && typeof node === 'object' ? node : {}), ...(data||{})} : data;
+  }
+  const parts = String(path).split('/').filter(Boolean);
+  const root = node && typeof node === 'object' ? {...node} : {};
+  let cur = root;
+  for (let i = 0; i < parts.length-1; i++){
+    cur[parts[i]] = cur[parts[i]] && typeof cur[parts[i]] === 'object' ? {...cur[parts[i]]} : {};
+    cur = cur[parts[i]];
+  }
+  const last = parts[parts.length-1];
+  cur[last] = merge ? {...(cur[last] && typeof cur[last] === 'object' ? cur[last] : {}), ...(data||{})} : data;
+  return root;
+}
+function healthStop(){
+  if (healthLive) healthLive.forEach(es=>{ try { es.close(); } catch(e){} });
+  healthLive = null;
+}
+function healthListen(w){
+  healthStop();
+  if (typeof EventSource === 'undefined' || !isRTDB(S.settings.syncUrl)) return;
+  const nodes = {day:undefined, profile:undefined};
+  const open = (key, path)=>{
+    let es;
+    try { es = new EventSource(dbURL(path)); } catch(e){ return null; }
+    const take = merge => ev=>{
+      let m = null;
+      try { m = JSON.parse(ev.data); } catch(e){}
+      if (!m || typeof m !== 'object' || typeof m.path !== 'string') return;
+      nodes[key] = streamApply(nodes[key], m.path, m.data, merge);
+      healthArrived(w, nodes);
+    };
+    es.addEventListener('put', take(false));
+    es.addEventListener('patch', take(true));
+    // Firebase saying no -- a revoked secret, a rule -- is final; the pull
+    // loop is still there.
+    es.addEventListener('cancel', ()=>es.close());
+    es.addEventListener('auth_revoked', ()=>es.close());
+    return es;
+  };
+  healthLive = [open('day', '/days/'+w.dk), open('profile', '/profile')].filter(Boolean);
+}
+/* A stream event: fold it in through the same merge a pull uses, so
+   last-write-wins is exactly what it always was, then see if it's news. */
+function healthArrived(w, nodes){
+  if (healthWait !== w) return;
+  const d = {};
+  if (nodes.day && typeof nodes.day === 'object') d.days = [{...nodes.day, date: nodes.day.date || w.dk}];
+  if (nodes.profile && typeof nodes.profile === 'object') d.profile = nodes.profile;
+  if (!d.days && !d.profile) return;
+  mergeRemote(d);
+  save();
+  healthCheck(w);
+}
+/* True, and finished, if the Shortcut's number (or weight) is here. */
+function healthCheck(w){
+  if (healthWait !== w) return true;
+  const gotActive = (peek(w.dk).activeUp||0) > w.up;
+  const gotWeight = (S.settings.profileUp||0) > w.prof && +S.settings.weightKg !== w.kg;
+  if (!gotActive && !gotWeight) return false;
+  healthWait = null;
+  healthStop();
+  const n = Math.round(peek(w.dk).active||0);
+  const ae = document.getElementById('ae');
+  if (ae && viewDate === w.dk) ae.value = n;
+  const kg = +S.settings.weightKg;
+  const wt = S.settings.unitSystem === 'metric' ? round1(kg)+' kg' : kgToLb(kg)+' lb';
+  const bits = [];
+  if (gotActive) bits.push(n.toLocaleString()+' active calories today');
+  if (gotWeight) bits.push('weight '+wt);
+  // How long you waited once back in Daybook -- zero-ish means the Shortcut
+  // had already finished, so any slowness left is inside Shortcuts.
+  const took = w.back ? ' ('+((Date.now()-w.back)/1000).toFixed(1)+' s after you came back)' : '';
+  healthNote('Updated from Health: '+bits.join(', ')+took+'.');
+  toast(gotActive ? 'Moved: '+n.toLocaleString()+' from Health' : 'Weight: '+wt+' from Health');
+  render();
+  return true;
+}
 async function healthReturned(){
   const w = healthWait;
   if (!w || w.busy || document.hidden) return;
-  if (Date.now() - w.at > 10*60000){ healthWait = null; return; }
+  if (Date.now() - w.at > 10*60000){ healthWait = null; healthStop(); return; }
   w.busy = true;
-  healthNote('Checking for the new number\u2026');
-  // The Shortcut may still be finishing if you came straight back.
-  for (const pause of [0, 1500, 3000, 5000]){
+  w.back = Date.now();
+  healthNote('Waiting for the new number\u2026');
+  healthListen(w);                      // fresh streams: the old ones died in the background
+  // The fallback. Spaced wider than before, and longer, because the stream
+  // is what catches a quick answer; this is for when streaming can't run.
+  for (const pause of [0, 2000, 4000, 6000, 8000]){
     if (pause) await new Promise(r=>setTimeout(r, pause));
     if (healthWait !== w) return;
     await pullSync();
-    const gotActive = (peek(w.dk).activeUp||0) > w.up;
-    const gotWeight = (S.settings.profileUp||0) > w.prof && +S.settings.weightKg !== w.kg;
-    if (gotActive || gotWeight){
-      healthWait = null;
-      const n = Math.round(peek(w.dk).active||0);
-      const ae = document.getElementById('ae');
-      if (ae && viewDate === w.dk) ae.value = n;
-      const kg = +S.settings.weightKg;
-      const wt = S.settings.unitSystem === 'metric' ? round1(kg)+' kg' : kgToLb(kg)+' lb';
-      const bits = [];
-      if (gotActive) bits.push(n.toLocaleString()+' active calories today');
-      if (gotWeight) bits.push('weight '+wt);
-      healthNote('Updated from Health: '+bits.join(', ')+'.');
-      toast(gotActive ? 'Moved: '+n.toLocaleString()+' from Health' : 'Weight: '+wt+' from Health');
-      render();
-      return;
-    }
+    if (healthCheck(w)) return;
   }
   if (healthWait !== w) return;
   healthWait = null;
+  healthStop();
   const msg = 'Nothing new arrived. Open the Shortcut in the Shortcuts app to see what it said.';
   healthNote(msg);
   if (!document.getElementById('aeNote')) toast(msg);
