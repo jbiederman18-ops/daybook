@@ -8,7 +8,7 @@
  * Bump VERSION whenever you change this file or index.html and want every
  * device to drop what it has cached.
  */
-const VERSION = '2026-09-22';
+const VERSION = '2026-09-26';
 const PREFIX  = 'daybook-';
 const SHELL   = PREFIX + 'shell-' + VERSION;
 const FONTS   = PREFIX + 'fonts-' + VERSION;
