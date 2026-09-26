@@ -1020,10 +1020,11 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
    DAYBOOK -- the icon, as a theme
    ------------------------------------------------------------
    Taken straight from the home-screen icon: paper-white glass by day,
-   charcoal by night, and one lit thing -- protein, in green. Carbs and
-   fat are glass rather than colour, told apart by lightness (lighter
-   carbs, darker fat), so the only hue on the ring is the one you're
-   chasing. Sugar keeps its violet on its own bar.
+   charcoal by night, and one lit thing -- protein, in green, the only
+   section with the glow. Carbs are amber and fat is blue, far enough
+   from green and from each other to read at a glance and for colour-
+   blind eyes. Grey is reserved for what's still available: the empty
+   part of the ring. Sugar keeps its violet on its own bar.
    ============================================================ */
 [data-theme="ring"]{
   --bar-track:rgba(0,0,0,.07);
@@ -1040,9 +1041,9 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
   --ink-on:#04160C;
   --ink-dim:#4A5270;
   --ink-faint:#7D86A0;
-  --breakfast:#A3ABBF;
+  --breakfast:#EE8B1B;
   --lunch:#12C971;
-  --dinner:#6B7593;
+  --dinner:#3B9EF5;
   --snacks:#8B5CF6;
   --accent:#12C971;
   --over:#E5383B;
@@ -1079,21 +1080,23 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
 [data-theme="ring"][data-mode="day"]{ --page:#E9EDF4; --stage-top:#FBFCFE;
   --accent:#12C971; --accent-ink:#08804A; --hot:#12C971; --hot-ink:#067A40; --ink-on:#04160C;
   --good:#12C971; --cta-glow:rgba(18,201,113,.34);
-  --m-prot:#12C971; --m-carb:rgba(11,16,48,.11); --m-fat:rgba(11,16,48,.27); --m-unk:rgba(11,16,48,.05);
-  --r-hi:#B8F5D2; --r-lo:#086A39; --r-track:rgba(11,16,48,.035); --r-track-edge:rgba(11,16,48,.07);
+  --m-prot:#12C971; --m-carb:#EE8B1B; --m-fat:#3B9EF5; --m-unk:rgba(11,16,48,.30);
+  --r-hi:#B8F5D2; --r-lo:#086A39; --r-track:rgba(11,16,48,.09); --r-track-edge:rgba(11,16,48,.12);
+  --t-glass:rgba(11,16,48,.14);
   --r-edge:rgba(255,255,255,.95); --r-facet:.3; --r-spec:.95; --r-glow:.42; --r-bloom:.2; }
 [data-theme="ring"][data-mode="night"]{ --page:#07080C; --stage-top:#171B26;
   --page-bg:radial-gradient(120% 55% at 28% 0%,#20263A 0%,#10131B 52%,#07080C 100%);
   --accent:#12C971; --accent-ink:#3FE394; --hot:#12C971; --hot-ink:#5BEBA6; --ink-on:#04160C;
   --good:#12C971; --cta-glow:rgba(18,201,113,.3);
-  --m-prot:#12C971; --m-carb:rgba(255,255,255,.34); --m-fat:rgba(255,255,255,.16); --m-unk:rgba(255,255,255,.06);
-  --r-hi:#D4FFE6; --r-lo:#0A7A42; --r-track:rgba(255,255,255,.035); --r-track-edge:rgba(255,255,255,.08);
+  --m-prot:#0FAF60; --m-carb:#D27D12; --m-fat:#3A8BD8; --m-unk:rgba(255,255,255,.34);
+  --r-hi:#D4FFE6; --r-lo:#0A7A42; --r-track:rgba(255,255,255,.11); --r-track-edge:rgba(255,255,255,.14);
+  --t-glass:rgba(255,255,255,.15);
   --r-edge:rgba(255,255,255,.5); --r-facet:.08; --r-spec:.5; --r-glow:.6; --r-bloom:.28; }
 
 [data-theme="ring"] .datenav h1{text-transform:none;font-size:20px;letter-spacing:-.01em;font-weight:600}
 [data-theme="ring"] .sheet-head h2{text-transform:none;font-size:19px;letter-spacing:-.01em}
 [data-theme="ring"] .cta{font-family:var(--display);letter-spacing:.01em}
-.swatch.t-ring i:nth-child(1){background:#12C971}.swatch.t-ring i:nth-child(2){background:#A3ABBF}.swatch.t-ring i:nth-child(3){background:#F4F6FA}
+.swatch.t-ring i:nth-child(1){background:#12C971}.swatch.t-ring i:nth-child(2){background:#EE8B1B}.swatch.t-ring i:nth-child(3){background:#3B9EF5}
 
 /* ---- the ring hero ---- */
 .ring{display:none}
@@ -1118,7 +1121,7 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
    the bottom of the screen into a wall of red ---- */
 [data-theme="ring"]{
   --t-good:linear-gradient(180deg,#44E59A 0%,#12C971 55%,#0FB263 100%);
-  --t-over:linear-gradient(180deg,var(--over) 0,var(--over) 5px,var(--m-fat) 5px,var(--m-fat) 100%);
+  --t-over:linear-gradient(180deg,var(--over) 0,var(--over) 5px,var(--t-glass) 5px,var(--t-glass) 100%);
 }
 [data-theme="ring"] .tbar{border-radius:8px 8px 3px 3px}
 </style>
