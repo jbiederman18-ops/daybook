@@ -1020,8 +1020,8 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
    DAYBOOK -- the icon, as a theme
    ------------------------------------------------------------
    Taken straight from the home-screen icon: paper-white glass by day,
-   charcoal by night, and one lit thing -- protein, in green, the only
-   section with the glow. Carbs are amber and fat is blue, far enough
+   charcoal by night, and the macros lit like the icon's green section:
+   each one glows in its own colour. Carbs are amber and fat is blue, far enough
    from green and from each other to read at a glance and for colour-
    blind eyes. Grey is reserved for what's still available: the empty
    part of the ring. Sugar keeps its violet on its own bar.
@@ -1083,6 +1083,7 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
   --m-prot:#12C971; --m-carb:#EE8B1B; --m-fat:#3B9EF5; --m-unk:rgba(11,16,48,.30);
   --r-hi:#B8F5D2; --r-lo:#086A39; --r-track:rgba(11,16,48,.09); --r-track-edge:rgba(11,16,48,.12);
   --t-glass:rgba(11,16,48,.14);
+  --r-chi:#FFE3B8; --r-clo:#A95A05; --r-fhi:#CFE6FF; --r-flo:#185EA8;
   --r-edge:rgba(255,255,255,.95); --r-facet:.3; --r-spec:.95; --r-glow:.42; --r-bloom:.2; }
 [data-theme="ring"][data-mode="night"]{ --page:#07080C; --stage-top:#171B26;
   --page-bg:radial-gradient(120% 55% at 28% 0%,#20263A 0%,#10131B 52%,#07080C 100%);
@@ -1091,6 +1092,7 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
   --m-prot:#0FAF60; --m-carb:#D27D12; --m-fat:#3A8BD8; --m-unk:rgba(255,255,255,.34);
   --r-hi:#D4FFE6; --r-lo:#0A7A42; --r-track:rgba(255,255,255,.11); --r-track-edge:rgba(255,255,255,.14);
   --t-glass:rgba(255,255,255,.15);
+  --r-chi:#FFD79E; --r-clo:#8A4A05; --r-fhi:#BFDBFF; --r-flo:#164E8A;
   --r-edge:rgba(255,255,255,.5); --r-facet:.08; --r-spec:.5; --r-glow:.6; --r-bloom:.28; }
 
 [data-theme="ring"] .datenav h1{text-transform:none;font-size:20px;letter-spacing:-.01em;font-weight:600}
@@ -2379,7 +2381,7 @@ function render(){
    order -- using the same 4/4/9 split as the bar, so the two never disagree.
    Past the target the turn becomes what was eaten (as the bar does) and a red
    band outside the ring marks the overshoot; the sections keep their colours. Each section is lit from the top left like the
-   icon: a lighter outer facet, a white rim, and protein alone gets the glow. */
+   icon: a lighter outer facet, a white rim, and each macro its own glow. */
 function ringPath(a0, a1, R, r, cx, cy){
   const P = (a, rad)=>{ const t = (a-90)*Math.PI/180; return [cx+rad*Math.cos(t), cy+rad*Math.sin(t)]; };
   if (a1 - a0 >= 359.9){   // a whole turn can't be one arc: two halves
@@ -2398,21 +2400,21 @@ function renderRing(parts, denom, left, tgt){
   const host = document.getElementById('ring');
   if (!host) return;
   const C = 150, R = 138, r = 92, MID = (R + r)/2, GAP = 2.4, over = left < 0;
-  const segs = [['p','var(--m-prot)'], ['f','var(--m-fat)'], ['c','var(--m-carb)'], ['u','var(--m-unk)']];
+  const segs = [['p','var(--m-prot)','rgProt'], ['f','var(--m-fat)','rgFat'], ['c','var(--m-carb)','rgCarb'], ['u','var(--m-unk)','']];
   let a = 0, body = '', glow = '', bloom = '';
-  segs.forEach(([k, col])=>{
+  segs.forEach(([k, col, grad])=>{
     const span = (parts[k] || 0)/denom*360;
     if (span < 0.5){ return; }
     const a0 = a + GAP/2, a1 = Math.min(a + span, 360) - GAP/2;
     a += span;
     if (a1 - a0 < 0.6) return;
-    const fill = k === 'p' ? 'url(#rgProt)' : col;
+    const fill = grad ? 'url(#'+grad+')' : col;
     const d = ringPath(a0, a1, R, r, C, C);
-    if (k === 'p'){
-      glow = '<path d="'+d+'" style="fill:var(--m-prot);opacity:var(--r-glow)" filter="url(#rgBlur)"/>';
+    if (grad){
+      glow += '<path d="'+d+'" style="fill:'+col+';opacity:var(--r-glow)" filter="url(#rgBlur)"/>';
       const m = (a0 + a1)/2, t = (m-90)*Math.PI/180;
-      bloom = '<circle cx="'+(C+MID*Math.cos(t)).toFixed(1)+'" cy="'+(C+MID*Math.sin(t)).toFixed(1)+
-              '" r="64" style="fill:var(--m-prot);opacity:var(--r-bloom)" filter="url(#rgBloom)"/>';
+      bloom += '<circle cx="'+(C+MID*Math.cos(t)).toFixed(1)+'" cy="'+(C+MID*Math.sin(t)).toFixed(1)+
+               '" r="64" style="fill:'+col+';opacity:var(--r-bloom)" filter="url(#rgBloom)"/>';
     }
     body += '<path class="rseg" data-k="'+k+'" d="'+d+'" style="fill:'+fill+'"/>'+
             '<path d="'+ringPath(a0, a1, R, MID, C, C)+'" style="fill:#fff;opacity:var(--r-facet)"/>'+
@@ -2433,6 +2435,12 @@ function renderRing(parts, denom, left, tgt){
       '<linearGradient id="rgProt" x1="0.2" y1="0" x2="0.6" y2="1">'+
         '<stop offset="0" style="stop-color:var(--r-hi)"/><stop offset="0.42" style="stop-color:var(--m-prot)"/>'+
         '<stop offset="1" style="stop-color:var(--r-lo)"/></linearGradient>'+
+      '<linearGradient id="rgFat" x1="0.2" y1="0" x2="0.6" y2="1">'+
+        '<stop offset="0" style="stop-color:var(--r-fhi)"/><stop offset="0.42" style="stop-color:var(--m-fat)"/>'+
+        '<stop offset="1" style="stop-color:var(--r-flo)"/></linearGradient>'+
+      '<linearGradient id="rgCarb" x1="0.2" y1="0" x2="0.6" y2="1">'+
+        '<stop offset="0" style="stop-color:var(--r-chi)"/><stop offset="0.42" style="stop-color:var(--m-carb)"/>'+
+        '<stop offset="1" style="stop-color:var(--r-clo)"/></linearGradient>'+
       '<filter id="rgBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>'+
       '<filter id="rgBloom" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="26"/></filter>'+
       '<filter id="rgSoft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.6"/></filter>'+
