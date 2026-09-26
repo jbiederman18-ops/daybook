@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Cinzel:wght@500;700;900&family=Outfit:wght@500;600;700&family=Saira:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Cinzel:wght@500;700;900&family=Outfit:wght@500;600;700&family=Saira:wght@600;700;800&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    Themes
@@ -1015,6 +1015,112 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
 [data-glass="on"] .mbar{box-shadow:inset 0 1px 2px rgba(0,0,0,.25),inset 0 0 0 1px var(--rim-low)}
 [data-glass="on"] .mdot{border-color:transparent}
 .kbproxy{position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;border:0;padding:0;margin:0;font-size:16px;pointer-events:none;z-index:-1}
+
+/* ============================================================
+   DAYBOOK -- the icon, as a theme
+   ------------------------------------------------------------
+   Taken straight from the home-screen icon: paper-white glass by day,
+   charcoal by night, and one lit thing -- protein, in green. Carbs and
+   fat are glass rather than colour, told apart by lightness (lighter
+   carbs, darker fat), so the only hue on the ring is the one you're
+   chasing. Sugar keeps its violet on its own bar.
+   ============================================================ */
+[data-theme="ring"]{
+  --bar-track:rgba(0,0,0,.07);
+  --good:#12C971;
+  --radius:14px;
+  --panel-radius:22px;
+  --strip-h:3px;
+  --bg:#EEF1F7;
+  --surface:#FFFFFF;
+  --surface-2:#E6EAF2;
+  --raised:#FFFFFF;
+  --line:#DCE1EC;
+  --ink:#0B1030;
+  --ink-on:#04160C;
+  --ink-dim:#4A5270;
+  --ink-faint:#7D86A0;
+  --breakfast:#A3ABBF;
+  --lunch:#12C971;
+  --dinner:#6B7593;
+  --snacks:#8B5CF6;
+  --accent:#12C971;
+  --over:#E5383B;
+  --page:#E9EDF4;
+  --strip:linear-gradient(90deg,rgba(18,201,113,0) 0%,#12C971 50%,rgba(18,201,113,0) 100%);
+  --strip-size:100% 100%;
+  --hero:transparent;
+  --hero-ink:#0B1030;
+  --hero-streak:none;
+  --big-shadow:none;
+  --cta:linear-gradient(180deg,#44E59A 0%,#12C971 58%,#0FB263 100%);
+  --cta-ink:#04160C;
+  --toast:#16192A;
+  --toast-ink:#FFFFFF;
+  --warn-bg:#FFF0F1;
+  --warn-ink:#A3122A;
+  --combo-bg:#EAF9F1;
+  --display:Sora,Archivo,system-ui,sans-serif;
+  --display-weight:600;
+  --display-track:.04em;
+  --border-w:1px;
+  --panel-border:1px;
+  --lift:0 1px 2px rgba(11,16,48,.08);
+  --panel-lift:0 14px 36px rgba(20,20,40,.09);
+  --press:brightness(.95);
+  --rule:1px solid var(--line);
+  --meal-rule:1px solid var(--line);
+  --seg-gloss:none;
+  --seg-edge:rgba(255,255,255,.7);
+  --bar-gloss:none;
+  --scrim:rgba(18,18,28,.3);
+  --m-sug:#8B5CF6;
+}
+[data-theme="ring"][data-mode="day"]{ --page:#E9EDF4; --stage-top:#FBFCFE;
+  --accent:#12C971; --accent-ink:#08804A; --hot:#12C971; --hot-ink:#067A40; --ink-on:#04160C;
+  --good:#12C971; --cta-glow:rgba(18,201,113,.34);
+  --m-prot:#12C971; --m-carb:rgba(11,16,48,.11); --m-fat:rgba(11,16,48,.27); --m-unk:rgba(11,16,48,.05);
+  --r-hi:#B8F5D2; --r-lo:#086A39; --r-track:rgba(11,16,48,.035); --r-track-edge:rgba(11,16,48,.07);
+  --r-edge:rgba(255,255,255,.95); --r-facet:.3; --r-spec:.95; --r-glow:.42; --r-bloom:.2; }
+[data-theme="ring"][data-mode="night"]{ --page:#07080C; --stage-top:#171B26;
+  --page-bg:radial-gradient(120% 55% at 28% 0%,#20263A 0%,#10131B 52%,#07080C 100%);
+  --accent:#12C971; --accent-ink:#3FE394; --hot:#12C971; --hot-ink:#5BEBA6; --ink-on:#04160C;
+  --good:#12C971; --cta-glow:rgba(18,201,113,.3);
+  --m-prot:#12C971; --m-carb:rgba(255,255,255,.34); --m-fat:rgba(255,255,255,.16); --m-unk:rgba(255,255,255,.06);
+  --r-hi:#D4FFE6; --r-lo:#0A7A42; --r-track:rgba(255,255,255,.035); --r-track-edge:rgba(255,255,255,.08);
+  --r-edge:rgba(255,255,255,.5); --r-facet:.08; --r-spec:.5; --r-glow:.6; --r-bloom:.28; }
+
+[data-theme="ring"] .datenav h1{text-transform:none;font-size:20px;letter-spacing:-.01em;font-weight:600}
+[data-theme="ring"] .sheet-head h2{text-transform:none;font-size:19px;letter-spacing:-.01em}
+[data-theme="ring"] .cta{font-family:var(--display);letter-spacing:.01em}
+.swatch.t-ring i:nth-child(1){background:#12C971}.swatch.t-ring i:nth-child(2){background:#A3ABBF}.swatch.t-ring i:nth-child(3){background:#F4F6FA}
+
+/* ---- the ring hero ---- */
+.ring{display:none}
+[data-theme="ring"] .hero,[data-theme="ring"][data-mode] .hero{background:transparent;border-color:transparent;padding-top:6px;overflow:visible}
+[data-theme="ring"] .hero>.remain,[data-theme="ring"] .hero>.bar{display:none}
+[data-theme="ring"] .ring{display:grid;place-items:center;position:relative;
+  width:min(256px,68vw);aspect-ratio:1;margin:2px auto 16px}
+.ring svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.ring .rc{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.ring .rbig{font-family:var(--display);font-weight:600;font-size:46px;line-height:1;letter-spacing:-.03em;
+  color:var(--ink);font-variant-numeric:tabular-nums}
+.ring .rcap{font-size:12.5px;font-weight:600;color:var(--ink-dim);max-width:120px;line-height:1.3}
+.ring .rcap b{color:var(--accent-ink);font-weight:700}
+.ring.over .rbig{color:var(--over)}
+.ring.over .rcap{color:var(--over)}
+.ring path{transition:opacity .3s}
+[data-theme="ring"] .hero .msplit,[data-theme="ring"] .hero .mathline{justify-content:center}
+[data-theme="ring"] .hero .msplit{margin:0 0 10px}
+
+/* ---- the week, in the ring's materials: an on-target day is lit like
+   protein; a day over is glass with a red cap, so a bad week doesn't turn
+   the bottom of the screen into a wall of red ---- */
+[data-theme="ring"]{
+  --t-good:linear-gradient(180deg,#44E59A 0%,#12C971 55%,#0FB263 100%);
+  --t-over:linear-gradient(180deg,var(--over) 0,var(--over) 5px,var(--m-fat) 5px,var(--m-fat) 100%);
+}
+[data-theme="ring"] .tbar{border-radius:8px 8px 3px 3px}
 </style>
 </head>
 <body>
@@ -1036,6 +1142,7 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
     </div>
 
     <div class="hero">
+      <div class="ring" id="ring" role="img"></div>
       <div class="remain" id="remainBox">
         <span class="big num" id="remainNum">—</span>
         <span class="cap" id="remainCap">left</span>
@@ -1123,7 +1230,7 @@ const DEFAULTS = {
   usdaKey:'', anthropicKey:'',
   model:'claude-haiku-4-5-20251001',
   proxy:'',                  // optional CORS proxy prefix
-  theme:'speed',             // 'speed' | 'aqua' | 'wick' | 'mania'
+  theme:'ring',              // 'ring' | 'speed' | 'aqua' | 'wick' | 'mania'
   glass:true,                // Liquid Glass material, orthogonal to the theme
   mode:'auto',               // 'auto' | 'day' | 'night' -- the stage, orthogonal to both
   unitSystem:'imperial',     // 'imperial' (ft/in/lb) or 'metric'  — your body stats
@@ -1162,12 +1269,23 @@ let sheetState = null;
    there is exactly one place to look when a phrase reads wrong.
    ============================================================ */
 const THEMES = [
+  {id:'ring',  name:'Daybook',     blurb:'The icon. Paper glass, one green light.', chrome:'#FBFCFE'},
   {id:'speed', name:'Speed Racer', blurb:'Neon telemetry on white. Hairline rules.', chrome:'#2E4FB0'},
   {id:'aqua',  name:'Aquaman',     blurb:'The trench looking up. Deep water, Atlantean gold.', chrome:'#072836'},
   {id:'wick',  name:'John Wick',   blurb:'The Continental after hours. Black, gold, one red.', chrome:'#0B0B0D'},
   {id:'mania', name:'WrestleMania',blurb:'Arena lights. Gold and hot pink on violet.', chrome:'#45148A'}
 ];
 const COPY = {
+  ring: {
+    left:'left of', over:'over',
+    added:(n,m)=>n+' added to '+m, removed:n=>'Removed '+n,
+    saved:'Saved', unsaved:'Removed from saved',
+    savedMeal:'Meal saved', addTo:m=>'Add to '+m,
+    addFood:'Add food', saveMeal:'Save meal', savedMealsHead:'Save this meal',
+    logHead:'Logged', recentHead:'Your regulars', recentEmpty:'Log something and it turns up here next time.',
+    noMeals:'No saved meals yet.', noFoods:'Nothing saved yet.',
+    synced:'Synced', trend:'Last 7 days'
+  },
   speed: {
     left:'left of', over:'over budget',
     added:(n,m)=>n+' added to '+m, removed:n=>'Removed '+n,
@@ -1236,6 +1354,7 @@ function modeId(){
 /* The browser chrome matches the top of the stage, so the status bar and
    the page meet without a seam. */
 const STAGE_TOP = {
+  ring:{night:'#171B26', day:'#FBFCFE'},
   mania:{night:'#16141D', day:'#FAF9FC'}, speed:{night:'#13161F', day:'#F9FAFD'},
   aqua:{night:'#10181C', day:'#F8FBFB'},  wick:{night:'#141414', day:'#FBFAF7'}
 };
@@ -2244,10 +2363,89 @@ function render(){
     bar.appendChild(seg);
   });
 
+  renderRing(parts, denom, left, tgt);
   renderMacros();
   renderLog();
   renderDock();
   renderTrend();
+}
+
+/* ---------- the ring ----------
+   The icon, live. A full turn is today's target; the day's calories fill it
+   clockwise from twelve o'clock -- protein, then fat, then carbs, the icon's
+   order -- using the same 4/4/9 split as the bar, so the two never disagree.
+   Past the target the turn becomes what was eaten (as the bar does) and a red
+   band outside the ring marks the overshoot; the sections keep their colours. Each section is lit from the top left like the
+   icon: a lighter outer facet, a white rim, and protein alone gets the glow. */
+function ringPath(a0, a1, R, r, cx, cy){
+  const P = (a, rad)=>{ const t = (a-90)*Math.PI/180; return [cx+rad*Math.cos(t), cy+rad*Math.sin(t)]; };
+  if (a1 - a0 >= 359.9){   // a whole turn can't be one arc: two halves
+    return ringPath(a0, a0+180, R, r, cx, cy) + ' ' + ringPath(a0+180, a0+360, R, r, cx, cy);
+  }
+  const L = (a1 - a0) > 180 ? 1 : 0, f = n => n.toFixed(2);
+  const [x0,y0] = P(a0,R), [x1,y1] = P(a1,R), [x2,y2] = P(a1,r), [x3,y3] = P(a0,r);
+  return 'M'+f(x0)+','+f(y0)+' A'+R+','+R+' 0 '+L+' 1 '+f(x1)+','+f(y1)+
+         ' L'+f(x2)+','+f(y2)+' A'+r+','+r+' 0 '+L+' 0 '+f(x3)+','+f(y3)+' Z';
+}
+function ringArc(a0, a1, rad, cx, cy){
+  const P = a => { const t = (a-90)*Math.PI/180; return (cx+rad*Math.cos(t)).toFixed(2)+','+(cy+rad*Math.sin(t)).toFixed(2); };
+  return 'M'+P(a0)+' A'+rad+','+rad+' 0 '+((a1-a0) > 180 ? 1 : 0)+' 1 '+P(a1);
+}
+function renderRing(parts, denom, left, tgt){
+  const host = document.getElementById('ring');
+  if (!host) return;
+  const C = 150, R = 138, r = 92, MID = (R + r)/2, GAP = 2.4, over = left < 0;
+  const segs = [['p','var(--m-prot)'], ['f','var(--m-fat)'], ['c','var(--m-carb)'], ['u','var(--m-unk)']];
+  let a = 0, body = '', glow = '', bloom = '';
+  segs.forEach(([k, col])=>{
+    const span = (parts[k] || 0)/denom*360;
+    if (span < 0.5){ return; }
+    const a0 = a + GAP/2, a1 = Math.min(a + span, 360) - GAP/2;
+    a += span;
+    if (a1 - a0 < 0.6) return;
+    const fill = k === 'p' ? 'url(#rgProt)' : col;
+    const d = ringPath(a0, a1, R, r, C, C);
+    if (k === 'p'){
+      glow = '<path d="'+d+'" style="fill:var(--m-prot);opacity:var(--r-glow)" filter="url(#rgBlur)"/>';
+      const m = (a0 + a1)/2, t = (m-90)*Math.PI/180;
+      bloom = '<circle cx="'+(C+MID*Math.cos(t)).toFixed(1)+'" cy="'+(C+MID*Math.sin(t)).toFixed(1)+
+              '" r="64" style="fill:var(--m-prot);opacity:var(--r-bloom)" filter="url(#rgBloom)"/>';
+    }
+    body += '<path class="rseg" data-k="'+k+'" d="'+d+'" style="fill:'+fill+'"/>'+
+            '<path d="'+ringPath(a0, a1, R, MID, C, C)+'" style="fill:#fff;opacity:var(--r-facet)"/>'+
+            '<path d="'+ringArc(a0, a1, R, C, C)+'" fill="none" style="stroke:var(--r-edge)" stroke-width="2" stroke-linecap="round"/>';
+  });
+  /* Over: the turn is now what was eaten, and the part past the target is
+     marked by a red band riding just outside the ring. */
+  let past = '';
+  if (over){
+    const from = Math.max(0, Math.min(360, tgt/denom*360));
+    if (360 - from > 1) past =
+      '<path d="'+ringPath(from + 0.6, 359.4, R+11, R+4, C, C)+'" style="fill:var(--over);opacity:.45" filter="url(#rgBlur)"/>'+
+      '<path class="rpast" d="'+ringPath(from + 0.6, 359.4, R+11, R+4, C, C)+'" style="fill:var(--over)"/>';
+  }
+  host.classList.toggle('over', over);
+  host.innerHTML =
+    '<svg viewBox="0 0 300 300" aria-hidden="true"><defs>'+
+      '<linearGradient id="rgProt" x1="0.2" y1="0" x2="0.6" y2="1">'+
+        '<stop offset="0" style="stop-color:var(--r-hi)"/><stop offset="0.42" style="stop-color:var(--m-prot)"/>'+
+        '<stop offset="1" style="stop-color:var(--r-lo)"/></linearGradient>'+
+      '<filter id="rgBlur" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="7"/></filter>'+
+      '<filter id="rgBloom" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="26"/></filter>'+
+      '<filter id="rgSoft" x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="1.6"/></filter>'+
+    '</defs>'+
+    bloom+
+    '<path d="'+ringPath(0, 360, R, r, C, C)+'" style="fill:var(--r-track);stroke:var(--r-track-edge)" stroke-width="1"/>'+
+    glow + body + past +
+    '<path d="'+ringArc(286, 344, R-5, C, C)+'" fill="none" style="stroke:#fff;opacity:var(--r-spec)" stroke-width="4" stroke-linecap="round" filter="url(#rgSoft)"/>'+
+    '<circle cx="'+(C+(R-9)*Math.cos((300-90)*Math.PI/180)).toFixed(1)+'" cy="'+(C+(R-9)*Math.sin((300-90)*Math.PI/180)).toFixed(1)+
+      '" r="3.5" style="fill:#fff;opacity:var(--r-spec)" filter="url(#rgSoft)"/>'+
+    '</svg>'+
+    '<div class="rc"><span class="rbig num" id="ringNum">'+Math.abs(left).toLocaleString()+'</span>'+
+    '<span class="rcap" id="ringCap">'+(over ? T('over') : T('left')+' <b>'+tgt.toLocaleString()+'</b>')+'</span></div>';
+  host.setAttribute('aria-label', over
+    ? Math.abs(left).toLocaleString()+' calories over'
+    : Math.abs(left).toLocaleString()+' calories left of '+tgt.toLocaleString());
 }
 
 /* ---------- protein, sugar, and the split ---------- */
@@ -2580,7 +2778,7 @@ function renderTrend(){
     const bar = v === 0
       ? '<div class="tbar none"></div>'
       : '<div class="tbar" style="height:'+Math.max(2, v/peak*100)+'%;background:'+
-          (over ? 'var(--over)' : 'var(--good)')+'"></div>';
+          (over ? 'var(--t-over, var(--over))' : 'var(--t-good, var(--good))')+'"></div>';
     const tick = t !== base && t > 0
       ? '<i class="ttick" style="bottom:'+Math.min(ZONE, t/peak*ZONE)+'px"></i>' : '';
     col.innerHTML = bar + tick +
