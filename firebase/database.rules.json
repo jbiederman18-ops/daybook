@@ -1,0 +1,9 @@
+{
+  "rules": {
+    ".read":  "auth.uid === 'ZtkFPWevDnOXlaXoZmXLUED6Fm23'",
+    ".write": "auth.uid === 'ZtkFPWevDnOXlaXoZmXLUED6Fm23'",
+    "entries": { ".indexOn": ["updated"] },
+    "library": { ".indexOn": ["updated"] },
+    "days":    { ".indexOn": ["updated"] }
+  }
+}

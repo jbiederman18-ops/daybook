@@ -1245,6 +1245,7 @@ const DEFAULTS = {
   activityBase:'tracker',    // 'tracker': base is resting burn, moved covers the rest; 'none': sedentary x1.2
   movedPct:100,              // share of moved (active calories) that counts toward the day
   syncUrl:'', syncToken:'',  // optional, powers the iOS widget
+  fbApiKey:'', fbAuth:null,  // Firebase sign-in: web API key, and the signed-in session (this device only)
   healthShortcut:''          // name of the Shortcut that sends Health's Active Energy
 };
 
@@ -1704,6 +1705,7 @@ async function doPush(full, keep){
     ch.days.forEach(r=>{    if (rtdbKeyOK(r.date)) patch['days/'+r.date]   = r; });
     if (ch.profile) patch['profile'] = ch.profile;
     patch['summary'] = payload.summary;
+    await fbReady();
     try {
       const pb = JSON.stringify(patch);
       const r = await fetch(dbURL('/'), {
@@ -1716,6 +1718,7 @@ async function doPush(full, keep){
       else {
         let d = null; try { d = await r.json(); } catch(e){}
         err = (d && d.error) || ('Firebase returned '+r.status);
+        if (r.status === 401) fbExpire();
         // 4xx is a considered no — wrong secret, rules, bad shape. Retrying
         // won't change it, and the cursor must not move.
         refused = r.status >= 400 && r.status < 500;
@@ -1786,9 +1789,92 @@ function isRTDB(u){
 function dbRoot(){
   return String(S.settings.syncUrl||'').trim().replace(/\/+$/,'').replace(/\.json$/i,'');
 }
+/* ---------- FIREBASE SIGN-IN ----------
+   Email and password over Firebase's REST API, no SDK. Signing in once swaps
+   the password for a refresh token, and the password is never stored. The
+   ID token lasts an hour; fbReady() renews it ahead of every request, and
+   fbCred() hands dbURL whichever credential applies: the ID token when
+   signed in, the legacy database secret when not. That fallback is what
+   makes the cutover reversible -- sign out and the old secret works again.
+   Tokens live in S.settings.fbAuth, which is not in PROFILE_KEYS (so it never
+   syncs) and is blanked in the exported backup. */
+const FB_SIGNIN  = 'https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=';
+const FB_REFRESH = 'https://securetoken.googleapis.com/v1/token?key=';
+function fbAuth(){ const a = S.settings.fbAuth; return a && a.refresh ? a : null; }
+/* Within two minutes of expiry counts as stale, so a request never leaves
+   with a token that dies in flight. */
+function fbStale(){ const a = fbAuth(); return !!a && !(a.id && (a.exp||0) - 120000 > Date.now()); }
+function fbExpire(){ const a = fbAuth(); if (a) a.exp = 0; }
+function fbCred(){ const a = fbAuth(); return a ? (a.id || '') : (S.settings.syncToken || ''); }
+function fbWhy(m){
+  m = String(m || '');
+  if (/INVALID_LOGIN_CREDENTIALS|INVALID_PASSWORD|EMAIL_NOT_FOUND|INVALID_EMAIL/.test(m)) return 'That email and password weren’t accepted.';
+  if (/API_KEY|API key/i.test(m)) return 'Firebase refused the web API key. Check it in Project settings.';
+  if (/OPERATION_NOT_ALLOWED/.test(m)) return 'Email/Password sign-in isn’t switched on in Firebase.';
+  if (/TOO_MANY_ATTEMPTS/.test(m)) return 'Too many attempts. Wait a few minutes and try again.';
+  if (/USER_DISABLED/.test(m)) return 'That account is disabled.';
+  return 'Sign-in failed' + (m ? ' (' + m + ')' : '') + '.';
+}
+async function fbSignIn(email, password){
+  const key = cleanKey(S.settings.fbApiKey);
+  if (!key) throw new Error('Add the Firebase web API key first.');
+  let r, j = null;
+  try {
+    r = await fetch(FB_SIGNIN + encodeURIComponent(key), {
+      method: 'POST', headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email: String(email).trim(), password: String(password), returnSecureToken: true})
+    });
+  } catch(e){ throw new Error('Could not reach Firebase.'); }
+  try { j = await r.json(); } catch(e){}
+  if (!r.ok || !j || !j.idToken || !j.refreshToken){
+    throw new Error(fbWhy(j && j.error && j.error.message || ('status ' + r.status)));
+  }
+  S.settings.fbAuth = {email: String(email).trim(), id: j.idToken, refresh: j.refreshToken,
+                       exp: Date.now() + (+j.expiresIn || 3600) * 1000};
+  persist();
+  return S.settings.fbAuth;
+}
+let fbBusy = null;
+/* Resolves when the token is good, or when renewing it was not possible.
+   Offline is not an error here: the old token is kept and the request itself
+   reports the problem. A refresh token Firebase has revoked is final, and
+   signs the device out so the secret fallback and a clear message take over. */
+function fbReady(){
+  const a = fbAuth();
+  if (!a || !fbStale()) return Promise.resolve();
+  if (fbBusy) return fbBusy;
+  fbBusy = (async ()=>{
+    try {
+      const r = await fetch(FB_REFRESH + encodeURIComponent(cleanKey(S.settings.fbApiKey)), {
+        method: 'POST', headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'grant_type=refresh_token&refresh_token=' + encodeURIComponent(a.refresh)
+      });
+      let j = null; try { j = await r.json(); } catch(e){}
+      if (r.ok && j && j.id_token){
+        a.id = j.id_token; a.refresh = j.refresh_token || a.refresh;
+        a.exp = Date.now() + (+j.expires_in || 3600) * 1000;
+        persist();
+        return;
+      }
+      const m = String(j && j.error && j.error.message || '');
+      if (r.status >= 400 && r.status < 500 && /TOKEN_EXPIRED|USER_DISABLED|USER_NOT_FOUND|INVALID_REFRESH_TOKEN|INVALID_GRANT/.test(m)){
+        S.settings.fbAuth = null;
+        S.sync.err = 'Signed out of Firebase (' + m + '). Sign in again in Settings.';
+        persist();
+      }
+    } catch(e){ /* offline: keep what we have */ }
+    finally { fbBusy = null; }
+  })();
+  return fbBusy;
+}
+// Renew in the background while the app is on screen and when it comes back,
+// so the token is already fresh when the first pull or push of a session goes.
+setInterval(()=>{ if (!document.hidden) fbReady(); }, 60000);
+document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) fbReady(); });
+window.addEventListener('focus', ()=>{ fbReady(); });
 function dbURL(path, qs){
   return dbRoot()+path+'.json?'+(qs ? qs+'&' : '')+
-         'auth='+encodeURIComponent(S.settings.syncToken||'');
+         'auth='+encodeURIComponent(fbCred());
 }
 /* Firebase rejects the entire write if any key holds one of these, so a single
    malformed id would take a whole push down with it — and since the cursor
@@ -1814,6 +1900,7 @@ async function pullSync(){
        ".indexOn": "updated" on entries, library and days in the rules, or
        Firebase answers 400 rather than scanning. */
     const q = 'orderBy=%22updated%22&startAt='+(S.sync.lastPull||0);
+    await fbReady();
     try {
       const [re, rl, rd, rp] = await Promise.all([
         fetch(dbURL('/entries', q)),
@@ -1825,6 +1912,7 @@ async function pullSync(){
       if (bad){
         let j = null; try { j = await bad.json(); } catch(e){}
         err = (j && j.error) || ('Firebase returned '+bad.status);
+        if (bad.status === 401) fbExpire();
       } else {
         // Firebase hands back an object keyed by id; the merge wants a list.
         // The key rides along as the id, for records whose writer let
@@ -5737,6 +5825,8 @@ function healthStop(){
 function healthListen(w){
   healthStop();
   if (typeof EventSource === 'undefined' || !isRTDB(S.settings.syncUrl)) return;
+  // The stream URL carries the token, so it must be fresh before it opens.
+  if (fbStale()){ fbReady().then(()=>{ if (healthWait === w && !fbStale()) healthListen(w); }); return; }
   const nodes = {day:undefined, profile:undefined};
   const open = (key, path)=>{
     let es;
@@ -5753,7 +5843,7 @@ function healthListen(w){
     // Firebase saying no -- a revoked secret, a rule -- is final; the pull
     // loop is still there.
     es.addEventListener('cancel', ()=>es.close());
-    es.addEventListener('auth_revoked', ()=>es.close());
+    es.addEventListener('auth_revoked', ()=>{ es.close(); fbExpire(); });
     return es;
   };
   healthLive = [open('day', '/days/'+w.dk), open('profile', '/profile')].filter(Boolean);
@@ -5926,7 +6016,15 @@ function openSettings(){
 
     '<div class="divider"><h3>Sync</h3></div>'+
     '<div class="field"><label>Sync URL</label><input id="su" value="'+escapeHTML(s.syncUrl)+'" placeholder="https://…-default-rtdb.firebasedatabase.app" autocomplete="off"></div>'+
-    '<div class="field"><label>Secret</label><input id="st" value="'+escapeHTML(s.syncToken)+'" placeholder="Firebase database secret" autocomplete="off"></div>'+
+    '<div class="field"><label>Firebase web API key</label><input id="fk" value="'+escapeHTML(s.fbApiKey)+'" placeholder="Project settings \u2192 General \u2192 Web API key" autocomplete="off"></div>'+
+    (fbAuth()
+      ? '<p class="note" id="fbNote">Signed in as <b>'+escapeHTML(fbAuth().email)+'</b> on this device.</p>'+
+        '<button class="cta ghost" id="fbOut" style="margin-top:6px">Sign out</button>'
+      : '<div class="field"><label>Email</label><input id="fe" type="email" value="" placeholder="the account you made in Firebase" autocomplete="username" autocapitalize="off"></div>'+
+        '<div class="field"><label>Password</label><input id="fp" type="password" value="" placeholder="not stored \u2014 only a sign-in token is kept" autocomplete="current-password"></div>'+
+        '<button class="cta" id="fbIn" style="margin-top:6px">Sign in</button>'+
+        '<p class="note" id="fbNote">Sign in once per device. Until you do, the legacy secret below is used.</p>')+
+    '<div class="field"><label>Legacy secret \u2014 clear this once you\u2019re signed in</label><input id="st" value="'+escapeHTML(s.syncToken)+'" placeholder="Firebase database secret" autocomplete="off"></div>'+
     '<p class="note">Leave both blank and everything still works — you just won\u2019t get the widget. Setup is in <b>widget-setup.md</b>.</p>'+
     (s.syncUrl ? '<p class="note" id="syncNote"></p>'+
       '<button class="cta ghost" id="testSync" style="margin-top:6px">Sync now</button>'+
@@ -6135,6 +6233,34 @@ function openSettings(){
     el.addEventListener('blur', tidy);
   });
 
+  const fbInBtn = document.getElementById('fbIn');
+  if (fbInBtn) fbInBtn.onclick = async ()=>{
+    const note = document.getElementById('fbNote'), pw = document.getElementById('fp');
+    S.settings.fbApiKey = cleanKey(document.getElementById('fk').value);
+    S.settings.syncUrl  = cleanKey(document.getElementById('su').value);
+    fbInBtn.disabled = true; note.textContent = 'Signing in\u2026';
+    try {
+      await fbSignIn(document.getElementById('fe').value, pw.value);
+      pw.value = '';
+      commitBody();
+      S.sync.lastPull = 0; S.sync.err = '';
+      save();
+      await pullSync();
+      toast(S.sync.err || 'Signed in and synced');
+      sheetGuard = null; openSettings();
+    } catch(e){
+      fbInBtn.disabled = false;
+      note.textContent = e.message || 'Sign-in failed.';
+      note.style.color = 'var(--over)';
+    }
+  };
+  const fbOutBtn = document.getElementById('fbOut');
+  if (fbOutBtn) fbOutBtn.onclick = ()=>{
+    commitBody();
+    S.settings.fbAuth = null; save();
+    toast('Signed out');
+    sheetGuard = null; openSettings();
+  };
   document.getElementById('saveSet').onclick = ()=>{
     Object.assign(S.settings, readBody(), {
       usdaKey:cleanKey(document.getElementById('uk').value),
@@ -6143,6 +6269,7 @@ function openSettings(){
       proxy:cleanKey(document.getElementById('px').value),
       syncUrl:cleanKey(document.getElementById('su').value),
       syncToken:cleanToken(document.getElementById('st').value),
+      fbApiKey:cleanKey(document.getElementById('fk').value),
       healthShortcut:String(document.getElementById('hs').value||'').trim()
     });
     dirty = false;
@@ -6161,7 +6288,7 @@ function openSettings(){
   storeNote();
   document.getElementById('exportBtn').onclick = ()=>{
     // Keys and the Firebase secret stay on the device; a backup file travels.
-    const safe = {...S, settings:{...S.settings, anthropicKey:'', usdaKey:'', syncToken:''}};
+    const safe = {...S, settings:{...S.settings, anthropicKey:'', usdaKey:'', syncToken:'', fbAuth:null}};
     const blob = new Blob([JSON.stringify(safe,null,2)],{type:'application/json'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
