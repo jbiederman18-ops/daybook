@@ -2114,6 +2114,95 @@ function fbReady(){
 setInterval(()=>{ if (!document.hidden) fbReady(); }, 60000);
 document.addEventListener('visibilitychange', ()=>{ if (!document.hidden) fbReady(); });
 window.addEventListener('focus', ()=>{ fbReady(); });
+/* ---------- moving to a new install ----------
+   Deleting the home-screen app deletes its storage, and the things that
+   never sync -- keys, the sync address, the Firebase sign-in -- go with it.
+   A setup code is those, in one line you can keep in Notes. Pasted into a
+   fresh install it puts them back and pulls everything else down by sync.
+   It holds working keys, so it's treated like a password. */
+const SETUP_KEYS = ['usdaKey','anthropicKey','model','proxy','syncUrl','fbApiKey','syncToken','healthShortcut'];
+const SETUP_TAG = 'daybook-setup:';
+function setupCode(){
+  const o = {v:1};
+  SETUP_KEYS.forEach(k=>{ const v = S.settings[k]; if (v !== undefined && v !== '' && v !== null) o[k] = v; });
+  const a = fbAuth();
+  if (a) o.fbAuth = {email:a.email, refresh:a.refresh};   // the ID token is renewed on arrival
+  const bytes = new TextEncoder().encode(JSON.stringify(o));
+  let bin = ''; bytes.forEach(b=>{ bin += String.fromCharCode(b); });
+  return SETUP_TAG + btoa(bin).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');
+}
+/* Forgiving on the way in: a code wrapped across lines by Notes, with stray
+   spaces or quotes, or the bare JSON all work. Anything else is null. */
+function readSetupCode(text){
+  let t = String(text || '').replace(/[\s ​-‍⁠﻿"'‘’“”]/g, '');
+  let o = null;
+  try {
+    if (t.startsWith('{')) o = JSON.parse(t);
+    else {
+      const i = t.indexOf(SETUP_TAG);
+      if (i < 0) return null;
+      let b = t.slice(i + SETUP_TAG.length).replace(/-/g,'+').replace(/_/g,'/');
+      while (b.length % 4) b += '=';
+      const bin = atob(b);
+      o = JSON.parse(new TextDecoder().decode(Uint8Array.from(bin, c=>c.charCodeAt(0))));
+    }
+  } catch(e){ return null; }
+  if (!o || typeof o !== 'object' || o.v !== 1) return null;
+  return o;
+}
+async function applySetupCode(o){
+  SETUP_KEYS.forEach(k=>{
+    if (o[k] === undefined) return;
+    S.settings[k] = k === 'syncToken' ? cleanToken(o[k])
+                  : k === 'healthShortcut' || k === 'model' ? String(o[k]).trim()
+                  : cleanKey(o[k]);
+  });
+  if (o.fbAuth && o.fbAuth.refresh) S.settings.fbAuth = {email:String(o.fbAuth.email||''), refresh:o.fbAuth.refresh, id:'', exp:0};
+  // Everything else comes from sync, from the start.
+  S.sync.lastPull = 0; S.sync.err = '';
+  persist();
+  if (!S.settings.syncUrl) return {ok:true, synced:false};
+  // Pull before anything pushes, so a blank install never writes over the
+  // widget summary with an empty day.
+  const ok = await pullSync();
+  return {ok:true, synced:ok, err:S.sync.err};
+}
+function openSetupPaste(fresh){
+  openSheet(sheetHead('Paste setup code')+
+    '<p class="note" style="margin-top:0">On your old install: Settings → <b>Copy setup code</b>. Then paste it here and everything comes back — keys, sync and your sign-in, then your log by sync.</p>'+
+    (navigator.clipboard && navigator.clipboard.readText ? '<button class="cta ghost" id="scClip" style="margin-top:10px">Paste from clipboard</button>' : '')+
+    '<div class="field" style="margin-top:12px"><textarea id="scBox" rows="4" placeholder="daybook-setup:…" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea></div>'+
+    '<button class="cta" id="scGo">Set up this device</button>'+
+    '<p class="note" id="scNote"></p>'+
+    (fresh ? '<button class="cta ghost" id="scHand" style="margin-top:14px">First time? Set up by hand</button>' : ''));
+  const hand = document.getElementById('scHand');
+  if (hand) hand.onclick = ()=>{ closeSheet(true); openSettings(); };
+  const box = document.getElementById('scBox'), note = document.getElementById('scNote'), go = document.getElementById('scGo');
+  const clip = document.getElementById('scClip');
+  if (clip) clip.onclick = async ()=>{
+    try { box.value = await navigator.clipboard.readText(); go.click(); }
+    catch(e){ note.textContent = 'Couldn’t read the clipboard — long-press the box and paste instead.'; box.focus(); }
+  };
+  go.onclick = async ()=>{
+    const o = readSetupCode(box.value);
+    if (!o){ note.textContent = 'That isn’t a setup code. It starts with daybook-setup:'; note.style.color = 'var(--over)'; return; }
+    go.disabled = true; note.style.color = ''; note.textContent = 'Setting up…';
+    const r = await applySetupCode(o);
+    render();
+    if (r.synced){ closeSheet(true); toast('All set — synced and signed in'); }
+    else if (!S.settings.syncUrl){ closeSheet(true); toast('Keys are in. No sync was set up on the old install.'); }
+    else { go.disabled = false; note.textContent = 'Keys are in, but sync didn’t answer: '+(r.err || 'try Sync now in Settings')+'.'; }
+  };
+}
+async function copySetupCode(btn){
+  const code = setupCode();
+  let copied = false;
+  try { await navigator.clipboard.writeText(code); copied = true; } catch(e){}
+  const out = document.getElementById('scOut');
+  if (out){ out.style.display = ''; out.value = code; if (!copied){ out.focus(); out.select(); } }
+  toast(copied ? 'Setup code copied — paste it into Notes' : 'Select the code below and copy it');
+}
+
 function dbURL(path, qs){
   return dbRoot()+path+'.json?'+(qs ? qs+'&' : '')+
          'auth='+encodeURIComponent(fbCred());
@@ -6292,6 +6381,13 @@ function openSettings(){
     'the Shortcut reads today\u2019s Active Energy, sends it to your worker, and the number lands here when you come back. '+
     'If the Shortcut also sends your weight, your protein target follows it. Needs sync set up above.</p>'+
 
+    '<div class="divider"><h3>Moving to a new install</h3></div>'+
+    '<p class="note" style="margin-top:0">Changing the home-screen icon means deleting the app and adding it again, which wipes this device. '+
+    'Copy the setup code first and keep it in Notes; after you re-add the app, paste it in and you\u2019re back \u2014 no keys to type, no sign-in. '+
+    'It holds your keys and sign-in, so treat it like a password.</p>'+
+    '<button class="cta" id="scCopy" style="margin-top:6px">Copy setup code</button>'+
+    '<textarea id="scOut" rows="3" readonly style="display:none;margin-top:8px;font-size:12px"></textarea>'+
+    '<button class="cta ghost" id="scPaste" style="margin-top:8px">Paste setup code</button>'+
     '<button class="cta ghost" id="exportBtn" style="margin-top:18px">Export my data</button>'+
     '<button class="cta ghost" id="importBtn" style="margin-top:8px">Import a backup</button>'+
     '<input type="file" id="importFile" accept="application/json,.json" hidden>'+
@@ -6520,6 +6616,8 @@ function openSettings(){
     dirty = false;
     touchProfile(); save(); render(); closeSheet(true); toast('Settings saved');
   };
+  document.getElementById('scCopy').onclick = e=>copySetupCode(e.currentTarget);
+  document.getElementById('scPaste').onclick = ()=>{ sheetGuard = null; openSetupPaste(); };
   const fileIn = document.getElementById('importFile');
   document.getElementById('importBtn').onclick = ()=>fileIn.click();
   fileIn.onchange = async ()=>{
@@ -6568,7 +6666,8 @@ document.addEventListener('keydown', e=>{ if (e.key === 'Escape') closeSheet(); 
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   }
   if (!S.settings.usdaKey && !S.settings.anthropicKey && !Object.keys(S.days).length){
-    setTimeout(openSettings, 500);
+    /* A blank install is nearly always a reinstall: offer the code first. */
+    setTimeout(()=>openSetupPaste(true), 500);
   }
 })();
 </script>
