@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-flat>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -1126,6 +1126,155 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
   --t-over:linear-gradient(180deg,var(--over) 0,var(--over) 5px,var(--t-glass) 5px,var(--t-glass) 100%);
 }
 [data-theme="ring"] .tbar{border-radius:8px 8px 3px 3px}
+
+/* ============================================================
+   FLAT
+   ------------------------------------------------------------
+   One more layer over theme, mode and glass, switched on by data-flat on
+   <html>. What goes: the card the page sat on, gradients, glows, the ring's
+   bevel and bloom, outlines on every chip, and the glass blur everywhere
+   except the floating bar at the bottom. What stays: each theme's colours,
+   at full strength, on the things that mean something.
+
+   Every selector starts with :root[data-flat][data-theme][data-mode], which
+   outranks every theme, stage and glass rule above it, so nothing up there
+   had to change and removing the attribute puts it all back.
+   ============================================================ */
+:root[data-flat][data-theme][data-mode]{
+  --page-bg:var(--stage-top);
+  --flat-page:var(--stage-top);
+  background:var(--flat-page);
+  --strip-h:0px;
+  --lift:none; --panel-lift:none; --big-shadow:none;
+  --seg-gloss:none; --bar-gloss:none;
+  /* the ring: solid colour, no facet, rim, highlight, glow or bloom */
+  --r-glow:0; --r-bloom:0; --r-facet:0; --r-spec:0;
+  --r-edge:transparent; --r-track-edge:transparent;
+  --r-hi:var(--m-prot); --r-lo:var(--m-prot);
+  --r-chi:var(--m-carb); --r-clo:var(--m-carb);
+  --r-fhi:var(--m-fat);  --r-flo:var(--m-fat);
+  /* the week: flat bars, an over day keeps its thin red cap */
+  --t-good:var(--good);
+  --t-over:linear-gradient(180deg,var(--over) 0,var(--over) 4px,var(--fill-2) 4px,var(--fill-2) 100%);
+}
+:root[data-flat][data-theme][data-mode="day"]{
+  --fill:rgba(15,18,40,.05); --fill-2:rgba(15,18,40,.08); --hair:rgba(15,18,40,.08);
+  --sheet:#FFFFFF;
+}
+:root[data-flat][data-theme][data-mode="night"]{
+  --fill:rgba(255,255,255,.065); --fill-2:rgba(255,255,255,.1); --hair:rgba(255,255,255,.08);
+  --sheet:color-mix(in srgb,var(--stage-top) 94%,#fff);
+}
+/* The main button, one solid colour per theme instead of a gradient. */
+:root[data-flat][data-theme="ring"]{--cta-flat:#12C971}
+:root[data-flat][data-theme="speed"]{--cta-flat:#FF3355}
+:root[data-flat][data-theme="aqua"]{--cta-flat:#F0A02A}
+:root[data-flat][data-theme="wick"]{--cta-flat:#B3202B}
+:root[data-flat][data-theme="mania"]{--cta-flat:#FF2D9E}
+
+:root[data-flat][data-theme][data-mode] body{
+  background:var(--flat-page);
+  padding-left:env(safe-area-inset-left,0px);
+  padding-right:env(safe-area-inset-right,0px);
+}
+:root[data-flat][data-theme][data-mode] .caustic{display:none}
+
+/* ---- no card: the day sits straight on the page ---- */
+:root[data-flat][data-theme][data-mode] .wrap{
+  background:transparent;border:0;border-radius:0;box-shadow:none;overflow:visible;
+  padding:0 20px 22px;-webkit-backdrop-filter:none;backdrop-filter:none;
+}
+:root[data-flat][data-theme][data-mode] .wrap::before,
+:root[data-flat][data-theme][data-mode] .wrap::after{display:none}
+:root[data-flat][data-theme][data-mode] .hero{
+  background:transparent;border:0;margin:14px -20px 0;padding:8px 20px 12px;
+}
+:root[data-flat][data-theme][data-mode] .meal{border-top:0;padding-top:20px}
+:root[data-flat][data-theme][data-mode] .trend{border-top:1px solid var(--hair)}
+
+/* ---- controls: filled, not outlined ---- */
+:root[data-flat][data-theme][data-mode] .arrow,
+:root[data-flat][data-theme][data-mode] .gear,
+:root[data-flat][data-theme][data-mode] .qchip,
+:root[data-flat][data-theme][data-mode] .chip,
+:root[data-flat][data-theme][data-mode] .addbtn,
+:root[data-flat][data-theme][data-mode] .camera,
+:root[data-flat][data-theme][data-mode] .qadd,
+:root[data-flat][data-theme][data-mode] .logfield,
+:root[data-flat][data-theme][data-mode] .tabs,
+:root[data-flat][data-theme][data-mode] .themecard{
+  background:var(--fill);border-color:transparent;box-shadow:none;
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+}
+:root[data-flat][data-theme][data-mode] .gear{color:var(--ink-dim)}
+:root[data-flat][data-theme][data-mode] .qchip.combo{background:var(--fill-2)}
+:root[data-flat][data-theme][data-mode] .savemeal{border-color:transparent;box-shadow:none}
+:root[data-flat][data-theme][data-mode] .tab.on,
+:root[data-flat][data-theme][data-mode] .chip.on{
+  background:var(--hot-wash);color:var(--hot-ink);box-shadow:none;border-color:transparent;
+}
+:root[data-flat][data-theme][data-mode] .themecard.on{box-shadow:inset 0 0 0 1.5px var(--hot)}
+:root[data-flat][data-theme][data-mode] .qadd.done{background:var(--accent);color:var(--ink-on)}
+/* background-color, not background: the select keeps its arrow */
+:root[data-flat][data-theme][data-mode] input,
+:root[data-flat][data-theme][data-mode] select,
+:root[data-flat][data-theme][data-mode] textarea{
+  background-color:var(--fill);border-color:transparent;box-shadow:none;
+  -webkit-backdrop-filter:none;backdrop-filter:none;
+}
+:root[data-flat][data-theme][data-mode] .cta{
+  background:var(--cta-flat,var(--accent));color:var(--cta-ink);
+  border-color:transparent;box-shadow:none;
+}
+:root[data-flat][data-theme][data-mode] .cta.ghost{background:var(--fill);color:var(--ink)}
+:root[data-flat][data-theme][data-mode] .warn{border:0}
+:root[data-flat][data-theme][data-mode] .shot{border-color:transparent}
+
+/* ---- bars and dots ---- */
+:root[data-flat][data-theme][data-mode] .bar,
+:root[data-flat][data-theme][data-mode] .mbar{background:var(--fill-2);box-shadow:none}
+:root[data-flat][data-theme][data-mode] .seg{box-shadow:none;border-right:2px solid var(--flat-page)}
+:root[data-flat][data-theme][data-mode] .mfill{box-shadow:none}
+:root[data-flat][data-theme][data-mode] .mdot,
+:root[data-flat][data-theme][data-mode] .dot{border:0;border-radius:50%}
+:root[data-flat][data-theme][data-mode] .tbar{border:0;border-radius:6px;box-shadow:none}
+:root[data-flat][data-theme][data-mode] .tline{border-top:1px dashed var(--ink-faint)}
+:root[data-flat][data-theme][data-mode] .tline b{
+  background:var(--flat-page);color:var(--ink-dim);-webkit-backdrop-filter:none;backdrop-filter:none;
+}
+
+/* ---- the log bar: the one place a little blur stays, so the list
+   reads as passing underneath it ---- */
+:root[data-flat][data-theme][data-mode] .dock-in{
+  background:color-mix(in srgb,var(--flat-page) 94%,transparent);
+  -webkit-backdrop-filter:blur(20px) saturate(160%);backdrop-filter:blur(20px) saturate(160%);
+  border:0;border-top:1px solid var(--hair);border-radius:0;box-shadow:none;
+}
+:root[data-flat][data-theme][data-mode] .dock-in::after{display:none}
+
+/* ---- the sheet: one solid surface, no strip, no plates ---- */
+:root[data-flat][data-theme][data-mode] .sheet{
+  background:var(--sheet);border-top:0;
+  box-shadow:0 -1px 0 var(--hair),0 -12px 40px rgba(0,0,0,.16);
+}
+:root[data-flat][data-theme][data-mode] .sheet::before,
+:root[data-flat][data-theme][data-mode] .sheet::after,
+:root[data-flat][data-theme][data-mode] .sheet-head::before,
+:root[data-flat][data-theme][data-mode] .stickysave::before{display:none}
+:root[data-flat][data-theme][data-mode] .griparea,
+:root[data-flat][data-theme][data-mode] .sheet-head{
+  background:var(--sheet);-webkit-backdrop-filter:none;backdrop-filter:none;
+}
+:root[data-flat][data-theme][data-mode] .stickysave{
+  background:linear-gradient(to top,var(--sheet) 62%,transparent);
+}
+
+/* ---- toast: inverted, like the system's own ---- */
+:root[data-flat][data-theme][data-mode] .toast{
+  background:var(--ink);color:var(--flat-page);border:0;
+  box-shadow:0 8px 24px rgba(0,0,0,.18);-webkit-backdrop-filter:none;backdrop-filter:none;
+}
+:root[data-flat][data-theme][data-mode] .toast button{color:var(--flat-page)}
 </style>
 </head>
 <body>
@@ -1156,7 +1305,7 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
       <div class="msplit" id="mSplit"></div>
       <div class="mathline">
         <span><button id="editBase"><b class="num" id="baseNum">—</b> base</button></span>
-        <span>+ <button id="editActive"><b class="num" id="activeNum">0</b> moved</button></span>
+        <span>+ <button id="editActive"><b class="num" id="activeNum">0</b> <span id="activeWord">moved</span></button></span>
         <span>− <b class="num" id="eatenNum">0</b> eaten</span>
       </div>
     </div>
@@ -1244,6 +1393,8 @@ const DEFAULTS = {
   sugarCap:90,               // total sugar, grams a day
   activityBase:'tracker',    // 'tracker': base is resting burn, moved covers the rest; 'none': sedentary x1.2
   movedPct:100,              // share of moved (active calories) that counts toward the day
+  typicalMode:'auto',        // 'auto' | 'manual' | 'off' -- usual active calories, carried in the base
+  typicalActive:0,           // the usual figure when typicalMode is 'manual'
   syncUrl:'', syncToken:'',  // optional, powers the iOS widget
   fbApiKey:'', fbAuth:null,  // Firebase sign-in: web API key, and the signed-in session (this device only)
   healthShortcut:''          // name of the Shortcut that sends Health's Active Energy
@@ -1255,7 +1406,7 @@ let S = { settings:{...DEFAULTS}, days:{}, saved:[], combos:[],
 
 /* Body stats sync between devices. Keys and the proxy stay local on purpose:
    they're per-device secrets and the relay is only guarded by a shared word. */
-const PROFILE_KEYS = ['sex','age','heightCm','weightKg','goalDelta','baseMode','manualBase','unitSystem','foodUnit','theme','glass','mode','proteinPerLb','sugarCap','activityBase','movedPct'];
+const PROFILE_KEYS = ['sex','age','heightCm','weightKg','goalDelta','baseMode','manualBase','unitSystem','foodUnit','theme','glass','mode','proteinPerLb','sugarCap','activityBase','movedPct','typicalMode','typicalActive'];
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function stampNew(e){ return {...e, id:uid(), up:Date.now()}; }
 /* Always move a record's clock forward. A device whose clock runs ahead can
@@ -1546,8 +1697,99 @@ function movedPct(){
   const v = Number(S.settings.movedPct);
   return isFinite(v) && v > 0 && v <= 100 ? v : 100;
 }
-function moved(key){ return Math.round((peek(key).active||0) * movedPct()/100); }
-function target(key){ return baseTarget() + moved(key); }
+/* ---------- usual movement ----------
+   The morning number used to start at resting burn, so a normal day's
+   movement only turned up as the tracker caught up with it. Now the base
+   carries your usual active calories from the start, and moved only adds
+   what goes beyond them. A quiet day never takes anything away: the floor
+   is the base. */
+const TYPICAL_DAYS = 14, TYPICAL_MIN = 3;
+let typicalCache = new Map(), typicalStamp = '';
+function typicalMode(){ const m = S.settings.typicalMode; return (m === 'manual' || m === 'off') ? m : 'auto'; }
+/* Raw average of the days before `key`. Only days a number actually arrived
+   for: a day nobody synced isn't a lazy day, and counting it as zero would
+   quietly drag the average down. */
+function typicalAuto(key){
+  const stamp = dataRev+'|'+todayKey();
+  if (stamp !== typicalStamp){ typicalCache = new Map(); typicalStamp = stamp; }
+  if (typicalCache.has(key)) return typicalCache.get(key);
+  const vals = [];
+  for (let i = 1; i <= TYPICAL_DAYS; i++){
+    const d = S.days[shiftKey(key, -i)];
+    if (d && d.activeUp && (+d.active||0) > 0) vals.push(+d.active);
+  }
+  const v = vals.length >= TYPICAL_MIN ? Math.round(vals.reduce((a,b)=>a+b, 0)/vals.length) : 0;
+  typicalCache.set(key, v);
+  return v;
+}
+function typicalRaw(key){
+  const m = typicalMode();
+  if (m === 'off') return 0;
+  if (m === 'manual') return Math.max(0, Math.round(+S.settings.typicalActive||0));
+  return typicalAuto(key || todayKey());
+}
+function typical(key){ return Math.round(typicalRaw(key) * movedPct()/100); }
+function counted(key){ return Math.round((peek(key).active||0) * movedPct()/100); }
+function dayBase(key){ return baseTarget() + typical(key); }
+/* Only what's beyond usual, and never below nothing. */
+function moved(key){ return Math.max(0, counted(key) - typical(key)); }
+function target(key){ return dayBase(key) + moved(key); }
+
+function typicalNote(){
+  const m = typicalMode();
+  if (m === 'off') return 'Your base starts at resting burn and every active calorie is added as it comes in.';
+  const tail = ' It’s in your base from the morning, moved only adds what you burn beyond it, and a quiet day never takes anything away.';
+  if (m === 'manual') return 'Your usual day, as you set it.'+tail;
+  const v = typicalAuto(todayKey());
+  return v
+    ? 'Your last two weeks average '+v.toLocaleString()+' active calories a day.'+tail
+    : 'Needs at least '+TYPICAL_MIN+' days of active calories from the last two weeks. Until then, every active calorie is added as before.';
+}
+function typicalHTML(){
+  const m = typicalMode();
+  return '<div class="field"><label>Usual active calories</label><div class="chips" style="margin:0">'+
+    [['auto','Auto'],['manual','Set it'],['off','Off']].map(([v,l])=>
+      '<button class="chip'+(m === v ? ' on' : '')+'" data-typ="'+v+'">'+l+'</button>').join('')+'</div>'+
+    '<input id="typAmt" type="number" inputmode="numeric" min="0" step="10" aria-label="Usual active calories"'+
+      ' style="margin-top:8px'+(m === 'manual' ? '' : ';display:none')+'" value="'+Math.max(0, Math.round(+S.settings.typicalActive||0))+'">'+
+    '<p class="note" id="typNote" style="margin-top:8px">'+escapeHTML(typicalNote())+'</p></div>';
+}
+/* Saves as you tap, like the theme picker, so it never depends on the
+   Save button's own list of fields. */
+function paintTypical(){
+  const m = typicalMode();
+  document.querySelectorAll('#sheetBody [data-typ]').forEach(b=>b.classList.toggle('on', b.dataset.typ === m));
+  const inp = document.getElementById('typAmt');
+  if (inp){
+    inp.style.display = m === 'manual' ? '' : 'none';
+    if (document.activeElement !== inp) inp.value = Math.max(0, Math.round(+S.settings.typicalActive||0));
+  }
+  const n = document.getElementById('typNote');
+  if (n) n.textContent = typicalNote();
+}
+document.addEventListener('click', e=>{
+  const b = e.target && e.target.closest && e.target.closest('#sheetBody [data-typ]');
+  if (!b) return;
+  e.preventDefault();
+  S.settings.typicalMode = b.dataset.typ;
+  // Set it starts from what Auto would have said, so it's never a blank box.
+  if (b.dataset.typ === 'manual' && !(+S.settings.typicalActive > 0))
+    S.settings.typicalActive = typicalAuto(todayKey()) || 300;
+  touchProfile(); save(); render(); paintTypical();
+});
+document.addEventListener('input', e=>{
+  if (!e.target || e.target.id !== 'typAmt') return;
+  S.settings.typicalActive = Math.max(0, Math.round(+e.target.value||0));
+  touchProfile(); save(); render(); paintTypical();
+});
+/* For the Active energy sheet: what today's number does to the day. */
+function aeShare(key){
+  const raw = Math.round(peek(key).active||0), pct = movedPct(), ty = typical(key), c = counted(key);
+  const part = pct < 100 ? ' Counting '+pct+'% of it: '+c.toLocaleString()+' of '+raw.toLocaleString()+'.' : '';
+  if (!ty) return part;
+  return part+' Your usual '+ty.toLocaleString()+' is already in your base, so '+
+    (c > ty ? (c - ty).toLocaleString()+' extra gets added.' : 'nothing extra yet — a quiet day never lowers it.');
+}
 
 /* ---------- persistence ---------- */
 let saveTimer = null, syncTimer = null;
@@ -2424,8 +2666,10 @@ function render(){
   box.classList.toggle('over', left < 0);
   document.getElementById('remainNum').textContent = Math.abs(left).toLocaleString();
   document.getElementById('remainCap').textContent = left < 0 ? T('over') : T('left')+' '+tgt.toLocaleString();
-  document.getElementById('baseNum').textContent = baseTarget().toLocaleString();
+  document.getElementById('baseNum').textContent = dayBase(viewDate).toLocaleString();
   document.getElementById('activeNum').textContent = moved(viewDate).toLocaleString();
+  const aw = document.getElementById('activeWord');
+  if (aw) aw.textContent = typical(viewDate) > 0 ? 'extra' : 'moved';
   document.getElementById('eatenNum').textContent = ate.toLocaleString();
 
   /* The budget bar, split by where the calories came from rather than which
@@ -2853,7 +3097,7 @@ function renderTrend(){
      that day -- the same number the top of the screen uses. The dashed line
      is the base; a day you moved gets a tick at its own target, so a green
      bar above the line is never a contradiction. */
-  const base = baseTarget();
+  const base = dayBase(viewDate);
   const tgts = keys.map(k=>target(k));
   const peak = Math.max(...vals, ...tgts, 1) * 1.12;
 
@@ -5914,7 +6158,7 @@ document.getElementById('editActive').onclick = ()=>{
   const health = healthReady();
   const raw = Math.round(peek(viewDate).active||0), pct = movedPct();
   const share = pct < 100
-    ? ' Counting '+pct+'% of it: '+moved(viewDate).toLocaleString()+' of '+raw.toLocaleString()+'.' : '';
+    ? aeShare(viewDate) : aeShare(viewDate);
   openSheet(sheetHead('Active energy')+
     (health ? '<button class="cta" id="aeHealth" style="margin-top:0">Update from Health</button>'+
       '<p class="note" id="aeNote" style="min-height:1.55em"></p>' : '')+
@@ -6039,6 +6283,7 @@ function openSettings(){
       '<button class="chip'+(s.activityBase!=='none'?' on':'')+'" id="abT">I wear a tracker</button>'+
       '<button class="chip'+(s.activityBase==='none'?' on':'')+'" id="abN">No tracker</button></div>'+
       '<p class="note" style="margin-top:8px">With a tracker, your base is resting burn plus your goal and <b>moved</b> covers the rest. Without one, the base includes a little for everyday movement.</p></div>'+
+    typicalHTML()+
     '<div class="field"><label>How much of moved to count</label><select id="mp">'+
       opt(100,'All of it',movedPct())+opt(90,'90%',movedPct())+opt(75,'75%',movedPct())+opt(50,'Half',movedPct())+'</select></div>'+
     '<p class="note">Trackers tend to overestimate. Counting less of it leaves a margin.</p>'+
