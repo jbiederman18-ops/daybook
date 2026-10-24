@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-flat>
+<html lang="en" data-flat data-tiles>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Bebas+Neue&family=Cinzel:wght@500;700;900&family=Outfit:wght@500;600;700&family=Saira:wght@600;700;800&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Manrope:wght@500;600;700;800&family=Bebas+Neue&family=Cinzel:wght@500;700;900&family=Outfit:wght@500;600;700&family=Saira:wght@600;700;800&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    Themes
@@ -1275,6 +1275,201 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
   box-shadow:0 8px 24px rgba(0,0,0,.18);-webkit-backdrop-filter:none;backdrop-filter:none;
 }
 :root[data-flat][data-theme][data-mode] .toast button{color:var(--flat-page)}
+/* ============================================================
+   Tiles
+   The newest layer, switched on by data-tiles on <html>. The day reads as a
+   stack of cards on a soft ground: what's left, protein and sugar, moved and
+   the week, then the log grouped by time of day. Colours still come from the
+   theme; this layer only decides the shapes. Every selector carries
+   [data-tiles] on top of the flat layer's, so it outranks it, and removing
+   the attribute puts the flat look back.
+   ============================================================ */
+:root[data-tiles][data-flat][data-theme][data-mode]{
+  --body-font:Manrope,Archivo,system-ui,-apple-system,sans-serif;
+  --tile-r:22px;
+}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode]{ --display:Manrope,Archivo,system-ui,sans-serif; --display-weight:800; --display-track:-.02em }
+:root[data-tiles][data-flat][data-theme][data-mode="day"]{
+  --ground:color-mix(in srgb,var(--stage-top),#14143C 6%);
+  --tile:#FFFFFF;
+  --flat-page:var(--ground); --sheet:var(--ground);
+  --tile-lift:0 6px 20px rgba(22,22,40,.07);
+}
+:root[data-tiles][data-flat][data-theme][data-mode="night"]{
+  --ground:color-mix(in srgb,var(--page),#000 25%);
+  --tile:var(--stage-top);
+  --flat-page:var(--ground); --sheet:var(--ground);
+  --tile-lift:0 6px 20px rgba(0,0,0,.35);
+}
+:root[data-tiles][data-flat][data-theme][data-mode] body{font-family:var(--body-font);font-feature-settings:'tnum' 1}
+:root[data-tiles][data-flat][data-theme][data-mode] .wrap{padding:0 16px 22px}
+
+/* ---- header ---- */
+:root[data-tiles][data-flat][data-theme][data-mode] header{padding-top:26px}
+:root[data-tiles][data-flat][data-theme][data-mode] .arrow,
+:root[data-tiles][data-flat][data-theme][data-mode] .gear{
+  width:44px;height:44px;border-radius:14px;background:var(--tile);color:var(--ink);border:0;box-shadow:none;
+}
+:root[data-tiles][data-flat][data-theme][data-mode] .arrow:disabled{opacity:.35}
+:root[data-tiles][data-flat][data-theme][data-mode] .datenav h1{
+  font-family:var(--display);font-size:22px;letter-spacing:-.02em;text-transform:none;font-weight:800;
+}
+
+/* ---- the hero tile ---- */
+.htile .gauge,.htile .hlab,.tiles,.tile{display:none}
+:root[data-tiles] .tiles{display:grid}
+:root[data-tiles] .tile,:root[data-tiles] .htile .hlab{display:flex}
+:root[data-tiles] .htile .gauge{display:block}
+:root[data-tiles][data-flat][data-theme][data-mode] .hero.htile{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  margin:14px 0 10px;padding:20px;border-radius:24px;background:var(--tile);border:0;
+}
+:root[data-tiles][data-flat][data-theme][data-mode] .htile>.ring,
+:root[data-tiles][data-flat][data-theme][data-mode] .htile>.bar{display:none}
+:root[data-tiles] .htile .hl{display:flex;flex-direction:column;gap:4px;min-width:0}
+:root[data-tiles] .htile .hlab{font-size:13px;font-weight:700;color:var(--ink-dim)}
+:root[data-tiles][data-flat][data-theme][data-mode] .htile .remain{display:flex;flex-direction:column;align-items:flex-start;gap:4px}
+:root[data-tiles][data-flat][data-theme][data-mode] .htile .remain .big{
+  font-family:var(--display);font-size:56px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--ink);
+}
+:root[data-tiles][data-flat][data-theme][data-mode] .htile .remain.over .big{color:var(--over)}
+:root[data-tiles][data-flat][data-theme][data-mode] .htile .remain .cap{font-size:13px;font-weight:600;color:var(--ink-dim)}
+:root[data-tiles][data-flat][data-theme][data-mode] .htile .msplit{
+  margin:6px 0 0;gap:4px 10px;font-size:12px;font-weight:600;color:var(--ink-dim);justify-content:flex-start;
+}
+:root[data-tiles][data-flat][data-theme][data-mode] .htile .msplit b{color:var(--ink)}
+:root[data-tiles] .gauge{position:relative;flex:none;width:108px;height:108px}
+:root[data-tiles] .gauge svg{width:108px;height:108px;display:block}
+:root[data-tiles] .gauge path{fill:none;stroke-width:12;stroke-linecap:butt}
+:root[data-tiles] .gauge .gtrack{stroke:var(--fill-2);stroke-linecap:round}
+:root[data-tiles] .gauge .gpct{position:absolute;left:0;right:0;top:40px;text-align:center;font-size:18px;font-weight:800;color:var(--ink)}
+:root[data-tiles] .gauge.over .gpct{color:var(--over)}
+
+/* ---- the small tiles ---- */
+:root[data-tiles] .tiles{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:0 0 10px;padding:0}
+:root[data-tiles][data-flat][data-theme][data-mode] .tile{
+  flex-direction:column;align-items:stretch;gap:8px;padding:16px;border-radius:var(--tile-r);
+  background:var(--tile);color:var(--ink);text-align:left;border:0;box-shadow:none;min-width:0;width:100%;
+}
+:root[data-tiles] button.tile:active,:root[data-tiles] .tbtn:active{filter:var(--press)}
+:root[data-tiles] .tlab2{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--ink-dim)}
+:root[data-tiles] .tlab2 svg{color:var(--over)}
+:root[data-tiles] .tlab2 .mdot{width:8px;height:8px}
+:root[data-tiles] .tnum{font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.1;color:var(--ink)}
+:root[data-tiles] .tnum b{font-weight:800}
+:root[data-tiles] .tnum small{font-size:14px;font-weight:600;color:var(--ink-dim)}
+:root[data-tiles] .tnum.over b{color:var(--over)}
+:root[data-tiles] .tsub{font-size:12px;font-weight:600;color:var(--ink-dim)}
+:root[data-tiles] .tsub.over{color:var(--over)}
+:root[data-tiles][data-flat][data-theme][data-mode] .tile .mbar{display:block;height:8px;border-radius:4px;background:var(--fill-2);overflow:hidden}
+:root[data-tiles][data-flat][data-theme][data-mode] .tile .mfill{display:block;height:100%;border-radius:4px}
+:root[data-tiles] .tbtn{display:flex;flex-direction:column;align-items:flex-start;gap:6px;text-align:left;color:inherit;padding:0}
+:root[data-tiles] .tsubbtn{
+  align-self:flex-start;font-size:12px;font-weight:600;color:var(--ink-dim);padding:8px 0;margin:-8px 0;
+  text-decoration:underline dotted;text-underline-offset:3px;
+}
+:root[data-tiles] .tsubbtn b{color:var(--ink);font-weight:700}
+:root[data-tiles] .wbars{display:flex;align-items:flex-end;gap:5px;height:36px}
+:root[data-tiles] .wbar{flex:1;min-height:3px;border-radius:3px;background:color-mix(in srgb,var(--accent) 26%,var(--tile))}
+:root[data-tiles] .wbar.now{background:var(--accent)}
+:root[data-tiles] .wbar.over{background:color-mix(in srgb,var(--over) 55%,var(--tile))}
+:root[data-tiles] .wbar.now.over{background:var(--over)}
+:root[data-tiles] .wbar.none{background:var(--fill-2)}
+:root[data-tiles] #macros .mcover,:root[data-tiles] #macros .nudge{grid-column:1/-1;margin:0;padding:0 4px}
+
+/* ---- the log card ---- */
+:root[data-tiles][data-flat][data-theme][data-mode] .meal.log{
+  padding:6px 16px 4px;border-radius:var(--tile-r);background:var(--tile);border:0;
+}
+:root[data-tiles][data-flat][data-theme][data-mode] .meal.log .meal-head{margin:8px 0 2px}
+:root[data-tiles][data-flat][data-theme][data-mode] .meal.log .meal-name{
+  font-family:var(--body-font);font-size:15px;font-weight:800;letter-spacing:0;text-transform:none;
+}
+:root[data-tiles][data-flat][data-theme][data-mode] .savemeal{background:var(--fill);color:var(--ink);border-radius:12px;padding:7px 12px;font-size:12.5px}
+
+/* ---- the trend card ---- */
+:root[data-tiles][data-flat][data-theme][data-mode] .trend.tile{
+  display:block;margin-top:10px;padding:16px;border-top:0;
+}
+:root[data-tiles][data-flat][data-theme][data-mode] .trend h2{
+  font-family:var(--body-font);font-size:15px;font-weight:800;letter-spacing:0;text-transform:none;
+}
+:root[data-tiles][data-flat][data-theme][data-mode] .tline b{background:var(--tile)}
+
+/* ---- the dock ---- */
+:root[data-tiles][data-flat][data-theme][data-mode] .dock-in{
+  background:linear-gradient(to bottom,color-mix(in srgb,var(--ground) 0%,transparent),var(--ground) 38%);
+  -webkit-backdrop-filter:none;backdrop-filter:none;border:0;padding-top:22px;
+}
+:root[data-tiles][data-flat][data-theme][data-mode] .logfield{
+  min-height:56px;border-radius:20px;background:var(--tile);box-shadow:var(--tile-lift);font-weight:600;
+}
+:root[data-tiles][data-flat][data-theme][data-mode] .dock .camera{
+  width:56px;height:56px;border-radius:20px;background:var(--tile);box-shadow:var(--tile-lift);
+}
+:root[data-tiles][data-flat][data-theme][data-mode] .qchip{
+  background:var(--tile);border-radius:14px;padding:9px 14px;font-weight:700;box-shadow:var(--tile-lift);
+}
+
+/* ---- sheets: the same ground, cards and fields lifted onto it ---- */
+:root[data-tiles][data-flat][data-theme][data-mode] .sheet{border-radius:28px 28px 0 0}
+:root[data-tiles][data-flat][data-theme][data-mode] .sheet input,
+:root[data-tiles][data-flat][data-theme][data-mode] .sheet select,
+:root[data-tiles][data-flat][data-theme][data-mode] .sheet textarea{background-color:var(--tile);border-radius:16px}
+:root[data-tiles][data-flat][data-theme][data-mode] .sheet .camera,
+:root[data-tiles][data-flat][data-theme][data-mode] .sheet .qadd,
+:root[data-tiles][data-flat][data-theme][data-mode] .sheet .chip,
+:root[data-tiles][data-flat][data-theme][data-mode] .sheet .cta.ghost{background:var(--tile)}
+:root[data-tiles][data-flat][data-theme][data-mode] .cta{border-radius:18px}
+:root[data-tiles][data-flat][data-theme][data-mode] .sheet-head h2{font-family:var(--display);font-weight:800;text-transform:none;letter-spacing:-.02em;font-size:22px}
+/* ---- log groups ---- */
+.lgroup{border-top:1px solid var(--hair,var(--line))}
+.lghead{display:flex;align-items:center;gap:12px;width:100%;padding:11px 0;text-align:left;color:inherit}
+.lgic{flex:none;width:36px;height:36px;border-radius:12px;display:grid;place-items:center;font-size:10.5px;font-weight:800;letter-spacing:.02em;
+  background:color-mix(in srgb,var(--accent) 16%,transparent);color:var(--accent-ink,var(--ink))}
+.lgt{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.lgn{font-size:15px;font-weight:700}
+.lgs{font-size:12px;font-weight:600;color:var(--ink-dim);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lgk{font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+.lgchev{flex:none;color:var(--ink-faint);transition:transform .2s}
+.lgroup.open .lgchev{transform:rotate(180deg)}
+.lgbody{display:none;padding:0 0 6px}
+.lgroup.open .lgbody{display:block}
+/* ---- swipe to remove ---- */
+#meals .entry{display:block;position:relative;overflow:hidden;padding:0;touch-action:pan-y;border-top:1px solid var(--hair,var(--line))}
+#meals .entry .eface{position:relative;z-index:1;width:100%;box-sizing:border-box;display:flex;align-items:center;gap:14px;padding:10px 0 10px 48px;
+  background:var(--tile,var(--surface));transition:transform .22s ease}
+#meals .entry.swiped .eface{transform:translateX(-88px)}
+#meals .swipe-act{position:absolute;top:0;right:0;bottom:0;width:88px;display:flex}
+#meals .swipe-del{flex:1;background:var(--over);color:#fff;font-weight:800;font-size:13px}
+.cta.ghost.danger,:root[data-flat][data-theme][data-mode] .cta.ghost.danger{color:var(--over)}
+/* ---- add sheet chips ---- */
+.tabs.chiptabs{background:transparent;border:0;padding:0;gap:8px;justify-content:flex-start;overflow-x:auto}
+.tabs.chiptabs .tab{flex:none;padding:0 14px;height:38px;border-radius:12px;font-size:13px;font-weight:700;
+  background:var(--tile,var(--fill));color:var(--ink)}
+.tabs.chiptabs .tab.on,:root[data-flat][data-theme][data-mode] .tabs.chiptabs .tab.on{background:var(--accent);color:var(--ink-on)}
+:root[data-flat][data-theme][data-mode] .tabs.chiptabs{background:transparent}
+/* ---- a database result, opened in place ---- */
+.res.open{border-bottom:none}
+.res.open .nm{font-weight:700}
+.inlinep{background:var(--tile,var(--surface));border-radius:18px;padding:14px;margin:2px 0 12px}
+.inlinep .cta{margin-top:4px}
+/* ---- estimate review ---- */
+.estcard{background:var(--tile,var(--surface));border-radius:20px;padding:16px}
+.estrow{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--hair,var(--line))}
+.estrow .txt{flex:1;min-width:0}
+.estrow .nm{display:block;font-size:14.5px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.estrow .sub{display:block;font-size:12px;color:var(--ink-dim);font-weight:600}
+.estrow .kc{width:44px;text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+.estrow.gone .txt,.estrow.gone .kc{opacity:.38;text-decoration:line-through}
+.estep{display:inline-flex;align-items:center;height:40px;border-radius:14px;background:var(--fill)}
+.estep button{width:38px;height:40px;font-size:18px;color:var(--ink)}
+.estep .eq{min-width:16px;text-align:center;font-size:14px;font-weight:800}
+.estbtns{display:flex;gap:10px;margin-top:12px}
+.estbtns .cta{margin-top:0}
+.estbtns .cta:first-child{flex:1}
+.estbtns .cta.ghost{flex:none;width:auto;padding:0 16px}
+:root[data-flat][data-theme][data-mode] .savemeal{text-transform:none;letter-spacing:0}
 </style>
 </head>
 <body>
@@ -1295,27 +1490,41 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
       </button>
     </div>
 
-    <div class="hero">
+    <div class="hero htile">
+      <div class="hl">
+        <span class="hlab" id="heroLab">Left to eat</span>
+        <div class="remain" id="remainBox">
+          <span class="big num" id="remainNum">—</span>
+          <span class="cap" id="remainCap">left</span>
+        </div>
+        <div class="msplit" id="mSplit"></div>
+      </div>
+      <div class="gauge" id="gauge" role="img"></div>
       <div class="ring" id="ring" role="img"></div>
-      <div class="remain" id="remainBox">
-        <span class="big num" id="remainNum">—</span>
-        <span class="cap" id="remainCap">left</span>
-      </div>
       <div class="bar" id="bar"></div>
-      <div class="msplit" id="mSplit"></div>
-      <div class="mathline">
-        <span><button id="editBase"><b class="num" id="baseNum">—</b> base</button></span>
-        <span>+ <button id="editActive"><b class="num" id="activeNum">0</b> <span id="activeWord">moved</span></button></span>
-        <span>− <b class="num" id="eatenNum">0</b> eaten</span>
-      </div>
     </div>
   </header>
 
-  <section class="macros" id="macros"></section>
+  <section class="tiles" id="macros"></section>
+
+  <section class="tiles">
+    <div class="tile mtile" id="moveTile">
+      <button class="tbtn" id="editActive">
+        <span class="tlab2"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><span id="activeWord">Moved</span></span>
+        <span class="tnum num">+<span id="activeNum">0</span></span>
+      </button>
+      <button class="tsubbtn" id="editBase">Base <b class="num" id="baseNum">—</b></button>
+    </div>
+    <button class="tile wtile" id="weekTile" aria-label="This week">
+      <span class="tlab2" id="weekLab">This week</span>
+      <span class="wbars" id="wbars"></span>
+      <span class="tsub" id="wsum"></span>
+    </button>
+  </section>
 
   <main id="meals"></main>
 
-  <section class="trend">
+  <section class="trend tile" id="trend">
     <h2 id="trendHead">Last 7 days</h2>
     <div class="bars" id="bars"></div>
     <div class="tsum">
@@ -2773,12 +2982,13 @@ function render(){
   const box = document.getElementById('remainBox');
   box.classList.toggle('over', left < 0);
   document.getElementById('remainNum').textContent = Math.abs(left).toLocaleString();
-  document.getElementById('remainCap').textContent = left < 0 ? T('over') : T('left')+' '+tgt.toLocaleString();
+  document.getElementById('remainCap').textContent = ate.toLocaleString()+' eaten of '+tgt.toLocaleString();
+  const hl = document.getElementById('heroLab');
+  if (hl) hl.textContent = left < 0 ? 'Over by' : 'Left to eat';
   document.getElementById('baseNum').textContent = dayBase(viewDate).toLocaleString();
   document.getElementById('activeNum').textContent = moved(viewDate).toLocaleString();
   const aw = document.getElementById('activeWord');
-  if (aw) aw.textContent = typical(viewDate) > 0 ? 'extra' : 'moved';
-  document.getElementById('eatenNum').textContent = ate.toLocaleString();
+  if (aw) aw.textContent = typical(viewDate) > 0 ? 'Extra moved' : 'Moved';
 
   /* The budget bar, split by where the calories came from rather than which
      meal they were in. Each entry's calories are shared out by its own
@@ -2809,6 +3019,7 @@ function render(){
   });
 
   renderRing(parts, denom, left, tgt);
+  renderGauge(parts, denom, left, tgt, ate);
   renderMacros();
   renderLog();
   renderDock();
@@ -2899,6 +3110,37 @@ function renderRing(parts, denom, left, tgt){
     : Math.abs(left).toLocaleString()+' calories left of '+tgt.toLocaleString());
 }
 
+/* ---------- the gauge ----------
+   The hero tile's dial: three quarters of a turn is today's target, filled
+   clockwise from the lower left with the same protein, fat, carbs split as the
+   ring and the bar, so all three always agree. Past the target the whole
+   sweep is what was eaten and turns red, the way the bar does. */
+function gaugeArc(a0, a1, r, c){
+  const P = a => { const t = a*Math.PI/180; return (c+r*Math.cos(t)).toFixed(2)+','+(c+r*Math.sin(t)).toFixed(2); };
+  return 'M'+P(a0)+' A'+r+','+r+' 0 '+((a1-a0) > 180 ? 1 : 0)+' 1 '+P(a1);
+}
+function renderGauge(parts, denom, left, tgt, ate){
+  const host = document.getElementById('gauge');
+  if (!host) return;
+  const C = 60, R = 47, START = 135, SWEEP = 270, GAP = 2, over = left < 0;
+  let a = START, segs = '';
+  [['p','var(--m-prot)'], ['f','var(--m-fat)'], ['c','var(--m-carb)'], ['u','var(--m-unk)']].forEach(([k, col])=>{
+    const span = (parts[k] || 0)/denom*SWEEP;
+    if (span < 0.5) return;
+    const a0 = a, a1 = Math.min(a + span, START + SWEEP);
+    a += span;
+    const e0 = a0 === START ? a0 : a0 + GAP/2, e1 = a1 >= START + SWEEP - 0.01 ? a1 : a1 - GAP/2;
+    if (e1 - e0 < 0.6) return;
+    segs += '<path class="gseg" data-k="'+k+'" d="'+gaugeArc(e0, e1, R, C)+'" style="stroke:'+(over ? 'var(--over)' : col)+'"/>';
+  });
+  const pct = tgt > 0 ? Math.round(ate/tgt*100) : 0;
+  host.classList.toggle('over', over);
+  host.innerHTML = '<svg viewBox="0 0 120 120" aria-hidden="true">'+
+    '<path class="gtrack" d="'+gaugeArc(START, START + SWEEP, R, C)+'"/>'+segs+'</svg>'+
+    '<span class="gpct num">'+pct+'%</span>';
+  host.setAttribute('aria-label', pct+' percent of today’s target eaten');
+}
+
 /* ---------- protein, sugar, and the split ---------- */
 function renderMacros(){
   const host = document.getElementById('macros');
@@ -2924,27 +3166,30 @@ function renderMacros(){
   }
 
   host.innerHTML =
-    '<button class="mrow" id="mTargets" aria-label="Protein and sugar targets">'+
-      '<div class="mline"><span class="mname"><i class="mdot" style="background:var(--m-prot)"></i>Protein'+
-        (hint ? ' <em>'+hint+'</em>' : '')+'</span>'+
-        '<span class="mval" id="mProt"><b>'+Math.round(mac.p)+'</b> / '+pt+' g</span></div>'+
-      '<div class="mbar"><div class="mfill" style="width:'+pct(mac.p,pt)+'%;background:var(--m-prot)"></div></div>'+
-      '<div class="mline"><span class="mname"><i class="mdot" style="background:var(--m-sug)"></i>Sugar'+
-        (sHint ? ' <em>'+sHint+'</em>' : '')+'</span>'+
-        '<span class="mval'+(sOver ? ' over' : '')+'" id="mSug"><b>'+Math.round(mac.s)+'</b> / '+sc+' g</span></div>'+
-      '<div class="mbar"><div class="mfill" style="width:'+pct(mac.s,sc)+'%;background:'+(sOver ? 'var(--over)' : 'var(--m-sug)')+'"></div></div>'+
+    '<button class="tile ptile" id="protTile" aria-label="Protein, targets">'+
+      '<span class="tlab2"><i class="mdot" style="background:var(--m-prot)"></i>Protein</span>'+
+      '<span class="tnum num" id="mProt"><b>'+Math.round(mac.p)+'</b><small> / '+pt+' g</small></span>'+
+      '<span class="mbar"><span class="mfill" style="width:'+pct(mac.p,pt)+'%;background:var(--m-prot)"></span></span>'+
+      '<span class="tsub">'+(hint || 'Target '+pt+' g')+'</span>'+
+    '</button>'+
+    '<button class="tile ptile" id="sugTile" aria-label="Sugar, targets">'+
+      '<span class="tlab2"><i class="mdot" style="background:var(--m-sug)"></i>Sugar</span>'+
+      '<span class="tnum num'+(sOver ? ' over' : '')+'" id="mSug"><b>'+Math.round(mac.s)+'</b><small> / '+sc+' g</small></span>'+
+      '<span class="mbar"><span class="mfill" style="width:'+pct(mac.s,sc)+'%;background:'+(sOver ? 'var(--over)' : 'var(--m-sug)')+'"></span></span>'+
+      '<span class="tsub'+(sOver ? ' over' : '')+'">'+(sHint || 'Cap '+sc+' g')+'</span>'+
     '</button>'+cover;
 
   /* The key to the calorie bar's colours, directly under it. Protein's grams
      are already on its own bar, so here it's just its share. */
   const split = document.getElementById('mSplit');
   if (split) split.innerHTML = ks > 0
-    ? '<span><i class="mdot" style="background:var(--m-prot)"></i>Protein'+share(kp)+'</span>'+
-      '<span><i class="mdot" style="background:var(--m-carb)"></i>Carbs <b>'+Math.round(mac.c)+' g</b>'+share(kc)+'</span>'+
-      '<span><i class="mdot" style="background:var(--m-fat)"></i>Fat <b>'+Math.round(mac.f)+' g</b>'+share(kf)+'</span>'
+    ? '<span><i class="mdot" style="background:var(--m-prot)"></i>P'+share(kp)+'</span>'+
+      '<span><i class="mdot" style="background:var(--m-carb)"></i>C <b>'+Math.round(mac.c)+'g</b></span>'+
+      '<span><i class="mdot" style="background:var(--m-fat)"></i>F <b>'+Math.round(mac.f)+'g</b></span>'
     : '';
 
-  host.querySelector('#mTargets').onclick = openTargets;
+  host.querySelector('#protTile').onclick = openTargets;
+  host.querySelector('#sugTile').onclick = openTargets;
   const fb = host.querySelector('#mFill');
   if (fb) fb.onclick = ()=>{ fb.disabled = true; fillMacros(viewDate); };
 
@@ -2970,7 +3215,93 @@ function renderMacros(){
   }
 }
 
-/* ---------- the day, as one list ---------- */
+/* ---------- the day, grouped by time of day ----------
+   Entries are still filed under the four meals by the clock, so the groups
+   come straight from them, renamed for the time rather than the meal. The
+   latest group starts open and earlier ones fold to one line; a tap on a
+   header opens or folds it and that sticks while you're on that day. No star
+   or cross on the rows any more: swipe a row left to remove it, or tap it and
+   remove it from the edit sheet. */
+const LOG_GROUP = {breakfast:['Morning','AM'], lunch:['Afternoon','PM'], dinner:['Evening','EVE'], snacks:['Late','LATE']};
+const logFolds = new Map();
+/* When an entry was logged. Ids start with the creation time in base 36; a
+   record from somewhere else keeps its last-edited time instead. */
+function loggedAt(e){
+  const head = String(e && e.id || '').slice(0, 8);
+  const t = parseInt(head, 36);
+  if (/^[0-9a-z]{8}$/.test(head) && t > 1.5e12 && t < Date.now() + 864e5) return t;
+  return +(e && e.up) > 1.5e12 ? +e.up : 0;
+}
+function clockOf(t){
+  if (!t) return '';
+  return new Date(t).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'}).replace(/\s?([AP]M)$/i, '').trim();
+}
+function removeEntry(meal, e){
+  const arr = day(viewDate).meals[meal.id];
+  const at = arr.indexOf(e);
+  if (at < 0) return;
+  bury(e,'entry'); arr.splice(at,1); save(); render(); buzz(12);
+  toast(T('removed', e.name), {label:'Undo', run(){
+    // Lift the tombstone as well, or the next pull deletes it again.
+    if (e.id) delete S.graves[e.id];
+    bumpUp(e);
+    arr.splice(Math.min(at, arr.length), 0, e);
+    save(); render();
+  }});
+}
+const SWIPE_W = 88;
+function closeSwipes(except){
+  document.querySelectorAll('#meals .entry.swiped').forEach(r=>{ if (r !== except) r.classList.remove('swiped'); });
+}
+function logRow(e, meal){
+  const row = document.createElement('div');
+  row.className = 'entry';
+  row.innerHTML =
+    '<div class="swipe-act"><button class="swipe-del">Remove</button></div>'+
+    '<div class="eface"><div class="txt"><span class="nm"></span><span class="sub"></span></div>'+
+    '<span class="kc">'+(+e.cal||0).toLocaleString()+'</span></div>';
+  row.querySelector('.nm').textContent = e.name;
+  row.querySelector('.sub').textContent = [e.portion, macShort(e)].filter(Boolean).join(' · ');
+  const face = row.querySelector('.eface');
+  row.querySelector('.swipe-del').onclick = ev=>{ ev.stopPropagation(); removeEntry(meal, e); };
+  /* Pointer events, so it works with a finger and a mouse alike. Only a
+     mostly-sideways drag is a swipe; anything else is left to the scroll. */
+  let x0 = null, y0 = 0, dx = 0, dragging = false;
+  row.addEventListener('pointerdown', ev=>{
+    if (ev.target.closest('.swipe-del')) return;
+    closeSwipes(row);
+    x0 = ev.clientX; y0 = ev.clientY; dx = 0; dragging = false;
+  });
+  row.addEventListener('pointermove', ev=>{
+    if (x0 === null) return;
+    const mx = ev.clientX - x0, my = ev.clientY - y0;
+    if (!dragging){
+      if (Math.abs(mx) > 8 && Math.abs(mx) > Math.abs(my)){ dragging = true; face.style.transition = 'none'; }
+      else if (Math.abs(my) > 10){ x0 = null; return; }
+      else return;
+    }
+    const base = row.classList.contains('swiped') ? -SWIPE_W : 0;
+    dx = Math.min(0, Math.max(-SWIPE_W*1.4, base + mx));
+    face.style.transform = 'translateX('+dx+'px)';
+  });
+  const end = ()=>{
+    if (x0 === null) return;
+    x0 = null;
+    if (!dragging) return;
+    face.style.transition = ''; face.style.transform = '';
+    row.classList.toggle('swiped', dx < -SWIPE_W/2);
+    row.__dragAt = Date.now();
+  };
+  row.addEventListener('pointerup', end);
+  row.addEventListener('pointercancel', end);
+  row.querySelector('.txt').onclick = ()=>{
+    if (Date.now() - (row.__dragAt || 0) < 400) return;
+    if (row.classList.contains('swiped')){ row.classList.remove('swiped'); return; }
+    const at = day(viewDate).meals[meal.id].indexOf(e);
+    if (at > -1) editEntry(meal, at);
+  };
+  return row;
+}
 function renderLog(){
   const host = document.getElementById('meals');
   host.innerHTML = '';
@@ -2993,37 +3324,43 @@ function renderLog(){
     sec.appendChild(p);
   }
 
-  list.forEach(({e, meal})=>{
-    const row = document.createElement('div');
-    row.className = 'entry';
-    row.innerHTML =
-      '<div class="txt"><span class="nm"></span><span class="sub"></span></div>'+
-      '<span class="kc">'+(+e.cal||0).toLocaleString()+'</span>'+
-      '<button class="iconbtn star" aria-label="Save as favourite"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M12 3l2.6 5.6 6 .8-4.4 4.2 1.1 6.1L12 16.8 6.7 19.7l1.1-6.1L3.4 9.4l6-.8z"/></svg></button>'+
-      '<button class="iconbtn del" aria-label="Remove"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
-    row.querySelector('.nm').textContent = e.name;
-    row.querySelector('.sub').textContent = [e.portion, macShort(e), e.src].filter(Boolean).join(' \u00b7 ');
-    const star = row.querySelector('.star');
-    if (isSaved(e)) star.classList.add('on');
-    star.onclick = ()=>{ toggleSave(e, meal.id); render(); };
-    row.querySelector('.del').onclick = ()=>{
-      const arr = day(viewDate).meals[meal.id];
-      const at = arr.indexOf(e);
-      if (at < 0) return;
-      bury(e,'entry'); arr.splice(at,1); save(); render(); buzz(12);
-      toast(T('removed', e.name), {label:'Undo', run(){
-        // Lift the tombstone as well, or the next pull deletes it again.
-        if (e.id) delete S.graves[e.id];
-        bumpUp(e);
-        arr.splice(Math.min(at, arr.length), 0, e);
-        save(); render();
-      }});
+  const groups = MEALS.map(m=>({meal:m, items:list.filter(x=>x.meal === m)})).filter(g=>g.items.length);
+  const last = groups.length ? groups[groups.length-1].meal.id : '';
+  groups.forEach(g=>{
+    const key = viewDate+'|'+g.meal.id;
+    const open = logFolds.has(key) ? logFolds.get(key) : g.meal.id === last;
+    const [label, short] = LOG_GROUP[g.meal.id] || [g.meal.name, ''];
+    const times = g.items.map(x=>loggedAt(x.e)).filter(Boolean);
+    const first = times.length ? Math.min(...times) : 0;
+    const cal = g.items.reduce((a,x)=>a+(+x.e.cal||0), 0);
+    const p = g.items.reduce((a,x)=>a+(macVal(x.e.p)||0), 0);
+    const names = g.items.map(x=>x.e.name);
+    const summary = names.length <= 2 ? names.join(', ') : names.slice(0,2).join(', ')+' +'+(names.length-2);
+    const gEl = document.createElement('div');
+    gEl.className = 'lgroup'+(open ? ' open' : '');
+    gEl.innerHTML =
+      '<button class="lghead" aria-expanded="'+open+'">'+
+        '<span class="lgic">'+escapeHTML(short)+'</span>'+
+        '<span class="lgt"><span class="lgn"></span><span class="lgs"></span></span>'+
+        '<span class="lgk num">'+cal.toLocaleString()+'</span>'+
+        '<svg class="lgchev" aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'+
+      '</button><div class="lgbody"></div>';
+    gEl.querySelector('.lgn').textContent = label+(first ? ' · '+clockOf(first) : '');
+    const sub = gEl.querySelector('.lgs');
+    const paintSub = o=>{ sub.textContent = o
+      ? g.items.length+' item'+(g.items.length === 1 ? '' : 's')+(p > 0 ? ' · P '+Math.round(p)+'g' : '')
+      : summary; };
+    paintSub(open);
+    const bodyEl = gEl.querySelector('.lgbody');
+    g.items.forEach(({e, meal})=>bodyEl.appendChild(logRow(e, meal)));
+    gEl.querySelector('.lghead').onclick = ()=>{
+      const now = !gEl.classList.contains('open');
+      gEl.classList.toggle('open', now);
+      gEl.querySelector('.lghead').setAttribute('aria-expanded', now);
+      logFolds.set(key, now);
+      paintSub(now);
     };
-    row.querySelector('.txt').onclick = ()=>{
-      const at = day(viewDate).meals[meal.id].indexOf(e);
-      if (at > -1) editEntry(meal, at);
-    };
-    sec.appendChild(row);
+    sec.appendChild(gEl);
   });
   host.appendChild(sec);
 }
@@ -3103,6 +3440,13 @@ function focusWhenSettled(proxy){
   /* Focus has to happen inside the tap for iOS to raise the keyboard, so it
      is done here rather than left to the sheet. */
   document.getElementById('logOpen').onclick = ()=>{
+    /* With regulars to show, open on them and leave the keyboard down: the
+       common case is a tap, not typing. Tapping the field raises it. */
+    if (recentFoods(currentMeal().id, 1).length || S.saved.length){
+      openLog();
+      lastFocus = document.getElementById('logOpen');
+      return;
+    }
     const proxy = document.getElementById('kbProxy');
     proxy.value = '';
     try { proxy.focus({preventScroll:true}); } catch(e){ proxy.focus(); }
@@ -3111,6 +3455,10 @@ function focusWhenSettled(proxy){
     // That's the proxy now, and focusing it would put the keyboard back up.
     lastFocus = document.getElementById('logOpen');
     focusWhenSettled(proxy);
+  };
+  document.getElementById('weekTile').onclick = ()=>{
+    const t = document.getElementById('trend');
+    if (t) t.scrollIntoView({behavior:'smooth', block:'center'});
   };
   document.getElementById('dockCam').onclick = ()=>{
     openLog();
@@ -3249,6 +3597,19 @@ function renderTrend(){
   const avg = done.length ? Math.round(done.reduce((a,x)=>a+x.v,0)/done.length) : 0;
   document.getElementById('avg7').textContent = done.length ? avg.toLocaleString() : '—';
   const diff = done.length ? Math.round(done.reduce((a,x)=>a+(x.v-x.t),0)/done.length) : 0;
+  /* The week tile: the same seven days, small. Today (or the day you're on)
+     in the accent, an over day in red, an empty day as a mark on the floor. */
+  const wb = document.getElementById('wbars');
+  if (wb){
+    wb.innerHTML = keys.map((k,i)=>{
+      const v = vals[i], cls = 'wbar'+(k === viewDate ? ' now' : '')+(v > tgts[i] ? ' over' : '')+(v === 0 ? ' none' : '');
+      return '<i class="'+cls+'" style="height:'+(v === 0 ? 3 : Math.max(4, v/peak*100))+'%"></i>';
+    }).join('');
+    const ws = document.getElementById('wsum');
+    if (ws) ws.textContent = done.length
+      ? 'Avg '+avg.toLocaleString()+' \u00b7 '+(diff > 0 ? '+' : diff < 0 ? '\u2212' : '\u00b1')+Math.abs(diff).toLocaleString()
+      : 'Nothing to average yet';
+  }
   /* Only days where most of the calories carry macros: a day that is mostly
      unknown would drag the average down and read as a protein problem. */
   const mdays = done.map(x=>dayMacros(x.k)).filter(m=>m.cal > 0 && m.known >= 0.8*m.cal);
@@ -3346,6 +3707,7 @@ function editEntry(meal, idx){
       '<div class="macrow">'+MAC.map(k=>'<div class="field"><label>'+MACN[k]+' g</label>'+
         '<input id="em'+k+'" type="number" inputmode="decimal" min="0" step="0.1" placeholder="\u2013"></div>').join('')+'</div>'+
       '<button class="cta" id="eSave">Save</button>'+
+      '<button class="cta ghost danger" id="eDel">Remove</button>'+
       '<p class="note" id="eWas"></p>';
 
     const qEl = host.querySelector('#eq');
@@ -3416,6 +3778,7 @@ function editEntry(meal, idx){
       }
     }
 
+    host.querySelector('#eDel').onclick = ()=>{ closeSheet(true); removeEntry(meal, e); };
     host.querySelector('#eSave').onclick = ()=>{
       const nm = name.trim();
       const v = Math.round(Number(cal));
@@ -3830,13 +4193,17 @@ function openAdd(meal){
 function drawAdd(){
   // Recipe is part of Estimate now; anything still asking for it lands there.
   if (sheetState.tab === 'recipe') sheetState.tab = 'estimate';
+  // Foods is folded into the regulars now.
+  if (sheetState.tab === 'saved') sheetState.tab = 'search';
   const t = sheetState.tab;
   openSheet(
     sheetHead(escapeHTML(addLabel())+tallyHTML()) +
-    '<div class="tabs">'+
-      ['search','estimate','meals','saved','custom'].map(k=>
+    /* Estimate has no chip: the one field sends a sentence, a link or a
+       photo there by itself. Regulars brings you back. */
+    '<div class="tabs chiptabs">'+
+      ['search','meals','custom'].map(k=>
         '<button class="tab'+(t===k?' on':'')+'" data-tab="'+k+'">'+
-        ({search:'Search',recipe:'Recipe',meals:'Meals',saved:'Foods',estimate:'Estimate',custom:'Custom'})[k]+'</button>').join('')+
+        ({search:'Regulars',meals:'Saved meals',custom:'Just calories'})[k]+'</button>').join('')+
     '</div><div id="tabBody"></div>'
   );
   document.querySelectorAll('.tab').forEach(b=>{
@@ -4173,7 +4540,7 @@ function tabSearch(){
   /* Don't steal focus on the way in any more. The keyboard used to cover the
      recents the moment the sheet opened, which made the common case — log the
      thing you always log — the one you had to dismiss a keyboard to reach. */
-  if (!recentFoods(sheetState.meal.id, 1).length) q.focus();
+  if (!recentFoods(sheetState.meal.id, 1).length && !S.saved.length) q.focus();
   let t;
   /* The debounce used to gate the whole render, so nothing at all happened
      for 450ms. Now it only gates the network: the log and the device cache
@@ -4565,7 +4932,7 @@ function recentRow(r){
     '<button class="qadd" aria-label="">'+PLUS_SVG+'</button>';
   row.querySelector('.nm').textContent = r.name;
   row.querySelector('.sub').textContent =
-    [r.portion, macShort(r), r.n > 1 ? r.n+'×' : '', agoLabel(r.last)].filter(Boolean).join(' · ');
+    [r.portion, macShort(r), r.n > 1 ? r.n+'×' : '', r.last ? agoLabel(r.last) : 'kept'].filter(Boolean).join(' · ');
   const qa = row.querySelector('.qadd');
   qa.setAttribute('aria-label', 'Add '+r.name+' as last time');
   row.querySelector('.rpick').onclick = ()=>openRelog(r, row);
@@ -4761,6 +5128,15 @@ function showRecents(out, expanded){
   const list = recentFoods(sheetState.meal.id, shown, expanded ? Infinity : 2);
   const more = !expanded &&
     recentFoods(sheetState.meal.id, shown + 1, 2).length > shown;
+  /* Starred foods used to have their own tab. Anything kept that isn't
+     already a regular joins the end of the list, so it's still one tap. */
+  const have = new Set(list.map(r=>r.key || foodKey(r)));
+  S.saved.forEach(s=>{
+    const k = foodKey(s);
+    if (have.has(k)) return;
+    have.add(k);
+    list.push({...s, key:k, n:s.uses||1, last:null});
+  });
   if (!list.length){
     out.innerHTML = '<div class="empty">'+escapeHTML(T('recentEmpty'))+'<br><br>'+
       escapeHTML(searchHint())+'</div>';
@@ -4919,7 +5295,7 @@ function renderLocal(q, host){
         '<span class="kc">'+perUnitHTML(f.kcal)+'</span>';
       btn.querySelector('.nm').textContent = titleCase(f.name);
       btn.querySelector('.sub').textContent = [f.brand, f.type, macRate(f.mac)].filter(Boolean).join(' · ');
-      btn.onclick = ()=>openPortion(asFood(f), f.kcal);
+      btn.onclick = ()=>openPortion(asFood(f), f.kcal, btn);
       host.appendChild(btn);
       rows++;
     });
@@ -4949,7 +5325,7 @@ function paintSearch(q){
     net.innerHTML = local.rows
       ? '<p class="note">'+escapeHTML(why)+'</p>'
       : '<div class="empty">Nothing on this device matches.<br>'+escapeHTML(why)+
-        (online() ? '' : '<br>Or use the Custom tab and type the number in.')+'</div>';
+        (online() ? '' : '<br>Or tap Just calories and type the number in.')+'</div>';
     if (online()) net.appendChild(estimateHandoff(q));
   } else if (q.length < MIN_Q){
     net.innerHTML = local.rows ? '' : '<p class="note">Keep typing to search the database.</p>';
@@ -5025,7 +5401,7 @@ async function runSearch(q, force){
                       '<span class="kc">'+perUnitHTML(per100)+'</span>';
       btn.querySelector('.nm').textContent = titleCase(f.description);
       btn.querySelector('.sub').textContent = [f.brandOwner||f.brandName, f.dataType, macRate(macPer100(f))].filter(Boolean).join(' · ');
-      btn.onclick = ()=>openPortion(f, per100);
+      btn.onclick = ()=>openPortion(f, per100, btn);
       net.appendChild(btn);
     });
     net.appendChild(estimateHandoff(q));
@@ -5047,11 +5423,26 @@ function titleCase(s){
 }
 
 /* ---------- portion picker ---------- */
-async function openPortion(food, per100){
+async function openPortion(food, per100, row){
   const name = titleCase(food.description);
-  openSheet(sheetHead('Portion')+
-    '<p style="margin:0 0 16px;font-size:15px">'+escapeHTML(name)+'</p>'+
-    '<div id="portions"><span class="spin"></span></div>');
+  if (row){
+    /* In place, under the result you tapped: the list stays where it was,
+       and tapping the same result again folds it away. */
+    const was = row.classList.contains('open');
+    document.querySelectorAll('#results .inlinep').forEach(x=>x.remove());
+    document.querySelectorAll('#results .res.open').forEach(x=>x.classList.remove('open'));
+    if (was) return;
+    row.classList.add('open');
+    const box = document.createElement('div');
+    box.className = 'inlinep';
+    box.innerHTML = '<div id="portions"><span class="spin"></span></div>';
+    row.after(box);
+    try { box.scrollIntoView({block:'nearest', behavior:'smooth'}); } catch(e){}
+  } else {
+    openSheet(sheetHead('Portion')+
+      '<p style="margin:0 0 16px;font-size:15px">'+escapeHTML(name)+'</p>'+
+      '<div id="portions"><span class="spin"></span></div>');
+  }
 
   // Plain-weight options in both units, the one you prefer first. Marked w:1
   // so the entry can be labelled with the real weight rather than the chip.
@@ -5426,40 +5817,79 @@ async function estimate(desc){
    A corrected total scales everything in proportion, macros included -- it
    says the portions were bigger or smaller, not that the food was different. */
 function showEstimate(out, items, basis){
-  const base = items.reduce((a,i)=>a+i.cal, 0);
+  /* Each item carries its own count: + for a second helping, − down to zero
+     to drop something it guessed wrong. The total box still scales the lot,
+     for when the portions were all bigger or smaller than it thought. */
+  const qty = items.map(()=>1);
   let scale = 1;
+  const rawTotal = ()=>items.reduce((a,it,i)=>a+it.cal*qty[i], 0);
   out.innerHTML =
     '<div class="divider"></div>'+
-    '<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:4px">'+
-      '<span class="num" id="eTot" style="font-size:34px;font-weight:700"></span>'+
-      '<span style="color:var(--ink-dim);font-size:13px">calories'+(items.length > 1 ? ' \u00b7 '+items.length+' items' : '')+'</span></div>'+
-    '<p class="note" id="eMac" style="margin:0 0 6px"></p>'+
-    '<div class="estlist" id="eList"></div>'+
-    // Accepting is the common case, so the button sits right under the list
-    // where it's on screen; correcting is the one you scroll for.
-    '<button class="cta" id="addEst"></button>'+
+    '<div class="estcard">'+
+      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:8px">'+
+        '<span style="color:var(--ink-dim);font-size:13px;font-weight:700" id="eCount"></span>'+
+        '<span class="num" id="eTot" style="font-size:30px;font-weight:800;letter-spacing:-.03em"></span></div>'+
+      '<p class="note" id="eMac" style="margin:4px 0 6px"></p>'+
+      '<div class="estlist" id="eList"></div>'+
+    '</div>'+
+    '<div class="estbtns"><button class="cta" id="addEst"></button>'+
+      '<button class="cta ghost" id="estSaveMeal">Add &amp; save meal</button></div>'+
     (basis ? '<p class="note" style="margin-top:10px">'+escapeHTML(basis)+'</p>' : '')+
     '<div class="field" style="margin-top:12px"><label>Adjust the total if you like</label>'+
-    '<input id="adj" type="number" inputmode="numeric" value="'+base+'"></div>';
-  const scaled = ()=>items.map(it=>({name:it.name, cal:Math.round(it.cal*scale),
-    portion:it.portion, src:'Estimate', ...macCopy(it.mac, scale)}));
-  const paint = ()=>{
+    '<input id="adj" type="number" inputmode="numeric" value="'+rawTotal()+'"></div>';
+  const scaled = ()=>items.map((it,i)=>qty[i] > 0 ? {name:it.name, cal:Math.round(it.cal*qty[i]*scale),
+    portion:(qty[i] === 1 ? '' : qty[i]+' × ')+it.portion, src:'Estimate', ...macCopy(it.mac, qty[i]*scale)} : null)
+    .filter(Boolean);
+  const listEl = out.querySelector('#eList');
+  listEl.innerHTML = items.map((it,i)=>
+    '<div class="estrow" data-i="'+i+'"><div class="txt"><span class="nm"></span><span class="sub"></span></div>'+
+    '<span class="estep"><button class="eminus" aria-label="Less">−</button><b class="eq"></b>'+
+    '<button class="eplus" aria-label="More">+</button></span><span class="kc"></span></div>').join('');
+  const paint = (keepAdj)=>{
     const list = scaled();
     const tot = list.reduce((a,e)=>a+e.cal, 0);
     out.querySelector('#eTot').textContent = tot.toLocaleString();
-    out.querySelector('#eMac').textContent = macLine(sumMac(list));
-    out.querySelector('#eList').innerHTML = list.map(e=>
-      '<div class="entry"><div class="txt"><span class="nm">'+escapeHTML(e.name)+'</span>'+
-      '<span class="sub">'+escapeHTML([e.portion, macShort(e)].filter(Boolean).join(' \u00b7 '))+'</span></div>'+
-      '<span class="kc">'+e.cal.toLocaleString()+'</span></div>').join('');
-    out.querySelector('#addEst').textContent = list.length > 1
-      ? 'Log all '+list.length+' \u00b7 '+tot.toLocaleString() : addLabel();
+    out.querySelector('#eCount').textContent = 'Estimate · '+list.length+' item'+(list.length === 1 ? '' : 's');
+    out.querySelector('#eMac').textContent = list.length ? macLine(sumMac(list)) : '';
+    items.forEach((it,i)=>{
+      const r = listEl.children[i];
+      r.classList.toggle('gone', qty[i] === 0);
+      r.querySelector('.nm').textContent = it.name;
+      r.querySelector('.sub').textContent = [(qty[i] > 1 ? qty[i]+' × ' : '')+it.portion, macShort(macCopy(it.mac, Math.max(qty[i],1)*scale))].filter(Boolean).join(' · ');
+      r.querySelector('.eq').textContent = qty[i];
+      r.querySelector('.kc').textContent = Math.round(it.cal*qty[i]*scale).toLocaleString();
+    });
+    const add = out.querySelector('#addEst');
+    add.textContent = !list.length ? 'Nothing to add' : list.length > 1
+      ? 'Add '+tot.toLocaleString()+' · '+list.length+' items' : addLabel()+' · '+tot.toLocaleString();
+    add.disabled = !list.length;
+    out.querySelector('#estSaveMeal').disabled = !list.length;
+    if (!keepAdj) out.querySelector('#adj').value = tot;
   };
+  listEl.querySelectorAll('.estrow').forEach(r=>{
+    const i = +r.dataset.i;
+    r.querySelector('.eminus').onclick = ()=>{ qty[i] = Math.max(0, qty[i]-1); paint(); };
+    r.querySelector('.eplus').onclick = ()=>{ qty[i] = qty[i]+1; paint(); };
+  });
   out.querySelector('#adj').oninput = ev=>{
-    const v = Math.round(parseFloat(ev.target.value));
-    if (isFinite(v) && v >= 0 && base > 0){ scale = v/base; paint(); }
+    const v = Math.round(parseFloat(ev.target.value)), base = rawTotal();
+    if (isFinite(v) && v >= 0 && base > 0){ scale = v/base; paint(true); }
   };
-  out.querySelector('#addEst').onclick = ()=>addEntries(scaled());
+  out.querySelector('#addEst').onclick = ()=>{ const l = scaled(); if (l.length) addEntries(l); };
+  out.querySelector('#estSaveMeal').onclick = ()=>{
+    const l = scaled();
+    if (!l.length) return;
+    const meal = sheetState && sheetState.meal;
+    const made = addEntries(l);
+    if (!made || !meal) return;
+    const name = l.length === 1 ? l[0].name : l[0].name+' + '+(l.length-1)+' more';
+    S.combos.filter(c=>c.name === name).forEach(c=>bury(c,'combo'));
+    S.combos = S.combos.filter(c=>c.name !== name);
+    S.combos.unshift({id:'c'+uid(), name, meal:meal.id, uses:1, up:Date.now(),
+      items:l.map(e=>({name:e.name, cal:e.cal, portion:e.portion, src:e.src, ...macCopy(e)}))});
+    save(); render();
+    toast(T('savedMeal')+' · '+l.reduce((a,e)=>a+e.cal,0).toLocaleString()+' added');
+  };
   paint();
 }
 
