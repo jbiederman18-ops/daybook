@@ -382,13 +382,18 @@ header{padding:30px 0 4px}
 /* ---------- sheet ---------- */
 .scrim{position:fixed;inset:0;background:var(--scrim);opacity:0;pointer-events:none;transition:opacity .22s;z-index:40}
 .scrim.open{opacity:1;pointer-events:auto}
-.sheet{position:fixed;left:0;right:0;bottom:0;padding-bottom:var(--kb,0px);z-index:50;background:var(--surface);border-radius:22px 22px 0 0;transform:translateY(106%);transition:transform .28s cubic-bezier(.32,.72,0,1),padding-bottom .22s cubic-bezier(.32,.72,0,1);max-height:92vh;max-height:92dvh;display:flex;flex-direction:column;border-top:var(--panel-border) solid var(--ink);overflow:hidden;box-shadow:0 -8px 40px rgba(0,0,0,.45)}
+.sheet{position:fixed;left:0;right:0;bottom:0;padding-bottom:var(--kb,0px);z-index:50;background:var(--surface);border-radius:22px 22px 0 0;transform:translateY(106%);transition:transform .28s cubic-bezier(.32,.72,0,1),padding-bottom .3s cubic-bezier(.32,.72,0,1);max-height:92vh;max-height:min(92dvh,calc(100dvh - var(--vvtop,0px) - 10px));display:flex;flex-direction:column;border-top:var(--panel-border) solid var(--ink);overflow:hidden;box-shadow:0 -8px 40px rgba(0,0,0,.45)}
 .sheet::before{content:'';position:absolute;top:0;left:0;right:0;height:var(--strip-h);background-image:var(--strip);background-size:var(--strip-size);border-bottom:var(--border-w) solid var(--ink);z-index:4}
 .sheet.open{transform:translateY(0)}
 .sheet-in{max-width:560px;width:100%;margin:0 auto;padding:0 18px calc(20px + env(safe-area-inset-bottom,0px));overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:contain}
 .griparea{flex:none;padding:16px 0 2px;touch-action:none;cursor:grab}
 .grip{width:44px;height:5px;border-radius:3px;background:var(--ink-faint);margin:0 auto 4px}
 .sheet.dragging{transition:none}
+/* The add sheet sits at one fixed detent, so switching tabs never moves the
+   tab bar out from under the finger that tapped it. */
+.sheet.tall{height:92vh;height:min(92dvh,calc(100dvh - var(--vvtop,0px) - 10px))}
+/* Any other change of sheet while one is up glides to its new height. */
+.sheet.morph{transition:transform .28s cubic-bezier(.32,.72,0,1),padding-bottom .3s cubic-bezier(.32,.72,0,1),height .3s cubic-bezier(.32,.72,0,1)}
 .sheet-head{display:flex;align-items:center;justify-content:space-between;padding:8px 0 14px;position:sticky;top:0;background:var(--surface);z-index:2}
 .sheet-head h2{font-family:var(--display);font-size:15px;margin:0;font-weight:var(--display-weight);letter-spacing:var(--display-track);text-transform:uppercase}
 .tabs{display:flex;gap:2px;margin-bottom:14px;background:var(--bg);padding:3px;border-radius:var(--pill);border:var(--border-w) solid var(--ink)}
@@ -4309,38 +4314,109 @@ let lastFocus = null, sheetGuard = null;
 function trackKeyboard(){
   const vv = window.visualViewport;
   if (!vv) return;
+  const root = document.documentElement;
+  /* iOS reports the keyboard's height only as it arrives, so a sheet that
+     waits for the report is always a beat behind the keys. The height for
+     each kind of keyboard is remembered, and the sheet starts moving on the
+     tap itself; the real report corrects it once the keys have settled. */
+  let known = {};
+  try { known = JSON.parse(localStorage.getItem('daybook-kb') || '{}') || {}; } catch(e){}
+  let holdUntil = 0, holdTimer = 0, kind = null, shown = -1;
+  const set = (kb, top)=>{
+    root.style.setProperty('--kb', kb+'px');
+    root.style.setProperty('--vvtop', top+'px');
+    root.classList.toggle('kb-open', kb > 0);
+    shown = kb;
+  };
   const apply = ()=>{
-    const kb = Math.round(window.innerHeight - vv.height - vv.offsetTop);
+    if (Date.now() < holdUntil) return;
+    const raw = Math.round(window.innerHeight - vv.height - vv.offsetTop);
     /* Safari's own bottom toolbar accounts for about 50px of difference
        between the two viewports, and treating that as a keyboard makes the
        sheet twitch every time the page scrolls. No keyboard is this short. */
-    document.documentElement.style.setProperty('--kb', (kb > 60 ? kb : 0)+'px');
-    // For the few rules that change shape, not just position, with a keyboard up.
-    document.documentElement.classList.toggle('kb-open', kb > 60);
+    const kb = raw > 60 ? raw : 0;
+    set(kb, kb ? Math.max(0, Math.round(vv.offsetTop)) : 0);
+    if (kb && kind && known[kind] !== kb){
+      known[kind] = kb;
+      try { localStorage.setItem('daybook-kb', JSON.stringify(known)); } catch(e){}
+    }
+  };
+  const predict = kb=>{
+    if (kb === shown) return;
+    set(kb, 0);
+    holdUntil = Date.now() + 480;
+    clearTimeout(holdTimer);
+    holdTimer = setTimeout(apply, 500);
+  };
+  const typable = el=>{
+    if (!el || !el.tagName) return false;
+    if (el.isContentEditable || el.tagName === 'TEXTAREA') return !el.readOnly;
+    if (el.tagName !== 'INPUT' || el.readOnly || el.disabled) return false;
+    return !/^(checkbox|radio|button|submit|reset|range|file|color|hidden|image)$/.test(el.type);
+  };
+  const kindOf = el=>{
+    const m = (el.getAttribute('inputmode') || '').toLowerCase();
+    return (m === 'numeric' || m === 'decimal' || m === 'tel' || el.type === 'tel') ? 'pad' : 'text';
   };
   vv.addEventListener('resize', apply);
   vv.addEventListener('scroll', apply);
   apply();
-  /* Shrinking the sheet is only half of it. The field you tapped can still be
-     below the fold of the sheet's own scroller — which is the case that looks
-     like nothing happened at all. */
   document.addEventListener('focusin', e=>{
     const el = e.target;
-    if (!el || !el.closest || !el.closest('.sheet-in')) return;
-    // The search box is the first thing in the sheet; centring it only ever
-    // scrolls something that didn't need scrolling.
-    if (el.id === 'q') return;
-    // After the keyboard animation, or it scrolls to the pre-keyboard layout.
+    if (!typable(el)) return;
+    kind = kindOf(el);
+    if (known[kind]) predict(known[kind]);
+    /* Shrinking the sheet is only half of it. The field you tapped can still
+       be below the fold of the sheet's own scroller. Only that scroller moves:
+       scrollIntoView would also pan the page, which drags the whole sheet up
+       under the status bar. The search box is first in the sheet and never
+       needs it. */
+    const sc = el.closest && el.closest('.sheet-in');
+    if (!sc || el.id === 'q') return;
     setTimeout(()=>{
-      try { el.scrollIntoView({block:'center', behavior:'smooth'}); } catch(x){}
-    }, 180);
+      if (document.activeElement !== el) return;
+      const r = el.getBoundingClientRect(), b = sc.getBoundingClientRect();
+      const head = sc.querySelector('.sheet-head');
+      const top = b.top + (head ? head.offsetHeight : 0) + 8, bot = b.bottom - 36;
+      if (r.top >= top && r.bottom <= bot) return;
+      const y = sc.scrollTop + (r.top + r.height/2) - (top + bot)/2;
+      try { sc.scrollTo({top:Math.max(0, y), behavior:'smooth'}); } catch(x){ sc.scrollTop = Math.max(0, y); }
+    }, 360);
+  });
+  // Moving between fields is a focusout then a focusin; only a real dismissal
+  // leaves nothing typable focused a tick later.
+  document.addEventListener('focusout', ()=>{
+    setTimeout(()=>{
+      if (typable(document.activeElement)) return;
+      kind = null;
+      if (shown > 0) predict(0);
+    }, 0);
   });
 }
 
-function openSheet(html){
+let morphTimer = 0;
+function openSheet(html, opts){
   const sh = document.getElementById('sheet');
-  if (!sh.classList.contains('open')) lastFocus = document.activeElement;
+  const wasOpen = sh.classList.contains('open');
+  if (!wasOpen) lastFocus = document.activeElement;
+  const h0 = wasOpen ? sh.getBoundingClientRect().height : 0;
+  clearTimeout(morphTimer);
+  sh.classList.remove('morph');
+  sh.style.height = '';
   document.getElementById('sheetBody').innerHTML = html;
+  sh.classList.toggle('tall', !!(opts && opts.tall));
+  /* One sheet replacing another used to snap to the new height. Pin the old
+     height, then let it glide to the new one. */
+  if (wasOpen){
+    const h1 = sh.getBoundingClientRect().height;
+    if (Math.abs(h1 - h0) > 2){
+      sh.style.height = h0+'px';
+      void sh.offsetHeight;
+      sh.classList.add('morph');
+      sh.style.height = h1+'px';
+      morphTimer = setTimeout(()=>{ sh.classList.remove('morph'); sh.style.height = ''; }, 340);
+    }
+  }
   sh.style.transform = '';
   sh.classList.add('open');
   document.getElementById('scrim').classList.add('open');
@@ -4420,12 +4496,23 @@ function drawAdd(){
       ['search','meals','custom'].map(k=>
         '<button class="tab'+(t===k?' on':'')+'" data-tab="'+k+'">'+
         ({search:'Regulars',meals:'Saved meals',custom:'Just calories'})[k]+'</button>').join('')+
-    '</div><div id="tabBody"></div>'
+    '</div><div id="tabBody"></div>',
+    {tall:true}
   );
-  document.querySelectorAll('.tab').forEach(b=>{
-    b.onclick = ()=>{ sheetState.tab = b.dataset.tab; drawAdd(); };
+  document.querySelectorAll('#sheetBody .chiptabs .tab').forEach(b=>{
+    b.onclick = ()=>switchAddTab(b.dataset.tab);
   });
   ({search:tabSearch, recipe:tabRecipe, meals:tabMeals, saved:tabSaved, estimate:tabEstimate, custom:tabCustom})[t]();
+}
+/* A tab tap swaps the body only. Rebuilding the whole sheet re-laid the
+   header and tab bar under your finger on every tap. */
+function switchAddTab(k){
+  if (!sheetState || sheetState.tab === k) return;
+  sheetState.tab = k;
+  document.querySelectorAll('#sheetBody .chiptabs .tab').forEach(b=>b.classList.toggle('on', b.dataset.tab === k));
+  body().innerHTML = '';
+  document.getElementById('sheetBody').scrollTop = 0;
+  ({search:tabSearch, meals:tabMeals, custom:tabCustom, estimate:tabEstimate})[k]();
 }
 const body = ()=>document.getElementById('tabBody');
 /* What you've added without closing the sheet, so a run of + taps has
@@ -4756,7 +4843,7 @@ function tabSearch(){
   /* Don't steal focus on the way in any more. The keyboard used to cover the
      recents the moment the sheet opened, which made the common case — log the
      thing you always log — the one you had to dismiss a keyboard to reach. */
-  if (!recentFoods(sheetState.meal.id, 1).length && !S.saved.length) q.focus();
+  if (!recentFoods(sheetState.meal.id, 1).length && !S.saved.length){ try { q.focus({preventScroll:true}); } catch(e){ q.focus(); } }
   let t;
   /* The debounce used to gate the whole render, so nothing at all happened
      for 450ms. Now it only gates the network: the log and the device cache
@@ -6689,7 +6776,7 @@ function tabCustom(){
   const nEl = document.getElementById('cn');
   nEl.value = sheetState.cname || '';
   nEl.oninput = ()=>{ sheetState.cname = nEl.value; };
-  nEl.focus();
+  try { nEl.focus({preventScroll:true}); } catch(e){ nEl.focus(); }
 
   // Everything is remembered in grams and per-100 g, so a unit switch or a
   // mode switch is lossless in either direction.
