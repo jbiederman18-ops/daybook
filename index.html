@@ -1470,6 +1470,31 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
 .estbtns .cta:first-child{flex:1}
 .estbtns .cta.ghost{flex:none;width:auto;padding:0 16px}
 :root[data-flat][data-theme][data-mode] .savemeal{text-transform:none;letter-spacing:0}
+/* ---- movement ---- */
+:root{--move:#EF4A7E}
+:root[data-tiles] .mtile{position:relative}
+:root[data-tiles] .mtile .tlab2 svg{color:var(--move)}
+:root[data-tiles] .mtile.hasref .tlab2{padding-right:36px}
+.mvwhen{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--ink-faint)}
+.mvref{position:absolute;top:8px;right:8px;width:40px;height:40px;border-radius:12px;display:grid;place-items:center;
+  color:var(--ink-dim);background:var(--fill)}
+.mvref[hidden]{display:none}
+.mvref:active{transform:scale(.94)}
+.mvref.busy svg{animation:mvspin 1s linear infinite}
+@keyframes mvspin{to{transform:rotate(360deg)}}
+.wmoves{display:flex;gap:5px;margin-top:-3px}
+.wmove{flex:1;height:5px;border-radius:3px;background:var(--move)}
+.mvcap{font-size:11.5px;font-weight:700;color:var(--ink-faint);margin:8px 0 4px}
+.mvrow{display:flex;align-items:flex-end;gap:8px;height:26px}
+.mvbar{flex:1;border-radius:3px;background:var(--move);min-height:2px}
+.aesum{font-size:15px;font-weight:700;margin:0 0 14px;color:var(--ink)}
+.cta.inl{width:auto;flex:none;margin:0;padding:0 18px}
+.wkrow,.wkest{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--hair,var(--line))}
+.wkrow .nm,.wkest .nm{flex:1;min-width:0;font-size:14.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wkrow .kc{font-weight:800}
+.wkest input{width:84px;flex:none}
+#wkList:empty{display:none}
+#wkList+.row{margin-top:10px}
 </style>
 </head>
 <body>
@@ -1510,14 +1535,17 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
   <section class="tiles">
     <div class="tile mtile" id="moveTile">
       <button class="tbtn" id="editActive">
-        <span class="tlab2"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><span id="activeWord">Moved</span></span>
-        <span class="tnum num">+<span id="activeNum">0</span></span>
+        <span class="tlab2"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><span id="activeWord">Moved</span><span class="mvwhen" id="moveWhen"></span></span>
+        <span class="tnum num" id="activeNum">0</span>
+        <span class="tsub" id="moveSub"></span>
       </button>
+      <button class="mvref" id="moveRefresh" aria-label="Update from Health" hidden><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
       <button class="tsubbtn" id="editBase">Base <b class="num" id="baseNum">—</b></button>
     </div>
     <button class="tile wtile" id="weekTile" aria-label="This week">
       <span class="tlab2" id="weekLab">This week</span>
       <span class="wbars" id="wbars"></span>
+      <span class="wmoves" id="wmoves" aria-hidden="true"></span>
       <span class="tsub" id="wsum"></span>
     </button>
   </section>
@@ -1527,11 +1555,14 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
   <section class="trend tile" id="trend">
     <h2 id="trendHead">Last 7 days</h2>
     <div class="bars" id="bars"></div>
+    <div class="mvcap">Moved</div>
+    <div class="mvrow" id="mvrow"></div>
     <div class="tsum">
       <span><span id="avgLab">Daily average</span> <b id="avg7">—</b></span>
       <span id="vsTarget"></span>
     </div>
     <div class="tsum" id="mavg"></div>
+    <div class="tsum" id="mvavg"></div>
   </section>
 </div>
 
@@ -1938,7 +1969,13 @@ function typicalRaw(key){
   return typicalAuto(key || todayKey());
 }
 function typical(key){ return Math.round(typicalRaw(key) * movedPct()/100); }
-function counted(key){ return Math.round((peek(key).active||0) * movedPct()/100); }
+/* Workouts the tracker missed: typed or described, kept beside the tracker's
+   number rather than in it, so the next Health update can't wipe them. They
+   count in full -- the tracker discount is for the tracker -- and stay out of
+   the usual-day average, which is the tracker's alone. */
+function workoutCal(key){ return (peek(key).moves || []).reduce((a,m)=>a+(+m.cal||0), 0); }
+function burned(key){ return Math.round(peek(key).active||0) + workoutCal(key); }
+function counted(key){ return Math.round((peek(key).active||0) * movedPct()/100) + workoutCal(key); }
 function dayBase(key){ return baseTarget() + typical(key); }
 /* Only what's beyond usual, and never below nothing. */
 function moved(key){ return Math.max(0, counted(key) - typical(key)); }
@@ -2058,10 +2095,16 @@ function queueSync(){
 /* Everything that changed since `since`. Deletes ride along as tombstones,
    which is what lets one device's deletion survive another's stale copy. */
 function collectChanges(since){
-  const entries = [], days = [], library = [];
+  const entries = [], days = [], library = [], moves = [];
   Object.keys(S.days).forEach(dk=>{
     const d = S.days[dk];
     if ((d.activeUp||0) > since) days.push({date:dk, active:Math.round(d.active||0), updated:d.activeUp});
+    /* Workouts get their own node, moves/<id>. The day node is rewritten
+       whole by the Health Shortcut, and an older build reading them as
+       entries would file them as food. */
+    (d.moves || []).forEach(m=>{
+      if ((m.up||0) > since) moves.push({id:m.id, date:dk, name:m.name||'Workout', cal:Math.round(+m.cal||0), updated:m.up, deleted:0});
+    });
     MEALS.forEach(m=>(d.meals[m.id]||[]).forEach(e=>{
       if ((e.up||0) > since) entries.push({
         id:e.id, date:dk, meal:m.id, name:e.name, cal:e.cal,
@@ -2089,7 +2132,9 @@ function collectChanges(since){
     const g = S.graves[id];
     if (!g || (g.up||0) <= since) return;
     const row = {id, updated:g.up, deleted:1};
-    if (g.kind === 'entry') entries.push(row); else library.push({...row, kind:g.kind});
+    if (g.kind === 'entry') entries.push(row);
+    else if (g.kind === 'move') moves.push(row);
+    else library.push({...row, kind:g.kind});
   });
 
   let profile = null;
@@ -2097,7 +2142,7 @@ function collectChanges(since){
     profile = {updated:S.settings.profileUp};
     PROFILE_KEYS.forEach(k=>profile[k] = S.settings[k]);
   }
-  return {entries, days, library, profile};
+  return {entries, days, library, profile, moves};
 }
 
 /* Pushes changes plus the widget's summary. Fire-and-forget: the app never
@@ -2123,7 +2168,7 @@ async function doPush(full, keep){
   const payload = {
     token: S.settings.syncToken || '',
     op: 'push',
-    entries: ch.entries, days: ch.days, library: ch.library, profile: ch.profile,
+    entries: ch.entries, days: ch.days, library: ch.library, profile: ch.profile, moves: ch.moves,
     summary: {
       date: k,
       target: target(k),
@@ -2158,6 +2203,7 @@ async function doPush(full, keep){
     ch.entries.forEach(r=>{ if (rtdbKeyOK(r.id))   patch['entries/'+r.id]  = r; });
     ch.library.forEach(r=>{ if (rtdbKeyOK(r.id))   patch['library/'+r.id]  = r; });
     ch.days.forEach(r=>{    if (rtdbKeyOK(r.date)) patch['days/'+r.date]   = r; });
+    ch.moves.forEach(r=>{   if (rtdbKeyOK(r.id))   patch['moves/'+r.id]    = r; });
     if (ch.profile) patch['profile'] = ch.profile;
     patch['summary'] = payload.summary;
     await fbReady();
@@ -2460,13 +2506,16 @@ async function pullSync(){
     const q = 'orderBy=%22updated%22&startAt='+(S.sync.lastPull||0);
     await fbReady();
     try {
-      const [re, rl, rd, rp] = await Promise.all([
+      /* Workouts are read whole: a handful a week, and no index needed in
+         the rules. The merge is last-write-wins, so re-reading is harmless. */
+      const [re, rl, rd, rp, rm] = await Promise.all([
         fetch(dbURL('/entries', q), {signal:within(SYNC_WAIT)}),
         fetch(dbURL('/library', q), {signal:within(SYNC_WAIT)}),
         fetch(dbURL('/days', q),    {signal:within(SYNC_WAIT)}),
-        fetch(dbURL('/profile'),    {signal:within(SYNC_WAIT)})
+        fetch(dbURL('/profile'),    {signal:within(SYNC_WAIT)}),
+        fetch(dbURL('/moves'),      {signal:within(SYNC_WAIT)})
       ]);
-      const bad = [re, rl, rd, rp].find(x=>!x.ok);
+      const bad = [re, rl, rd, rp, rm].find(x=>!x.ok);
       if (bad){
         let j = null; try { j = await bad.json(); } catch(e){}
         err = (j && j.error) || ('Firebase returned '+bad.status);
@@ -2483,6 +2532,7 @@ async function pullSync(){
           library: vals(await rl.json()),
           days:    vals(await rd.json()),
           profile: await rp.json(),
+          moves:   vals(await rm.json()),
           now: serverNow(re)
         };
       }
@@ -2602,6 +2652,39 @@ function mergeRemote(d){
     }
   });
 
+  /* Workouts: last write wins, deletes as tombstones, the same as entries. */
+  if (d.moves && d.moves.length){
+    const mix = new Map();
+    Object.keys(S.days).forEach(k=>(S.days[k].moves||[]).forEach(m=>mix.set(m.id, {k, m})));
+    d.moves.forEach(r=>{
+      const up = +r.updated || 0;
+      if (!r.id || !up) return;
+      const grave = S.graves[r.id], found = mix.get(r.id);
+      const unhook = ()=>{
+        const list = S.days[found.k].moves, i = list.indexOf(found.m);
+        if (i > -1) list.splice(i, 1);
+        mix.delete(r.id);
+      };
+      if (+r.deleted === 1){
+        if (found) unhook();
+        if (!grave || grave.up < up) S.graves[r.id] = {up, kind:'move'};
+        return;
+      }
+      if (grave && grave.up >= up) return;
+      if (found){
+        if ((found.m.up||0) >= up) return;
+        unhook();
+      }
+      const dk = normDate(r.date);
+      if (!dk) return;
+      const dd = day(dk);
+      dd.moves = dd.moves || [];
+      const m = {id:r.id, name:String(r.name||'Workout'), cal:Math.max(0, Math.round(+r.cal||0)), up};
+      dd.moves.push(m);
+      mix.set(r.id, {k:dk, m});
+    });
+  }
+
   (d.library||[]).forEach(r=>{
     const up = +r.updated || 0;
     if (!r.id || !up) return;
@@ -2658,11 +2741,12 @@ function storeNote(){
    log back, and a delete made since the backup stays deleted. Keys and
    device settings are never in a backup, so nothing here touches them. */
 function backupRows(b){
-  const entries = [], library = [], days = [];
+  const entries = [], library = [], days = [], moves = [];
   Object.keys(b.days || {}).forEach(dk=>{
     const d = b.days[dk] || {}, date = normDate(dk);
     if (!date) return;
     if (d.activeUp) days.push({date, active:d.active||0, updated:d.activeUp});
+    (d.moves || []).forEach(m=>{ if (m && m.id) moves.push({...m, date, updated:m.up||1, deleted:0}); });
     MEALS.forEach(m=>((d.meals && d.meals[m.id]) || []).forEach(e=>{
       if (e && e.id) entries.push({...e, date, meal:m.id, updated:e.up||1, deleted:0});
     }));
@@ -2672,14 +2756,16 @@ function backupRows(b){
   Object.entries(b.graves || {}).forEach(([id, g])=>{
     if (!g || !g.up) return;
     const row = {id, updated:g.up, deleted:1};
-    if (g.kind === 'entry') entries.push(row); else library.push({...row, kind:g.kind});
+    if (g.kind === 'entry') entries.push(row);
+    else if (g.kind === 'move') moves.push(row);
+    else library.push({...row, kind:g.kind});
   });
   let profile = null;
   if (b.settings && b.settings.profileUp){
     profile = {updated:b.settings.profileUp};
     PROFILE_KEYS.forEach(k=>profile[k] = b.settings[k]);
   }
-  return {entries, library, days, profile};
+  return {entries, library, days, profile, moves};
 }
 function countLog(){
   let n = 0;
@@ -2789,7 +2875,7 @@ function hydrate(){
   // the fix so it stops riding along in every save.
   Object.keys(S.days).forEach(dk=>{
     const dd = S.days[dk];
-    if (!dd || dd.activeUp || Math.round(dd.active||0)) return;
+    if (!dd || dd.activeUp || Math.round(dd.active||0) || (dd.moves && dd.moves.length)) return;
     const hasFood = MEALS.some(m=>(dd.meals && dd.meals[m.id] || []).length);
     if (!hasFood){ delete S.days[dk]; dirty = true; }
   });
@@ -2986,9 +3072,7 @@ function render(){
   const hl = document.getElementById('heroLab');
   if (hl) hl.textContent = left < 0 ? 'Over by' : 'Left to eat';
   document.getElementById('baseNum').textContent = dayBase(viewDate).toLocaleString();
-  document.getElementById('activeNum').textContent = moved(viewDate).toLocaleString();
-  const aw = document.getElementById('activeWord');
-  if (aw) aw.textContent = typical(viewDate) > 0 ? 'Extra moved' : 'Moved';
+  paintMoved();
 
   /* The budget bar, split by where the calories came from rather than which
      meal they were in. Each entry's calories are shared out by its own
@@ -3108,6 +3192,40 @@ function renderRing(parts, denom, left, tgt){
   host.setAttribute('aria-label', over
     ? Math.abs(left).toLocaleString()+' calories over'
     : Math.abs(left).toLocaleString()+' calories left of '+tgt.toLocaleString());
+}
+
+/* ---------- moved ----------
+   The tile shows everything burned, then what it does to the day: with a
+   usual figure on, that much is already in the base and only the rest is
+   extra. The time is when the tracker's number last arrived, and the round
+   arrow runs the Health Shortcut straight from here -- today only, since
+   the Shortcut always writes today. */
+function movedLine(key){
+  const b = burned(key), ty = typical(key), mv = moved(key), pct = movedPct();
+  const s = ty > 0
+    ? b.toLocaleString()+' burned · '+ty.toLocaleString()+' in base · +'+mv.toLocaleString()+' extra'
+    : b.toLocaleString()+' burned · +'+mv.toLocaleString()+' to your day';
+  return pct < 100 ? s+' · '+pct+'% counted' : s;
+}
+function paintMoved(){
+  const b = burned(viewDate), ty = typical(viewDate), mv = moved(viewDate);
+  const isToday = viewDate === todayKey();
+  document.getElementById('activeNum').textContent = b.toLocaleString();
+  const sub = document.getElementById('moveSub');
+  // The tile keeps it to what's added; the sheet has the full breakdown.
+  if (sub) sub.textContent = '+'+mv.toLocaleString()+(ty > 0 ? ' extra' : ' to your day');
+  const up = peek(viewDate).activeUp;
+  const when = document.getElementById('moveWhen');
+  if (when) when.textContent = isToday && up ? clockOf(up) : '';
+  const ref = document.getElementById('moveRefresh');
+  if (ref){
+    const show = healthReady() && isToday;
+    ref.hidden = !show;
+    document.getElementById('moveTile').classList.toggle('hasref', show);
+    let waiting = false;
+    try { waiting = !!healthWait; } catch(e){}
+    ref.classList.toggle('busy', waiting);
+  }
 }
 
 /* ---------- the gauge ----------
@@ -3605,6 +3723,23 @@ function renderTrend(){
       const v = vals[i], cls = 'wbar'+(k === viewDate ? ' now' : '')+(v > tgts[i] ? ' over' : '')+(v === 0 ? ' none' : '');
       return '<i class="'+cls+'" style="height:'+(v === 0 ? 3 : Math.max(4, v/peak*100))+'%"></i>';
     }).join('');
+    /* Movement under the food: one mark per day, stronger the more you burned. */
+    const burns = keys.map(k=>burned(k)), bpeak = Math.max(...burns, 1);
+    const wm = document.getElementById('wmoves');
+    if (wm) wm.innerHTML = burns.map(v=>'<i class="wmove" style="opacity:'+(v ? (0.25 + 0.75*v/bpeak).toFixed(2) : 0.12)+'"></i>').join('');
+    const mr = document.getElementById('mvrow');
+    if (mr) mr.innerHTML = burns.map((v,i)=>'<i class="mvbar" title="'+prettyDate(keys[i])+': '+v.toLocaleString()+' moved" style="height:'+
+      (v ? Math.max(8, v/bpeak*100) : 4)+'%'+(v ? '' : ';opacity:.3')+'"></i>').join('');
+    const mva = document.getElementById('mvavg');
+    if (mva){
+      const md = keys.map((k,i)=>({k, v:burns[i]})).filter(x=>x.v > 0 && x.k !== today);
+      if (md.length){
+        const top = md.reduce((a,x)=>x.v > a.v ? x : a);
+        const dow = new Date(top.k.split('-')[0], top.k.split('-')[1]-1, top.k.split('-')[2]).toLocaleDateString(undefined, {weekday:'short'});
+        mva.innerHTML = '<span>Moved average <b>'+Math.round(md.reduce((a,x)=>a+x.v,0)/md.length).toLocaleString()+'</b></span>'+
+          '<span>Most <b>'+dow+' '+top.v.toLocaleString()+'</b></span>';
+      } else mva.innerHTML = '';
+    }
     const ws = document.getElementById('wsum');
     if (ws) ws.textContent = done.length
       ? 'Avg '+avg.toLocaleString()+' \u00b7 '+(diff > 0 ? '+' : diff < 0 ? '\u2212' : '\u00b1')+Math.abs(diff).toLocaleString()
@@ -6771,29 +6906,114 @@ async function healthReturned(){
 document.addEventListener('visibilitychange', healthReturned);
 window.addEventListener('focus', healthReturned);
 
-document.getElementById('editActive').onclick = ()=>{
-  const health = healthReady();
-  const raw = Math.round(peek(viewDate).active||0), pct = movedPct();
-  const share = pct < 100
-    ? aeShare(viewDate) : aeShare(viewDate);
-  openSheet(sheetHead('Active energy')+
-    (health ? '<button class="cta" id="aeHealth" style="margin-top:0">Update from Health</button>'+
-      '<p class="note" id="aeNote" style="min-height:1.55em"></p>' : '')+
-    '<div class="field"><label>Active calories burned on '+prettyDate(viewDate).toLowerCase()+'</label>'+
-    '<input id="ae" type="number" inputmode="numeric" value="'+Math.round(day(viewDate).active||0)+'"></div>'+
-    '<button class="cta'+(health ? ' ghost' : '')+'" id="aeSave">Save</button>'+
-    '<p class="note">'+(health
-      ? 'Update from Health hops over to Shortcuts for a second \u2014 tap back to Daybook and the number fills in. A number typed here is replaced the next time it runs.'
-      : 'To fill this from Apple Health with a tap, add your Shortcut\u2019s name under Settings \u2192 Active calories.')+
-      share+'</p>');
-  if (!health) document.getElementById('ae').focus();
-  if (health) document.getElementById('aeHealth').onclick = runHealthShortcut;
+document.getElementById('editActive').onclick = ()=>openMoved();
+document.getElementById('moveRefresh').onclick = ()=>{
+  document.getElementById('moveRefresh').classList.add('busy');
+  runHealthShortcut();
+};
+/* One short line for what the numbers do, the tracker's number, and the
+   workouts it missed. Health is offered on today only: the Shortcut always
+   writes today, so on any other day it would quietly change the wrong one. */
+function openMoved(){
+  const health = healthReady(), isToday = viewDate === todayKey();
+  const up = peek(viewDate).activeUp;
+  openSheet(sheetHead('Moved')+
+    '<p class="aesum" id="aeSum"></p>'+
+    (health && isToday
+      ? '<button class="cta" id="aeHealth" style="margin-top:0">Update from Health</button>'+
+        '<p class="note" id="aeNote" style="min-height:1.55em">'+(up ? 'Last updated '+new Date(up).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'})+'.' : '')+'</p>'
+      : health ? '<p class="note">Health updates today only. Type this day’s number below.</p>' : '')+
+    '<div class="field"><label>Tracker active calories</label>'+
+      '<div class="row" style="gap:8px;align-items:stretch">'+
+      '<input id="ae" type="number" inputmode="numeric" value="'+Math.round(peek(viewDate).active||0)+'">'+
+      '<button class="cta ghost inl" id="aeSave">Save</button></div></div>'+
+    '<div class="divider"><h3>Workouts the tracker missed</h3></div>'+
+    '<div id="wkList"></div>'+
+    '<div class="row" style="gap:8px;align-items:stretch">'+
+      '<input id="wkIn" placeholder="250, or ‘45 min bike ride’" autocomplete="off" enterkeyhint="done" aria-label="Add a workout">'+
+      '<button class="cta inl" id="wkGo">Add</button></div>'+
+    '<div id="wkEst"></div>'+
+    (!health ? '<p class="note" style="margin-top:14px">To fill the tracker number from Apple Health in one tap, add your Shortcut’s name under Settings → Active calories.</p>' : ''));
+  if (health && isToday) document.getElementById('aeHealth').onclick = runHealthShortcut;
+  const paint = ()=>{
+    const s = document.getElementById('aeSum');
+    if (s) s.textContent = movedLine(viewDate);
+    const host = document.getElementById('wkList');
+    if (!host) return;
+    const list = peek(viewDate).moves || [];
+    host.innerHTML = '';
+    list.forEach(m=>{
+      const row = document.createElement('div');
+      row.className = 'wkrow';
+      row.innerHTML = '<span class="nm"></span><span class="kc num">'+(+m.cal||0).toLocaleString()+'</span>'+
+        '<button class="iconbtn wkdel" aria-label="Remove workout"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M6 6l12 12M18 6L6 18"/></svg></button>';
+      row.querySelector('.nm').textContent = m.name;
+      row.querySelector('.wkdel').onclick = ()=>{
+        const arr = day(viewDate).moves || [], at = arr.indexOf(m);
+        if (at < 0) return;
+        bury(m, 'move'); arr.splice(at, 1); save(); render(); paint();
+        toast('Removed '+m.name, {label:'Undo', run(){
+          delete S.graves[m.id]; bumpUp(m);
+          const a = day(viewDate).moves = day(viewDate).moves || [];
+          a.splice(Math.min(at, a.length), 0, m); save(); render(); paint();
+        }});
+      };
+      host.appendChild(row);
+    });
+  };
+  const addMove = (name, cal)=>{
+    cal = Math.max(0, Math.round(+cal||0));
+    if (!cal){ toast('That needs a number above zero'); return; }
+    const d = day(viewDate);
+    d.moves = d.moves || [];
+    const m = stampNew({name: String(name||'Workout').trim() || 'Workout', cal});
+    d.moves.push(m);
+    save(); render(); paint(); buzz(10);
+    document.getElementById('wkIn').value = '';
+    document.getElementById('wkEst').innerHTML = '';
+    toast('+'+cal.toLocaleString()+' moved', {label:'Undo', run(){
+      const a = day(viewDate).moves || [], i = a.indexOf(m);
+      if (i > -1){ bury(m, 'move'); a.splice(i, 1); save(); render(); paint(); }
+    }});
+  };
   document.getElementById('aeSave').onclick = ()=>{
     day(viewDate).active = Math.max(0, Math.round(Number(document.getElementById('ae').value)||0));
     day(viewDate).activeUp = Date.now();
-    save(); render(); closeSheet();
+    save(); render(); paint(); toast('Saved');
   };
-};
+  const go = async ()=>{
+    const v = document.getElementById('wkIn').value.trim();
+    if (!v) return;
+    if (/^\d+(\.\d+)?$/.test(v)){ addMove('Workout', v); return; }
+    const out = document.getElementById('wkEst');
+    out.innerHTML = '<span class="spin"></span>';
+    try {
+      const j = await askClaude(workoutPrompt(v));
+      const cal = Math.round(+(j && j.calories));
+      if (!isFinite(cal) || cal <= 0) throw new Error('No number came back.');
+      if (!document.body.contains(out)) return;
+      out.innerHTML = '<div class="wkest"><span class="nm"></span>'+
+        '<input id="wkCal" type="number" inputmode="numeric" value="'+cal+'" aria-label="Calories">'+
+        '<button class="cta inl" id="wkAdd">Add</button></div>';
+      const name = String(j.name || v);
+      out.querySelector('.nm').textContent = name;
+      document.getElementById('wkAdd').onclick = ()=>addMove(name, document.getElementById('wkCal').value);
+    } catch(err){
+      if (document.body.contains(out)) out.innerHTML = '<div class="warn"><b>Couldn’t estimate that.</b><br>'+
+        escapeHTML(err && err.message || String(err))+' Type the calories instead.</div>';
+    }
+  };
+  document.getElementById('wkGo').onclick = go;
+  document.getElementById('wkIn').onkeydown = e=>{ if (e.key === 'Enter'){ e.preventDefault(); go(); } };
+  paint();
+}
+function workoutPrompt(desc){
+  const s = S.settings;
+  return 'Estimate the active calories (on top of resting burn) for this workout: "'+String(desc).slice(0, 200)+'".\n'+
+    'The person: '+(s.sex || 'male')+', '+(s.age || 35)+' years, '+kgToLb(s.weightKg || 80)+' lb.\n'+
+    'If no duration is given, assume a typical session. Reply with JSON only: '+
+    '{"name":"short name including the duration","calories":number}';
+}
 
 /* ---------- settings ---------- */
 function openSettings(){
