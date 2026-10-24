@@ -3644,13 +3644,9 @@ function focusWhenSettled(proxy){
   /* Focus has to happen inside the tap for iOS to raise the keyboard, so it
      is done here rather than left to the sheet. */
   document.getElementById('logOpen').onclick = ()=>{
-    /* With regulars to show, open on them and leave the keyboard down: the
-       common case is a tap, not typing. Tapping the field raises it. */
-    if (recentFoods(currentMeal().id, 1).length || S.saved.length){
-      openLog();
-      lastFocus = document.getElementById('logOpen');
-      return;
-    }
+    /* It looks like a text field, so it acts like one: the keyboard comes up
+       with the sheet. Regulars still show above the keys, and the quick
+       chips on the dock cover the tap-without-typing case. */
     const proxy = document.getElementById('kbProxy');
     proxy.value = '';
     try { proxy.focus({preventScroll:true}); } catch(e){ proxy.focus(); }
