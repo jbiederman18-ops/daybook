@@ -1495,6 +1495,16 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
 .wkest input{width:84px;flex:none}
 #wkList:empty{display:none}
 #wkList+.row{margin-top:10px}
+/* ---- save to Passwords ---- */
+.kcstep{display:flex;gap:12px;margin:0 0 16px}
+.kcstep>div{flex:1;min-width:0;font-size:14px;line-height:1.5}
+.kcn{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:13px;
+  background:var(--accent);color:var(--ink-on)}
+#kcOut{display:block;width:100%;box-sizing:border-box;margin-top:8px;font-family:ui-monospace,Menlo,monospace;font-size:12px;
+  word-break:break-all;resize:none;user-select:text;-webkit-user-select:text}
+.kcrow{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;margin:6px 0;border-radius:12px;background:var(--tile,var(--fill));font-size:13.5px}
+.kcrow span{color:var(--ink-dim)}
+.kcrow b{text-align:right;word-break:break-all}
 </style>
 </head>
 <body>
@@ -2477,12 +2487,10 @@ function openSetupPaste(fresh){
 }
 
 /* ---------- iCloud Passwords ----------
-   Safari offers to save a password when a form with one is submitted. The
-   form goes into a hidden frame at about:blank, so nothing leaves the phone
-   and the app doesn't navigate. The saved entry is a password for this
-   site with the user name below; the box on a fresh install asks for the
-   same pair, which is what makes Face ID offer it. If no prompt appears,
-   the code is on the clipboard and the sheet says how to add it by hand. */
+   iOS never offers to save a password from inside a home-screen app, so
+   this is done by hand, once: copy the code, add it in the Passwords app
+   as a password for this site under the user name below. The box on a fresh
+   install asks for the same pair, which is what makes Face ID offer it. */
 const KC_USER = 'Daybook setup';
 /* What the saved copy depends on: the keys and the sign-in's email, not the
    refresh token, which Firebase may reissue without anything changing. */
@@ -2504,46 +2512,40 @@ function kcStateText(){
 }
 function openKeychainSave(){
   const code = setupCode();
-  openSheet(sheetHead('Save to iCloud Passwords')+
-    '<p class="note" style="margin:0 0 14px">Keeps your setup as a password for this site. After you delete and re-add Daybook, '+
-      'tap the setup box and Face ID fills it back in — keys, sync and sign-in, then your log by sync.</p>'+
-    '<iframe name="kcSink" id="kcSink" title="Save frame" hidden></iframe>'+
-    '<form id="kcForm" method="post" action="about:blank" target="kcSink" autocomplete="on">'+
-      '<div class="field"><label for="kcUser">Saved as</label>'+
-        '<input id="kcUser" name="username" autocomplete="username" autocapitalize="off" spellcheck="false" value="'+KC_USER+'"></div>'+
-      '<div class="field"><label for="kcPass">Setup code</label>'+
-        '<input id="kcPass" name="password" type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false"></div>'+
-      '<button class="cta" id="kcGo" type="submit">Save to Passwords</button>'+
-    '</form>'+
-    '<p class="note" id="kcNote"></p>');
-  document.getElementById('kcPass').value = code;
   const host = location.host || 'this site';
-  document.getElementById('kcForm').addEventListener('submit', ()=>{
-    // The submit itself is what Safari watches for; this just runs alongside.
+  const step = (n, html)=>'<div class="kcstep"><span class="kcn">'+n+'</span><div>'+html+'</div></div>';
+  openSheet(sheetHead('Save to iCloud Passwords')+
+    '<p class="note" style="margin:0 0 14px">Your iPhone won’t offer to save passwords from inside a home-screen app, so this one is two quick steps. '+
+      'After that, a fresh install fills it back in with Face ID.</p>'+
+    step(1, '<b>Copy your setup code.</b>'+
+      '<textarea id="kcOut" rows="3" readonly autocapitalize="off" spellcheck="false" aria-label="Setup code"></textarea>'+
+      '<button class="cta" id="kcCopy" style="margin-top:8px">Copy setup code</button>')+
+    step(2, '<b>Add it to Passwords.</b> Open the <b>Passwords</b> app (on older iOS: Settings → Passwords), tap <b>+</b>, then fill in:'+
+      '<div class="kcrow"><span>Website</span><b>'+escapeHTML(host)+'</b></div>'+
+      '<div class="kcrow"><span>User name</span><b>'+KC_USER+'</b></div>'+
+      '<div class="kcrow"><span>Password</span><b>paste the code</b></div>'+
+      'and tap Save.')+
+    '<button class="cta ghost" id="kcDone">I’ve saved it</button>'+
+    '<p class="note">On a fresh install, tap the setup box and pick <b>'+KC_USER+'</b> above the keyboard. '+
+      'If it isn’t offered, tap the key icon and search for it.</p>');
+  const out = document.getElementById('kcOut');
+  out.value = code;
+  const btn = document.getElementById('kcCopy');
+  btn.onclick = async ()=>{
+    let ok = false;
+    try { await navigator.clipboard.writeText(code); ok = true; } catch(e){}
+    if (!ok){
+      // Older path: select the text and copy, which a tap still allows.
+      out.focus(); out.select(); out.setSelectionRange(0, code.length);
+      try { ok = document.execCommand('copy'); } catch(e){}
+    }
+    btn.textContent = ok ? 'Copied ✓' : 'Select the code above and copy it';
+    if (ok) toast('Setup code copied');
+  };
+  document.getElementById('kcDone').onclick = ()=>{
     S.sync.kcHash = kcHash(); persist();
-    let copied = false;
-    const done = ()=>{
-      const n = document.getElementById('kcNote');
-      if (!n) return;
-      n.innerHTML = 'If your iPhone asked, tap <b>Save Password</b>. No prompt? '+
-        (copied ? 'The code is copied — ' : 'Copy the code from Settings, then ')+
-        'open the Settings app → <b>Passwords</b> → <b>+</b>, and enter website <b>'+escapeHTML(host)+
-        '</b>, user name <b>'+KC_USER+'</b>, and paste the code as the password.';
-    };
-    try {
-      navigator.clipboard.writeText(code).then(()=>{ copied = true; done(); }, done);
-    } catch(e){ done(); }
-    setTimeout(done, 400);
-  });
-}
-
-async function copySetupCode(btn){
-  const code = setupCode();
-  let copied = false;
-  try { await navigator.clipboard.writeText(code); copied = true; } catch(e){}
-  const out = document.getElementById('scOut');
-  if (out){ out.style.display = ''; out.value = code; if (!copied){ out.focus(); out.select(); } }
-  toast(copied ? 'Setup code copied — paste it into Notes' : 'Select the code below and copy it');
+    closeSheet(true); toast('Saved — you’re ready to reinstall');
+  };
 }
 
 /* A deadline for sync requests. On a weak signal a fetch can sit for a minute
