@@ -2432,11 +2432,21 @@ async function applySetupCode(o){
   return {ok:true, synced:ok, err:S.sync.err};
 }
 function openSetupPaste(fresh){
-  openSheet(sheetHead('Paste setup code')+
-    '<p class="note" style="margin-top:0">On your old install: Settings → <b>Copy setup code</b>. Then paste it here and everything comes back — keys, sync and your sign-in, then your log by sync.</p>'+
-    (navigator.clipboard && navigator.clipboard.readText ? '<button class="cta ghost" id="scClip" style="margin-top:10px">Paste from clipboard</button>' : '')+
-    '<div class="field" style="margin-top:12px"><textarea id="scBox" rows="4" placeholder="daybook-setup:…" autocomplete="off" autocapitalize="off" spellcheck="false"></textarea></div>'+
-    '<button class="cta" id="scGo">Set up this device</button>'+
+  /* A username and password pair, named to match what Save to iCloud
+     Passwords stored, so tapping the box offers "Daybook setup" above the
+     keyboard. Whatever lands in the box -- filled in, or pasted -- applies
+     itself the moment it reads as a setup code. */
+  openSheet(sheetHead('Set up this device')+
+    '<p class="note" style="margin:0 0 14px">Saved your setup to iCloud Passwords? Tap the box and choose <b>'+KC_USER+'</b>. '+
+      'Or paste a setup code from your old install (Settings → Copy setup code).</p>'+
+    '<form id="scForm" autocomplete="on" onsubmit="return false">'+
+      '<div class="field"><label for="scUser">Saved as</label>'+
+        '<input id="scUser" name="username" autocomplete="username" autocapitalize="off" spellcheck="false" value="'+KC_USER+'"></div>'+
+      '<div class="field"><label for="scBox">Setup code</label>'+
+        '<input id="scBox" name="password" type="password" autocomplete="current-password" autocapitalize="off" spellcheck="false" placeholder="Tap, then choose '+KC_USER+'"></div>'+
+      (navigator.clipboard && navigator.clipboard.readText ? '<button class="cta ghost" id="scClip" type="button" style="margin-top:0">Paste from clipboard</button>' : '')+
+      '<button class="cta" id="scGo" type="button">Set up this device</button>'+
+    '</form>'+
     '<p class="note" id="scNote"></p>'+
     (fresh ? '<button class="cta ghost" id="scHand" style="margin-top:14px">First time? Set up by hand</button>' : ''));
   const hand = document.getElementById('scHand');
@@ -2447,17 +2457,86 @@ function openSetupPaste(fresh){
     try { box.value = await navigator.clipboard.readText(); go.click(); }
     catch(e){ note.textContent = 'Couldn’t read the clipboard — long-press the box and paste instead.'; box.focus(); }
   };
+  let busy = false;
   go.onclick = async ()=>{
+    if (busy) return;
     const o = readSetupCode(box.value);
     if (!o){ note.textContent = 'That isn’t a setup code. It starts with daybook-setup:'; note.style.color = 'var(--over)'; return; }
-    go.disabled = true; note.style.color = ''; note.textContent = 'Setting up…';
+    busy = true; go.disabled = true; note.style.color = ''; note.textContent = 'Setting up…';
     const r = await applySetupCode(o);
+    // It came from a saved copy, so that copy is current.
+    S.sync.kcHash = kcHash(); persist();
     render();
     if (r.synced){ closeSheet(true); toast('All set — synced and signed in'); }
     else if (!S.settings.syncUrl){ closeSheet(true); toast('Keys are in. No sync was set up on the old install.'); }
-    else { go.disabled = false; note.textContent = 'Keys are in, but sync didn’t answer: '+(r.err || 'try Sync now in Settings')+'.'; }
+    else { busy = false; go.disabled = false; note.textContent = 'Keys are in, but sync didn’t answer: '+(r.err || 'try Sync now in Settings')+'.'; }
   };
+  const auto = ()=>{ if (!busy && readSetupCode(box.value)) go.click(); };
+  box.addEventListener('input', auto);
+  box.addEventListener('change', auto);
 }
+
+/* ---------- iCloud Passwords ----------
+   Safari offers to save a password when a form with one is submitted. The
+   form goes into a hidden frame at about:blank, so nothing leaves the phone
+   and the app doesn't navigate. The saved entry is a password for this
+   site with the user name below; the box on a fresh install asks for the
+   same pair, which is what makes Face ID offer it. If no prompt appears,
+   the code is on the clipboard and the sheet says how to add it by hand. */
+const KC_USER = 'Daybook setup';
+/* What the saved copy depends on: the keys and the sign-in's email, not the
+   refresh token, which Firebase may reissue without anything changing. */
+function kcHash(){
+  const o = {};
+  SETUP_KEYS.forEach(k=>{ const v = S.settings[k]; if (v !== undefined && v !== '' && v !== null) o[k] = v; });
+  const a = fbAuth();
+  if (a) o.email = a.email;
+  const t = JSON.stringify(o);
+  let h = 5381;
+  for (let i = 0; i < t.length; i++) h = ((h << 5) + h + t.charCodeAt(i)) >>> 0;
+  return h.toString(36);
+}
+function kcStateText(){
+  if (!S.sync.kcHash) return '';
+  return S.sync.kcHash === kcHash()
+    ? 'Saved to iCloud Passwords from this device.'
+    : 'Your keys or sign-in changed since you last saved — save again so a reinstall gets the new ones.';
+}
+function openKeychainSave(){
+  const code = setupCode();
+  openSheet(sheetHead('Save to iCloud Passwords')+
+    '<p class="note" style="margin:0 0 14px">Keeps your setup as a password for this site. After you delete and re-add Daybook, '+
+      'tap the setup box and Face ID fills it back in — keys, sync and sign-in, then your log by sync.</p>'+
+    '<iframe name="kcSink" id="kcSink" title="Save frame" hidden></iframe>'+
+    '<form id="kcForm" method="post" action="about:blank" target="kcSink" autocomplete="on">'+
+      '<div class="field"><label for="kcUser">Saved as</label>'+
+        '<input id="kcUser" name="username" autocomplete="username" autocapitalize="off" spellcheck="false" value="'+KC_USER+'"></div>'+
+      '<div class="field"><label for="kcPass">Setup code</label>'+
+        '<input id="kcPass" name="password" type="password" autocomplete="new-password" autocapitalize="off" spellcheck="false"></div>'+
+      '<button class="cta" id="kcGo" type="submit">Save to Passwords</button>'+
+    '</form>'+
+    '<p class="note" id="kcNote"></p>');
+  document.getElementById('kcPass').value = code;
+  const host = location.host || 'this site';
+  document.getElementById('kcForm').addEventListener('submit', ()=>{
+    // The submit itself is what Safari watches for; this just runs alongside.
+    S.sync.kcHash = kcHash(); persist();
+    let copied = false;
+    const done = ()=>{
+      const n = document.getElementById('kcNote');
+      if (!n) return;
+      n.innerHTML = 'If your iPhone asked, tap <b>Save Password</b>. No prompt? '+
+        (copied ? 'The code is copied — ' : 'Copy the code from Settings, then ')+
+        'open the Settings app → <b>Passwords</b> → <b>+</b>, and enter website <b>'+escapeHTML(host)+
+        '</b>, user name <b>'+KC_USER+'</b>, and paste the code as the password.';
+    };
+    try {
+      navigator.clipboard.writeText(code).then(()=>{ copied = true; done(); }, done);
+    } catch(e){ done(); }
+    setTimeout(done, 400);
+  });
+}
+
 async function copySetupCode(btn){
   const code = setupCode();
   let copied = false;
@@ -7130,10 +7209,12 @@ function openSettings(){
     'If the Shortcut also sends your weight, your protein target follows it. Needs sync set up above.</p>'+
 
     '<div class="divider"><h3>Moving to a new install</h3></div>'+
-    '<p class="note" style="margin-top:0">Changing the home-screen icon means deleting the app and adding it again, which wipes this device. '+
-    'Copy the setup code first and keep it in Notes; after you re-add the app, paste it in and you\u2019re back \u2014 no keys to type, no sign-in. '+
-    'It holds your keys and sign-in, so treat it like a password.</p>'+
-    '<button class="cta" id="scCopy" style="margin-top:6px">Copy setup code</button>'+
+    '<p class="note" style="margin-top:0">Deleting the home-screen app wipes this device\u2019s keys and sign-in. '+
+    'Save your setup to iCloud Passwords and a fresh install fills it back in with Face ID. '+
+    'It holds your keys and sign-in, so it lives where your passwords do.</p>'+
+    '<button class="cta" id="kcSave" style="margin-top:6px">Save to iCloud Passwords</button>'+
+    '<p class="note" id="kcState" style="margin-top:6px">'+escapeHTML(kcStateText())+'</p>'+
+    '<button class="cta ghost" id="scCopy" style="margin-top:8px">Copy setup code</button>'+
     '<textarea id="scOut" rows="3" readonly style="display:none;margin-top:8px;font-size:12px"></textarea>'+
     '<button class="cta ghost" id="scPaste" style="margin-top:8px">Paste setup code</button>'+
     '<button class="cta ghost" id="exportBtn" style="margin-top:18px">Export my data</button>'+
@@ -7365,6 +7446,7 @@ function openSettings(){
     touchProfile(); save(); render(); closeSheet(true); toast('Settings saved');
   };
   document.getElementById('scCopy').onclick = e=>copySetupCode(e.currentTarget);
+  document.getElementById('kcSave').onclick = ()=>{ sheetGuard = null; openKeychainSave(); };
   document.getElementById('scPaste').onclick = ()=>{ sheetGuard = null; openSetupPaste(); };
   const fileIn = document.getElementById('importFile');
   document.getElementById('importBtn').onclick = ()=>fileIn.click();
