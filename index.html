@@ -2123,7 +2123,7 @@ function collectChanges(since){
     MEALS.forEach(m=>(d.meals[m.id]||[]).forEach(e=>{
       if ((e.up||0) > since) entries.push({
         id:e.id, date:dk, meal:m.id, name:e.name, cal:e.cal,
-        portion:e.portion||'', src:e.src||'',
+        portion:e.portion||'', src:e.src||'', brand:e.brand||'',
         // Blank rather than 0 so an unweighed entry leaves an empty cell.
         // A relay older than version 6 has no column for this and drops it,
         // which is why the weight is still written into the portion label.
@@ -2136,7 +2136,7 @@ function collectChanges(since){
     }));
   });
   S.saved.forEach(f=>{ if ((f.up||0) > since) library.push({
-    id:f.id, kind:'food', name:f.name, cal:f.cal, portion:f.portion||'', src:f.src||'',
+    id:f.id, kind:'food', name:f.name, cal:f.cal, portion:f.portion||'', src:f.src||'', brand:f.brand||'',
     meal:f.meal||'', uses:f.uses||1, items:'', g: Math.round(gramsOf(f)) || '',
     ...macCopy(f), updated:f.up, deleted:0 }); });
   S.combos.forEach(c=>{ if ((c.up||0) > since) library.push({
@@ -2717,6 +2717,7 @@ function mergeRemote(d){
     // relay change on its own, with nothing needed here.
     const rg = +r.g || parseGrams(rec.portion);
     if (rg > 0) rec.g = Math.round(rg);
+    if (r.brand) rec.brand = String(r.brand);
     Object.assign(rec, macCopy(r));
     const arr = day(dk).meals[meal];
     arr.push(rec);
@@ -2790,7 +2791,7 @@ function mergeRemote(d){
          items: parseItems(r.items)}
       : {id:r.id, name:r.name, cal:+r.cal||0, portion:r.portion||'', src:r.src||'',
          meal:r.meal||'', uses:+r.uses||1, up,
-         g: Math.round(+r.g || parseGrams(r.portion)) || undefined, ...macCopy(r)};
+         g: Math.round(+r.g || parseGrams(r.portion)) || undefined, ...brandOf(r), ...macCopy(r)};
     if (i > -1) list[i] = rec; else list.unshift(rec);
   });
   S.saved.sort((a,b)=>(b.uses||0)-(a.uses||0));
@@ -3465,7 +3466,7 @@ function logRow(e, meal){
     '<div class="eface"><div class="txt"><span class="nm"></span><span class="sub"></span></div>'+
     '<span class="kc">'+(+e.cal||0).toLocaleString()+'</span></div>';
   row.querySelector('.nm').textContent = e.name;
-  row.querySelector('.sub').textContent = [e.portion, macShort(e)].filter(Boolean).join(' · ');
+  row.querySelector('.sub').textContent = [e.brand, e.portion, macShort(e)].filter(Boolean).join(' · ');
   const face = row.querySelector('.eface');
   row.querySelector('.swipe-del').onclick = ev=>{ ev.stopPropagation(); removeEntry(meal, e); };
   /* Pointer events, so it works with a finger and a mouse alike. Only a
@@ -3603,7 +3604,7 @@ function quickChip(q, m){
 function logChip(q, m){
   if (q.type === 'combo'){ logCombo(q.ref, m); return; }
   const r = q.ref, dk = viewDate;
-  const e = stampNew({name:r.name, cal:r.cal, portion:r.portion, g:gramsOf(r)||undefined, src:r.src, ...macCopy(r)});
+  const e = stampNew({name:r.name, cal:r.cal, portion:r.portion, g:gramsOf(r)||undefined, src:r.src, ...brandOf(r), ...macCopy(r)});
   day(dk).meals[m.id].push(e);
   bumpUse(r, m.id);
   buzz(10); save(); render();
@@ -4036,7 +4037,7 @@ function toggleSave(e, mealId){
   const k = foodKey(e);
   const i = S.saved.findIndex(s=>foodKey(s) === k);
   if (i > -1){ bury(S.saved[i],'food'); S.saved.splice(i,1); toast(T('unsaved')); }
-  else { S.saved.unshift(stampNew({name:e.name, cal:e.cal, portion:e.portion, g:gramsOf(e)||undefined, src:e.src, uses:1, meal:mealId||'', ...macCopy(e)})); toast(T('saved')); }
+  else { S.saved.unshift(stampNew({name:e.name, cal:e.cal, portion:e.portion, g:gramsOf(e)||undefined, src:e.src, ...brandOf(e), uses:1, meal:mealId||'', ...macCopy(e)})); toast(T('saved')); }
   save();
 }
 function bumpUse(e, mealId){
@@ -4097,7 +4098,7 @@ function saveCombo(){
     if (!chosen.length){ toast('Tick at least one thing'); return; }
     if (!nm){ toast('Give it a name'); return; }
     const items = chosen.map(({e})=>({name:e.name, cal:e.cal, portion:e.portion,
-      g:gramsOf(e)||undefined, src:e.src, ...macCopy(e)}));
+      g:gramsOf(e)||undefined, src:e.src, ...brandOf(e), ...macCopy(e)}));
     S.combos.filter(c=>c.name === nm).forEach(c=>bury(c,'combo'));
     S.combos = S.combos.filter(c=>c.name !== nm);
     S.combos.unshift({id:'c'+uid(), name:nm, meal:chosen[0].meal.id, items, uses:1, up:Date.now()});
@@ -4106,7 +4107,7 @@ function saveCombo(){
 }
 function logCombo(combo, meal){
   combo.items.forEach(i=>day(viewDate).meals[meal.id].push(stampNew({
-    name:i.name, cal:i.cal, portion:i.portion, g:gramsOf(i)||undefined, src:i.src, ...macCopy(i)
+    name:i.name, cal:i.cal, portion:i.portion, g:gramsOf(i)||undefined, src:i.src, ...brandOf(i), ...macCopy(i)
   })));
   combo.uses = (combo.uses||0)+1;
   bumpUp(combo);
@@ -4170,10 +4171,13 @@ function buildRecents(){
       if (eg > 0 && dk >= r.last) r.g = Math.round(eg);
       // Same for macros: the latest entry that has them speaks for the food.
       if (hasMac(e) && dk >= (r.macDay || '')){ Object.assign(r, macCopy(e)); r.macDay = dk; }
+      if (e.brand && dk >= (r.brandDay || '')){ r.brand = String(e.brand); r.brandDay = dk; }
       if (dk > r.last) r.last = dk;
     }));
   });
-  return Array.from(map.values());
+  const out = Array.from(map.values());
+  out.forEach(r=>{ if (!r.brand){ const b = guessBrand(r); if (b) r.brand = b; } });
+  return out;
 }
 function recentFoods(mealId, limit, maxPerName){
   const stamp = dataRev+'|'+todayKey();
@@ -4198,6 +4202,36 @@ function recentFoods(mealId, limit, maxPerName){
     out.push(r);
   }
   return out;
+}
+/* ---------- brands ----------
+   USDA names a branded food by what it is ("CHICKPEA PASTA") and keeps the
+   brand in two other fields: brandName (BANZA) and brandOwner, the company
+   (Banza LLC, or The Kroger Co. for Simple Truth). People search by brand, so
+   both are kept, as one string, and searched alongside the name. */
+function brandText(owner, name){
+  const o = String(owner || '').trim(), b = String(name || '').trim();
+  const nice = s => s === s.toUpperCase() ? titleCase(s) : s;
+  const norm = s => s.toLowerCase().replace(/[^a-z0-9]/g, '');
+  if (!b) return o;
+  if (!o || norm(b).includes(norm(o))) return nice(b);
+  if (norm(o).includes(norm(b))) return o;
+  return nice(b)+', '+o;
+}
+/* For spreading into an entry: nothing at all when there's no brand, so an
+   unbranded food doesn't grow an empty field. */
+function brandOf(x){ return x && x.brand ? {brand:String(x.brand)} : {}; }
+/* Anything logged before entries kept their brand. If the device has seen
+   exactly one branded food with this name at this calorie density, that's
+   the one; anything less certain stays unbranded rather than guessed. */
+function guessBrand(r){
+  if (!r || r.brand || !(r.g > 0) || !(r.cal > 0)) return '';
+  const nm = String(r.name || '').trim().toLowerCase(), per100 = r.cal / r.g * 100;
+  const found = new Set();
+  SEEN.forEach(f=>{
+    if (!f || !f.brand || String(f.name || '').trim().toLowerCase() !== nm) return;
+    if (Math.abs((+f.kcal || 0) - per100) <= Math.max(3, per100 * 0.03)) found.add(f.brand);
+  });
+  return found.size === 1 ? [...found][0] : '';
 }
 /* Shared by every search surface so typing behaves the same whether the
    match comes from your log, the device cache or the bundled pack. */
@@ -4226,7 +4260,7 @@ function searchRecents(q, mealId, limit){
   const all = recentFoods(mealId, 500);
   const hits = [];
   all.forEach((r, i)=>{
-    const key = (r.name+' '+(r.portion||'')).toLowerCase();
+    const key = [r.name, r.portion, r.brand].filter(Boolean).join(' ').toLowerCase();
     const sc = termScore(key, terms);
     if (sc == null) return;
     // i is the habit rank; a small weight keeps "the one you always eat"
@@ -4648,6 +4682,7 @@ function rememberFoods(list){
     SEEN.unshift(f);
   });
   if (SEEN.length > 800) SEEN.length = 800;
+  recentStamp = '';        // a newly seen brand may name something already logged
   persistSeen();
 }
 /* Portions kept from an earlier lookup of the same food. Saves the second
@@ -4675,7 +4710,7 @@ function searchLocal(q, limit){
   const scan = list => {
     for (const f of list){
       if (taken.has(f.id)) continue;
-      const key = f.key || (f.key = String(f.name).toLowerCase());
+      const key = f.key || (f.key = [f.name, f.brand, f.brandName].filter(Boolean).join(' ').toLowerCase());
       let score = 0, ok = true;
       for (const t of terms){
         const at = key.indexOf(t);
@@ -5231,7 +5266,7 @@ function recentRow(r){
     '<button class="qadd" aria-label="">'+PLUS_SVG+'</button>';
   row.querySelector('.nm').textContent = r.name;
   row.querySelector('.sub').textContent =
-    [r.portion, macShort(r), r.n > 1 ? r.n+'×' : '', r.last ? agoLabel(r.last) : 'kept'].filter(Boolean).join(' · ');
+    [r.brand, r.portion, macShort(r), r.n > 1 ? r.n+'×' : '', r.last ? agoLabel(r.last) : 'kept'].filter(Boolean).join(' · ');
   const qa = row.querySelector('.qadd');
   qa.setAttribute('aria-label', 'Add '+r.name+' as last time');
   row.querySelector('.rpick').onclick = ()=>openRelog(r, row);
@@ -5240,7 +5275,7 @@ function recentRow(r){
     /* g had been dropped here once, so re-logging from this list quietly
        produced an entry with no weight. gramsOf() matches the quick chips. */
     addEntry({name:r.name, cal:r.cal, portion:r.portion,
-              g:gramsOf(r)||undefined, src:r.src, ...macCopy(r)}, {stay:true});
+              g:gramsOf(r)||undefined, src:r.src, ...brandOf(r), ...macCopy(r)}, {stay:true});
     qa.classList.add('done'); qa.innerHTML = CHECK_SVG;
     clearTimeout(t);
     // Back to + so a second one is still one tap away.
@@ -5408,7 +5443,7 @@ function openRelog(r, row){
       if (!(qty > 0)){ toast('Amount needs to be above zero'); return; }
       const g = grams();
       addEntry({name:r.name, cal:v, portion:portion(),
-                g: g > 0 ? Math.round(g) : undefined, src:r.src, ...macCopy(r, qty/qty0)});
+                g: g > 0 ? Math.round(g) : undefined, src:r.src, ...brandOf(r), ...macCopy(r, qty/qty0)});
     };
     sync();
   }
@@ -5491,7 +5526,7 @@ function rememberMac(food, per100, mac){
   const f = SEEN.find(x=>x.id === food.fdcId);
   if (f){ f.mac = mac; persistSeen(); return; }
   rememberFoods([{id:food.fdcId, name:titleCase(food.description), kcal:per100,
-    type:food.dataType || '', brand:food.brandOwner || '', portions:food._portions || [], mac}]);
+    type:food.dataType || '', brand:brandText(food.brandOwner, food.brandName), portions:food._portions || [], mac}]);
 }
 
 /* Anything that sounds like a sentence gets an estimate offered at the top. */
@@ -5677,7 +5712,7 @@ async function runSearch(q, force){
       name: titleCase(f.description),
       kcal: kcalOf(f),
       type: f.dataType || '',
-      brand: f.brandOwner || f.brandName || '',
+      brand: brandText(f.brandOwner, f.brandName),
       portions: [],
       mac: macPer100(f)
     })));
@@ -5699,7 +5734,7 @@ async function runSearch(q, force){
       btn.innerHTML = '<div class="txt"><span class="nm"></span><span class="sub"></span></div>'+
                       '<span class="kc">'+perUnitHTML(per100)+'</span>';
       btn.querySelector('.nm').textContent = titleCase(f.description);
-      btn.querySelector('.sub').textContent = [f.brandOwner||f.brandName, f.dataType, macRate(macPer100(f))].filter(Boolean).join(' · ');
+      btn.querySelector('.sub').textContent = [brandText(f.brandOwner, f.brandName), f.dataType, macRate(macPer100(f))].filter(Boolean).join(' · ');
       btn.onclick = ()=>openPortion(f, per100, btn);
       net.appendChild(btn);
     });
@@ -5845,6 +5880,7 @@ async function openPortion(food, per100, row){
         portion: named ? named+' \u00b7 '+w : w,
         g: Math.round(g),
         src:'USDA',
+        ...brandOf({brand: brandText(food.brandOwner, food.brandName)}),
         ...(mac ? macCopy(mac, g/100) : {})
       });
     };
@@ -5918,7 +5954,7 @@ function tabSaved(){
     b.className = 'res';
     b.innerHTML = '<div class="txt"><span class="nm"></span><span class="sub"></span></div><span class="kc">'+s.cal.toLocaleString()+'</span>';
     b.querySelector('.nm').textContent = s.name;
-    b.querySelector('.sub').textContent = [s.portion, macShort(s), s.uses>1 ? s.uses+' times' : ''].filter(Boolean).join(' · ');
+    b.querySelector('.sub').textContent = [s.brand, s.portion, macShort(s), s.uses>1 ? s.uses+' times' : ''].filter(Boolean).join(' · ');
     b.onclick = ()=>{ bumpUse(s, sheetState.meal.id); addEntry({name:s.name, cal:s.cal, portion:s.portion, g:gramsOf(s)||undefined, src:s.src, ...macCopy(s)}); };
     body().appendChild(b);
   });
