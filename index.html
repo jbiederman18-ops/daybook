@@ -1416,6 +1416,42 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
   background:var(--tile);border-radius:14px;padding:9px 14px;font-weight:700;box-shadow:var(--tile-lift);
 }
 
+/* ---- home picks: one tap logs, a hold adjusts ---- */
+.picks{display:none}
+:root[data-tiles] .picks{display:block;margin:0 0 10px}
+:root[data-tiles] .picks[hidden]{display:none}
+:root[data-tiles] .pk-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin:16px 4px 8px}
+:root[data-tiles] .pk-head:first-child{margin-top:6px}
+:root[data-tiles] .pk-head h2{margin:0;font-family:var(--body-font);font-size:15px;font-weight:800;letter-spacing:0;text-transform:none;color:var(--ink)}
+:root[data-tiles] .pk-head .pk-sub{font-size:12px;font-weight:700;color:var(--ink-faint);white-space:nowrap}
+:root[data-tiles] .pk-head .pk-sub.prot{color:var(--m-prot)}
+:root[data-tiles] .pk-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+:root[data-tiles][data-flat][data-theme][data-mode] .pk{
+  position:relative;display:flex;flex-direction:column;justify-content:space-between;gap:6px;
+  min-height:84px;padding:11px 11px 10px;border-radius:16px;border:0;box-shadow:none;
+  background:var(--tile);color:var(--ink);text-align:left;font:inherit;min-width:0;
+  -webkit-touch-callout:none;-webkit-user-select:none;user-select:none;
+  transition:transform .12s;
+}
+:root[data-tiles] .pk:active{filter:var(--press)}
+:root[data-tiles] .pk.held{transform:scale(.95)}
+:root[data-tiles] .pk .pn{font-size:13px;font-weight:700;line-height:1.22;overflow:hidden;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
+:root[data-tiles] .pk .pf{display:flex;align-items:baseline;justify-content:space-between;gap:6px;min-width:0}
+:root[data-tiles] .pk .pc{font-size:12.5px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink-dim);flex:none}
+:root[data-tiles] .pk .pm{font-size:11px;font-weight:600;color:var(--ink-faint);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+:root[data-tiles] .pk.done .pn{padding-right:14px}
+:root[data-tiles] .pk .ptick{position:absolute;top:10px;right:9px;color:var(--accent)}
+:root[data-tiles][data-flat][data-theme][data-mode] .pk.boost{box-shadow:inset 0 0 0 2px var(--m-prot)}
+:root[data-tiles] .pk.boost .pc{color:var(--m-prot)}
+:root[data-tiles][data-flat][data-theme][data-mode] .pk.combo{grid-column:1/-1;min-height:0;flex-direction:row;align-items:center;justify-content:flex-start;gap:12px;padding:12px 14px}
+:root[data-tiles][data-flat][data-theme][data-mode] .pk.combo{background:color-mix(in srgb,var(--accent) 9%,var(--tile))}
+:root[data-tiles] .pk.combo .pct{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+:root[data-tiles] .pk.combo .pn{-webkit-line-clamp:1}
+:root[data-tiles] .pk.combo .pm{white-space:normal}
+:root[data-tiles] .pk.combo .pic{flex:none;width:30px;height:30px;border-radius:10px;display:grid;place-items:center;
+  background:color-mix(in srgb,var(--accent) 18%,var(--tile));color:var(--accent)}
+
 /* ---- sheets: the same ground, cards and fields lifted onto it ---- */
 :root[data-tiles][data-flat][data-theme][data-mode] .sheet{border-radius:28px 28px 0 0}
 :root[data-tiles][data-flat][data-theme][data-mode] .sheet input,
@@ -1565,6 +1601,8 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
     </button>
   </section>
 
+  <section class="picks" id="picks"></section>
+
   <main id="meals"></main>
 
   <section class="trend tile" id="trend">
@@ -1661,7 +1699,7 @@ let S = { settings:{...DEFAULTS}, days:{}, saved:[], combos:[],
 
 /* Body stats sync between devices. Keys and the proxy stay local on purpose:
    they're per-device secrets and the relay is only guarded by a shared word. */
-const PROFILE_KEYS = ['sex','age','heightCm','weightKg','goalDelta','baseMode','manualBase','unitSystem','foodUnit','theme','glass','mode','proteinPerLb','sugarCap','activityBase','movedPct','typicalMode','typicalActive'];
+const PROFILE_KEYS = ['sex','age','heightCm','weightKg','goalDelta','baseMode','manualBase','unitSystem','foodUnit','theme','glass','mode','proteinPerLb','sugarCap','activityBase','movedPct','typicalMode','typicalActive','hideCombos'];
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,8); }
 function stampNew(e){ return {...e, id:uid(), up:Date.now()}; }
 /* Always move a record's clock forward. A device whose clock runs ahead can
@@ -3192,6 +3230,7 @@ function render(){
   renderRing(parts, denom, left, tgt);
   renderGauge(parts, denom, left, tgt, ate);
   renderMacros();
+  renderPicks();
   renderLog();
   renderDock();
   renderTrend();
@@ -3404,8 +3443,11 @@ function renderMacros(){
   const now = new Date();
   if (viewDate === todayKey() && now.getHours() >= 14 && toGo >= 15){
     const had = new Set(dayEntries(viewDate).map(x=>String(x.e.name||'').trim().toLowerCase()));
-    const picks = recentFoods(currentMeal().id, 80)
-      .filter(r=>hasMac(r) && r.p >= 8 && r.cal > 0 && r.p*4/r.cal >= 0.25 &&
+    const HP = homePicks(viewDate);
+    const onScreen = new Set([...HP.freq, ...HP.recent].map(t=>normName(t.name)));
+    const tileHelps = boostedKeys(HP, viewDate).size > 0;
+    const picks = tileHelps ? [] : recentFoods(currentMeal().id, 80)
+      .filter(r=>proteinDense(r) && !onScreen.has(normName(r.name)) &&
                  !had.has(String(r.name).trim().toLowerCase()))
       .sort((a,b)=>b.p/b.cal - a.p/a.cal)
       .slice(0, 2);
@@ -3577,9 +3619,9 @@ function renderDock(){
   const host = document.getElementById('quick');
   if (!host) return;
   host.innerHTML = '';
-  const m = currentMeal();
-  quickPicks(m.id, viewDate).forEach(q=>host.appendChild(quickChip(q, m)));
-  host.hidden = !host.children.length;
+  /* The one-tap repeats moved up onto the home screen as tiles, where there's
+     room for more than four of them. The bar is just the bar now. */
+  host.hidden = true;
   sizeDock();
 }
 function sizeDock(){
@@ -4067,7 +4109,7 @@ function saveCombo(){
     '<div id="cbList" style="margin:2px 0 6px"></div>'+
     '<p class="note" id="cbTot"></p>'+
     '<button class="cta" id="cbSave">Save meal</button>'+
-    '<p class="note">Saved meals log in one tap from above the bar, around the same time of day, and from the Meals tab.</p>');
+    '<p class="note">Saved meals log in one tap from the home screen. Hold one to pick which parts you had.</p>');
   const host = document.getElementById('cbList'), inp = document.getElementById('cbn');
   let named = false;
   inp.oninput = ()=>{ named = true; };
@@ -4278,6 +4320,291 @@ function agoLabel(dk){
   if (n < 7) return n+' days ago';
   if (n < 14) return 'last week';
   return Math.round(n/7)+' weeks ago';
+}
+
+/* ============================================================
+   Home picks
+   What's on the home screen under the totals, so most logs are one tap with
+   nothing to remember. Three kinds, and no food appears twice:
+     combos   -- saved meals, plus groups you keep logging together
+     frequent -- logged on the most days in the last 30. Not weighted by time
+                 of day: logging often happens all at once in the afternoon,
+                 and tiles that hold still are tiles your thumb learns.
+     recent   -- the latest things logged that aren't already up there, and
+                 aren't already in the day you're looking at.
+   ============================================================ */
+const PICK_DAYS = 30, PICK_N = 6, COMBO_MIN = 3, COMBO_MAX = 2;
+let pickCache = null, pickStamp = '';
+const normName = n => String(n || '').trim().toLowerCase();
+const comboKey = names => names.map(normName).sort().join('\u0001');
+function hiddenCombos(){
+  return new Set(String(S.settings.hideCombos || '').split('\n').filter(Boolean));
+}
+function proteinDense(r){
+  return !!r && hasMac(r) && r.p >= 8 && r.cal > 0 && r.p*4/r.cal >= 0.25;
+}
+function homePicks(dk){
+  const stamp = dataRev+'|'+todayKey()+'|'+dk+'|'+(S.settings.hideCombos || '')+'|'+S.combos.length;
+  if (pickStamp === stamp && pickCache) return pickCache;
+  recentFoods(currentMeal().id, 1);                      // refreshes recentCache
+  const recByKey = new Map((recentCache || []).map(r=>[r.key, r]));
+  const today = todayKey(), cut30 = shiftKey(today, -(PICK_DAYS - 1)), cut = shiftKey(today, -RECENT_DAYS);
+  const names = new Map();     // normName -> {days30:Set, rk, variants:Map(foodKey -> {n, rk})}
+  const groups = [];           // [{day, names:[norm...]}] per day+meal in the last 30 days
+  Object.keys(S.days).forEach(k=>{
+    if (k < cut || k > today) return;
+    const meals = S.days[k].meals || {};
+    MEALS.forEach(m=>{
+      const inGroup = new Set();
+      (meals[m.id] || []).forEach(e=>{
+        if (!e || !e.name) return;
+        const n = normName(e.name), fk = foodKey(e);
+        const rk = k+'|'+String(loggedAt(e)).padStart(15, '0');
+        let rec = names.get(n);
+        if (!rec){ rec = {days30:new Set(), rk:'', variants:new Map()}; names.set(n, rec); }
+        if (rk > rec.rk) rec.rk = rk;
+        let v = rec.variants.get(fk);
+        if (!v){ v = {key:fk, n:0, rk:''}; rec.variants.set(fk, v); }
+        if (rk > v.rk) v.rk = rk;
+        if (k >= cut30){ rec.days30.add(k); v.n++; inGroup.add(n); }
+      });
+      if (inGroup.size >= 2) groups.push({day:k, names:[...inGroup].slice(0, 8)});
+    });
+  });
+  const refOf = key => recByKey.get(key) || null;
+  // The portion you usually have for frequent tiles; the one you last had for recent ones.
+  const usual = rec => [...rec.variants.values()].sort((a,b)=>b.n - a.n || (a.rk < b.rk ? 1 : -1))[0];
+  const latest = rec => [...rec.variants.values()].sort((a,b)=>a.rk < b.rk ? 1 : -1)[0];
+
+  const d = S.days[dk];
+  const had = new Set();
+  if (d && d.meals) MEALS.forEach(m=>(d.meals[m.id] || []).forEach(e=>{ if (e && e.name) had.add(normName(e.name)); }));
+
+  /* ---- combos ---- */
+  const combos = [];
+  const savedSets = S.combos.filter(c=>c.items && c.items.length).map(c=>new Set(c.items.map(i=>normName(i.name))));
+  S.combos.filter(c=>c.items && c.items.length)
+    .filter(c=>!c.items.every(i=>had.has(normName(i.name))))
+    .sort((a,b)=>(b.uses||0) - (a.uses||0))
+    .slice(0, COMBO_MAX)
+    .forEach(c=>combos.push({type:'combo', saved:c, name:c.name, items:c.items, cal:comboCal(c)}));
+  if (combos.length < COMBO_MAX){
+    // Every 2-4 item subset of each day+meal group, counted once per day.
+    const sets = new Map();
+    groups.forEach(g=>{
+      const ns = g.names.slice().sort(), L = ns.length;
+      const add = arr=>{
+        const key = arr.join('\u0001');
+        let s = sets.get(key);
+        if (!s){ s = {names:arr, days:new Set()}; sets.set(key, s); }
+        s.days.add(g.day);
+      };
+      for (let a = 0; a < L; a++) for (let b = a+1; b < L; b++){
+        add([ns[a], ns[b]]);
+        for (let c = b+1; c < L; c++){
+          add([ns[a], ns[b], ns[c]]);
+          for (let e = c+1; e < L; e++) add([ns[a], ns[b], ns[c], ns[e]]);
+        }
+      }
+    });
+    const hidden = hiddenCombos();
+    let cands = [...sets.values()].filter(s=>s.days.size >= COMBO_MIN);
+    // Keep the biggest version of a habit: drop a pair when the triple it's
+    // part of happens nearly as often.
+    cands = cands.filter(s=>!cands.some(o=>o.names.length > s.names.length &&
+      s.names.every(n=>o.names.includes(n)) && o.days.size >= Math.max(COMBO_MIN, 0.75*s.days.size)));
+    cands.sort((a,b)=>b.days.size - a.days.size || b.names.length - a.names.length);
+    const chosen = [];
+    for (const s of cands){
+      if (combos.length + chosen.length >= COMBO_MAX) break;
+      if (hidden.has(s.names.join('\u0001'))) continue;
+      if (savedSets.some(ss=>s.names.every(n=>ss.has(n)))) continue;          // already a saved meal
+      if (s.names.every(n=>had.has(n))) continue;                             // already logged
+      if (chosen.some(c=>c.names.filter(n=>s.names.includes(n)).length*2 >= s.names.length)) continue;
+      const items = s.names.map(n=>refOf(usual(names.get(n)).key)).filter(Boolean);
+      if (items.length !== s.names.length) continue;
+      chosen.push(s);
+      combos.push({type:'combo', saved:null, key:s.names.join('\u0001'), days:s.days.size,
+        name:items.map(i=>i.name).join(' + '), items, cal:items.reduce((a,i)=>a+(+i.cal||0), 0)});
+    }
+  }
+
+  /* ---- frequent ---- */
+  const freq = [...names.entries()]
+    .filter(([, r])=>r.days30.size >= 2)
+    .sort((a,b)=>b[1].days30.size - a[1].days30.size || (a[1].rk < b[1].rk ? 1 : -1))
+    .map(([n, r])=>({n, ref:refOf(usual(r).key), days:r.days30.size}))
+    .filter(x=>x.ref)
+    .slice(0, PICK_N)
+    .map(x=>({type:'food', ref:x.ref, name:x.ref.name, cal:x.ref.cal, done:had.has(x.n), days:x.days}));
+  const shown = new Set(freq.map(f=>normName(f.name)));
+
+  /* ---- recent ---- */
+  const recent = [...names.entries()]
+    .filter(([n])=>!shown.has(n) && !had.has(n))
+    .sort((a,b)=>a[1].rk < b[1].rk ? 1 : -1)
+    .map(([n, r])=>({n, ref:refOf(latest(r).key)}))
+    .filter(x=>x.ref)
+    .slice(0, PICK_N)
+    .map(x=>({type:'food', ref:x.ref, name:x.ref.name, cal:x.ref.cal, done:false}));
+
+  pickCache = {combos, freq, recent};
+  pickStamp = stamp;
+  return pickCache;
+}
+/* Protein short late in the day: the densest tiles already on screen get
+   picked out, so the answer to "what should I eat" is right there. */
+function proteinGap(dk){
+  if (dk !== todayKey() || new Date().getHours() < 14) return 0;
+  const mac = dayMacros(dk);
+  if (!mac.cal) return 0;
+  const toGo = Math.max(0, proteinTarget() - Math.round(mac.p));
+  return toGo >= 15 ? toGo : 0;
+}
+function boostedKeys(P, dk){
+  if (!proteinGap(dk)) return new Set();
+  return new Set([...P.freq, ...P.recent]
+    .filter(t=>!t.done && proteinDense(t.ref))
+    .sort((a,b)=>b.ref.p/b.ref.cal - a.ref.p/a.ref.cal)
+    .slice(0, 3).map(t=>t.ref.key));
+}
+function renderPicks(){
+  const host = document.getElementById('picks');
+  if (!host) return;
+  const P = homePicks(viewDate), m = currentMeal();
+  const boost = boostedKeys(P, viewDate), gap = proteinGap(viewDate);
+  host.innerHTML = '';
+  const head = (title, sub, cls)=>{
+    const h = document.createElement('div');
+    h.className = 'pk-head';
+    h.innerHTML = '<h2></h2>'+(sub ? '<span class="pk-sub'+(cls ? ' '+cls : '')+'"></span>' : '');
+    h.querySelector('h2').textContent = title;
+    if (sub) h.querySelector('.pk-sub').textContent = sub;
+    host.appendChild(h);
+  };
+  const grid = ()=>{ const g = document.createElement('div'); g.className = 'pk-grid'; host.appendChild(g); return g; };
+
+  if (P.combos.length || P.freq.length){
+    const sub = boost.size ? gap+' g protein to go' : 'last 30 days';
+    head(T('recentHead') || 'Your regulars', sub, boost.size ? 'prot' : '');
+    const g = grid();
+    P.combos.forEach(c=>g.appendChild(comboTile(c, m)));
+    P.freq.forEach(t=>g.appendChild(foodTile(t, m, boost.has(t.ref.key))));
+  }
+  if (P.recent.length){
+    head('Recently logged', '');
+    const g = grid();
+    P.recent.forEach(t=>g.appendChild(foodTile(t, m, boost.has(t.ref.key))));
+  }
+  host.hidden = !host.children.length;
+}
+const TICK_SVG = '<svg class="ptick" aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>';
+function foodTile(t, m, boosted){
+  const r = t.ref;
+  const b = document.createElement('button');
+  b.className = 'pk'+(t.done ? ' done' : '')+(boosted ? ' boost' : '');
+  b.dataset.key = r.key;
+  const portion = String(r.portion || '').trim();
+  b.innerHTML = (t.done ? TICK_SVG : '')+'<span class="pn"></span>'+
+    '<span class="pf"><span class="pc num"></span><span class="pm"></span></span>';
+  b.querySelector('.pn').textContent = r.name;
+  b.querySelector('.pc').textContent = boosted ? '+'+Math.round(r.p)+' g P' : (+r.cal||0).toLocaleString();
+  b.querySelector('.pm').textContent = boosted ? (+r.cal||0).toLocaleString() : portion;
+  b.setAttribute('aria-label', 'Log '+r.name+', '+(+r.cal||0)+' calories'+(t.done ? ', already logged today' : '')+'. Hold to change the amount.');
+  holdToAdjust(b, ()=>adjustRegular(m, r));
+  b.onclick = ()=>{ if (b.__held) return; logChip({type:'food', name:r.name, cal:r.cal, ref:r}, m); };
+  return b;
+}
+const COMBO_SVG = '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="2"/><rect x="13" y="4" width="7" height="7" rx="2"/><rect x="4" y="13" width="7" height="7" rx="2"/><rect x="13" y="13" width="7" height="7" rx="2"/></svg>';
+function comboTile(c, m){
+  const b = document.createElement('button');
+  b.className = 'pk combo';
+  b.innerHTML = '<span class="pic">'+COMBO_SVG+'</span>'+
+    '<span class="pct"><span class="pn"></span><span class="pm"></span></span><span class="pc num"></span>';
+  b.querySelector('.pn').textContent = c.saved ? c.name : c.items.length+' together';
+  b.querySelector('.pm').textContent = c.items.map(i=>i.name).join(' + ');
+  b.querySelector('.pc').textContent = Math.round(c.cal).toLocaleString();
+  b.setAttribute('aria-label', 'Log '+c.items.map(i=>i.name).join(', ')+'. Hold to choose.');
+  holdToAdjust(b, ()=>openComboPick(c, m));
+  b.onclick = ()=>{ if (b.__held) return; logGroup(c.items, m, c.saved); };
+  return b;
+}
+/* Several entries in one tap, and one Undo that takes them all back. */
+function logGroup(items, m, saved){
+  const dk = viewDate;
+  const added = items.map(i=>stampNew({name:i.name, cal:i.cal, portion:i.portion,
+    g:gramsOf(i)||undefined, src:i.src, ...brandOf(i), ...macCopy(i)}));
+  added.forEach(e=>day(dk).meals[m.id].push(e));
+  if (saved){
+    saved.uses = (saved.uses||0)+1;
+    bumpUp(saved);
+    S.combos.sort((a,b)=>(b.uses||0)-(a.uses||0));
+  } else items.forEach(i=>bumpUse(i, m.id));
+  if (sheetState) closeSheet();
+  buzz(10); save(); render();
+  const cal = added.reduce((a,e)=>a+(+e.cal||0), 0);
+  toast(T('added', cal.toLocaleString(), dayWord()), {label:'Undo', run(){
+    const list = day(dk).meals[m.id];
+    added.forEach(e=>{ const at = list.indexOf(e); if (at > -1){ bury(e,'entry'); list.splice(at,1); } });
+    save(); render();
+  }});
+}
+/* Holding a combo: untick what you didn't have, and for a spotted one,
+   keep it as a saved meal or stop it being suggested. */
+function openComboPick(c, m){
+  const on = new Set(c.items.map((_, i)=>i));
+  openSheet(sheetHead(c.saved ? c.name : 'Logged together')+
+    (c.saved ? '' : '<p class="note">You’ve logged these together on '+c.days+' days this month.</p>')+
+    '<div id="cpList" style="margin:2px 0 6px"></div>'+
+    '<button class="cta" id="cpGo"></button>'+
+    (c.saved ? '' :
+      '<div class="field" style="margin-top:14px"><label>Save as a meal called</label><input id="cpName" autocomplete="off"></div>'+
+      '<button class="cta ghost" id="cpSave">Save as a meal</button>'+
+      '<button class="cta ghost" id="cpHide">Stop suggesting this</button>'));
+  const host = document.getElementById('cpList'), go = document.getElementById('cpGo');
+  const picked = ()=>c.items.filter((_, i)=>on.has(i));
+  const upd = ()=>{
+    const it = picked(), cal = it.reduce((a,i)=>a+(+i.cal||0), 0);
+    go.textContent = it.length ? 'Log '+it.length+' · '+cal.toLocaleString()+' kcal' : 'Tick something to log';
+    go.disabled = !it.length;
+  };
+  c.items.forEach((it, i)=>{
+    const row = document.createElement('label');
+    row.className = 'entry pick';
+    row.innerHTML = '<input type="checkbox" checked><div class="txt"><span class="nm"></span><span class="sub"></span></div>'+
+      '<span class="kc">'+(+it.cal||0).toLocaleString()+'</span>';
+    row.querySelector('.nm').textContent = it.name;
+    row.querySelector('.sub').textContent = [it.portion, macShort(it)].filter(Boolean).join(' · ');
+    row.querySelector('input').onchange = ev=>{ if (ev.target.checked) on.add(i); else on.delete(i); upd(); };
+    host.appendChild(row);
+  });
+  upd();
+  go.onclick = ()=>{
+    const it = picked();
+    if (!it.length) return;
+    logGroup(it, m, it.length === c.items.length ? c.saved : null);
+  };
+  const nameEl = document.getElementById('cpName');
+  if (nameEl) nameEl.value = c.name;
+  const sv = document.getElementById('cpSave');
+  if (sv) sv.onclick = ()=>{
+    const nm = nameEl.value.trim();
+    if (!nm){ toast('Give it a name'); return; }
+    const items = c.items.map(i=>({name:i.name, cal:i.cal, portion:i.portion,
+      g:gramsOf(i)||undefined, src:i.src, ...brandOf(i), ...macCopy(i)}));
+    S.combos.filter(x=>x.name === nm).forEach(x=>bury(x,'combo'));
+    S.combos = S.combos.filter(x=>x.name !== nm);
+    S.combos.unshift({id:'c'+uid(), name:nm, meal:m.id, items, uses:1, up:Date.now()});
+    save(); render(); closeSheet(); toast(T('savedMeal'));
+  };
+  const hd = document.getElementById('cpHide');
+  if (hd) hd.onclick = ()=>{
+    const list = hiddenCombos();
+    list.add(c.key);
+    S.settings.hideCombos = [...list].join('\n');
+    touchProfile(); save(); render(); closeSheet();
+    toast('Won’t suggest that one again');
+  };
 }
 
 /* Top repeats for a meal slot: saved meals first, then single foods. */
