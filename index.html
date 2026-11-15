@@ -1416,6 +1416,36 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
   background:var(--tile);border-radius:14px;padding:9px 14px;font-weight:700;box-shadow:var(--tile-lift);
 }
 
+/* ---- compact header ----
+   The calorie card shrinks to the number, a small gauge, and one strip of
+   protein / sugar / moved, so the tiles start above the fold. The full cards
+   sit under the tiles; the chevron brings them up top instead. */
+.hstrip{display:none}
+:root[data-tiles][data-flat][data-theme][data-mode] .hero.htile{flex-wrap:wrap;padding:14px 16px 12px;margin:10px 0 4px;row-gap:12px}
+:root[data-tiles] .htile .hl{gap:2px;flex:1 1 0}
+:root[data-tiles] .htile .hlab{font-size:12px}
+:root[data-tiles][data-flat][data-theme][data-mode] .htile .remain{gap:3px}
+:root[data-tiles][data-flat][data-theme][data-mode] .htile .remain .big{font-size:44px}
+:root[data-tiles][data-flat][data-theme][data-mode] .htile .msplit{display:none}
+:root[data-tiles] .wrap.heroOpen .htile .msplit{display:flex}
+:root[data-tiles] .htile .gauge{width:70px;height:70px}
+:root[data-tiles] .htile .gauge svg{width:70px;height:70px}
+:root[data-tiles] .htile .gauge .gpct{top:25px;font-size:13px}
+:root[data-tiles] .hstrip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 32px;gap:6px;flex:1 0 100%}
+:root[data-tiles] .hs{display:flex;flex-direction:column;gap:5px;min-width:0;padding:7px 9px 8px;border:0;border-radius:12px;
+  background:var(--fill-2);color:var(--ink);text-align:left;font:inherit}
+:root[data-tiles] .hs:active{filter:var(--press)}
+:root[data-tiles] .hs .hsl{display:flex;align-items:baseline;justify-content:space-between;gap:4px;font-size:11px;font-weight:700;color:var(--ink-dim);white-space:nowrap}
+:root[data-tiles] .hs .hsv{font-size:14px;font-weight:800;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root[data-tiles] .hs .hsv small{font-size:11px;font-weight:600;color:var(--ink-faint)}
+:root[data-tiles] .hs .hsv.over{color:var(--over)}
+:root[data-tiles] .hs .hsb{height:4px;border-radius:2px;background:color-mix(in srgb,var(--ink) 11%,transparent);overflow:hidden}
+:root[data-tiles] .hs .hsb i{display:block;height:100%;border-radius:2px}
+:root[data-tiles] .hsx{display:grid;place-items:center;border:0;border-radius:12px;padding:0;color:var(--ink-dim);
+  background:var(--fill-2)}
+:root[data-tiles] .hsx svg{transition:transform .2s}
+:root[data-tiles] .wrap.heroOpen .hsx svg{transform:rotate(180deg)}
+
 /* ---- home picks: one tap logs, a hold adjusts ---- */
 .picks{display:none}
 :root[data-tiles] .picks{display:block;margin:0 0 10px}
@@ -1578,12 +1608,15 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
       <div class="gauge" id="gauge" role="img"></div>
       <div class="ring" id="ring" role="img"></div>
       <div class="bar" id="bar"></div>
+      <div class="hstrip" id="hStrip"></div>
     </div>
   </header>
 
+  <section class="picks" id="picks"></section>
+
   <section class="tiles" id="macros"></section>
 
-  <section class="tiles">
+  <section class="tiles" id="moveSec">
     <div class="tile mtile" id="moveTile">
       <button class="tbtn" id="editActive">
         <span class="tlab2"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><span id="activeWord">Moved</span><span class="mvwhen" id="moveWhen"></span></span>
@@ -1600,8 +1633,6 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
       <span class="tsub" id="wsum"></span>
     </button>
   </section>
-
-  <section class="picks" id="picks"></section>
 
   <main id="meals"></main>
 
@@ -3230,6 +3261,7 @@ function render(){
   renderRing(parts, denom, left, tgt);
   renderGauge(parts, denom, left, tgt, ate);
   renderMacros();
+  renderStrip();
   renderPicks();
   renderLog();
   renderDock();
@@ -4320,6 +4352,49 @@ function agoLabel(dk){
   if (n < 7) return n+' days ago';
   if (n < 14) return 'last week';
   return Math.round(n/7)+' weeks ago';
+}
+
+/* The one-line summary inside the calorie card. Taps go where the full cards
+   would have taken you; the chevron brings those cards up above the tiles. */
+const HERO_OPEN_KEY = 'daybook-heroOpen';
+function heroOpen(){ try { return localStorage.getItem(HERO_OPEN_KEY) === '1'; } catch(e){ return false; } }
+function placeStats(){
+  const wrap = document.querySelector('.wrap'), picks = document.getElementById('picks');
+  const mac = document.getElementById('macros'), mv = document.getElementById('moveSec');
+  if (!wrap || !picks || !mac || !mv) return;
+  const open = heroOpen();
+  wrap.classList.toggle('heroOpen', open);
+  if (open){ if (picks.previousElementSibling !== mv){ picks.before(mac); picks.before(mv); } }
+  else if (picks.nextElementSibling !== mac){ picks.after(mv); picks.after(mac); }
+}
+function renderStrip(){
+  const host = document.getElementById('hStrip');
+  if (!host) return;
+  const mac = dayMacros(viewDate), pt = proteinTarget(), sc = sugarCap();
+  const pct = (v, of)=>Math.max(0, Math.min(100, of > 0 ? v/of*100 : 0));
+  const sOver = mac.s > sc, b = burned(viewDate), mv = moved(viewDate);
+  const cell = (id, label, right, val, bar)=>
+    '<button class="hs" id="'+id+'"><span class="hsl"><span>'+label+'</span><span>'+right+'</span></span>'+
+    '<span class="hsv num'+(id === 'hsSug' && sOver ? ' over' : '')+'">'+val+'</span>'+
+    (bar ? '<span class="hsb"><i style="width:'+bar[0]+'%;background:'+bar[1]+'"></i></span>' : '')+'</button>';
+  host.innerHTML =
+    cell('hsProt', 'Protein', '', Math.round(mac.p)+'<small> / '+pt+'g</small>', [pct(mac.p, pt), 'var(--m-prot)'])+
+    cell('hsSug', 'Sugar', '', Math.round(mac.s)+'<small> / '+sc+'g</small>', [pct(mac.s, sc), sOver ? 'var(--over)' : 'var(--m-sug)'])+
+    cell('hsMove', 'Moved', '', b.toLocaleString()+'<small> +'+mv.toLocaleString()+'</small>', [Math.min(100, b/6), 'var(--move)'])+
+    '<button class="hsx" id="hsMore" aria-label="'+(heroOpen() ? 'Show fewer stats' : 'Show all stats')+'" aria-expanded="'+heroOpen()+'">'+
+      '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>';
+  host.querySelector('#hsProt').setAttribute('aria-label', 'Protein '+Math.round(mac.p)+' of '+pt+' grams. Targets.');
+  host.querySelector('#hsSug').setAttribute('aria-label', 'Sugar '+Math.round(mac.s)+' of '+sc+' grams. Targets.');
+  host.querySelector('#hsMove').setAttribute('aria-label', 'Moved '+b+' calories, '+mv+' added to your day.');
+  host.querySelector('#hsProt').onclick = openTargets;
+  host.querySelector('#hsSug').onclick = openTargets;
+  host.querySelector('#hsMove').onclick = ()=>document.getElementById('editActive').click();
+  host.querySelector('#hsMore').onclick = ()=>{
+    try { localStorage.setItem(HERO_OPEN_KEY, heroOpen() ? '0' : '1'); } catch(e){}
+    placeStats(); renderStrip();
+    if (heroOpen()) document.getElementById('macros').scrollIntoView({behavior:'smooth', block:'nearest'});
+  };
+  placeStats();
 }
 
 /* ============================================================
