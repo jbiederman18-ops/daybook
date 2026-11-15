@@ -758,6 +758,7 @@ html.kb-open[data-glass="on"] .sheet:has(.stickysave)::after{
 .radj .row{margin-bottom:4px}
 .radj .field{margin:0}
 .radj .note{margin:8px 0 2px;min-height:1.55em}
+.radj.solo{padding-bottom:4px;border-bottom:0;animation:none}
 @keyframes radjIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.radj{animation:none}}
 
@@ -5723,19 +5724,28 @@ function holdToAdjust(el, fn){
   ['pointerup','pointercancel','pointerleave'].forEach(ev=>el.addEventListener(ev, ()=>{ if (t) cancel(); }));
   el.addEventListener('contextmenu', e=>e.preventDefault());
 }
-/* The add sheet for that meal, with this food's adjuster already open. It's
-   nearly always in the regulars list -- the chips are drawn from the same
-   ranking -- but if a cap pushed it off, it's put at the top rather than lost. */
+/* Hold a tile and you get that one food on its own card -- the same adjuster
+   the add sheet uses, without the whole regulars list around it. Opening
+   inside the list meant the finger that was still down landed on the rows
+   under it. The card also ignores touches until that finger has lifted, so
+   the release can't press a chip or the Add button by itself. */
 function adjustRegular(meal, r){
-  openAdd(meal);
-  const out = document.getElementById('results');
-  if (!out) return;
-  let row = Array.from(out.querySelectorAll('.rrow')).find(x=>x.dataset.key === r.key);
-  if (!row){
-    row = recentRow(r);
-    out.insertBefore(row, out.firstChild);
-  }
-  openRelog(r, row);
+  sheetState = { meal, tab:'food', added:0 };
+  const sub = [r.brand, r.portion, macShort(r)].filter(Boolean).join(' \u00b7 ');
+  openSheet(sheetHead(escapeHTML(r.name))+
+    (sub ? '<p class="note" style="margin:-4px 0 12px">'+escapeHTML(sub)+'</p>' : '')+
+    '<div class="radj solo" id="foodAdj"></div>'+
+    '<button class="cta ghost" id="foodMore">Something else</button>');
+  const sb = document.getElementById('sheetBody');
+  sb.style.pointerEvents = 'none';
+  let freed = false;
+  const free = ()=>{ if (freed) return; freed = true;
+    setTimeout(()=>{ sb.style.pointerEvents = ''; }, 350); };
+  window.addEventListener('pointerup', free, {once:true});
+  window.addEventListener('pointercancel', free, {once:true});
+  setTimeout(free, 1500);   // a lost pointerup must not leave the card dead
+  relogPanel(r, document.getElementById('foodAdj'));
+  document.getElementById('foodMore').onclick = ()=>openAdd(meal);
 }
 function closeRelog(){
   document.querySelectorAll('#sheetBody .radj').forEach(p=>{
@@ -5756,7 +5766,18 @@ function openRelog(r, row){
   const q = document.getElementById('q');
   if (q && document.activeElement === q) q.blur();
 
-  const meal = sheetState.meal;
+  const panel = document.createElement('div');
+  panel.className = 'radj';
+  panel.__row = row;
+  row.classList.add('open');
+  row.querySelector('.rpick').setAttribute('aria-expanded', 'true');
+  row.after(panel);
+  relogPanel(r, panel);
+  // After the keyboard (if any) has gone, so "nearest" measures the real space.
+  setTimeout(()=>{ try { panel.scrollIntoView({block:'nearest', behavior:'smooth'}); } catch(e){} }, 260);
+}
+/* The chips, amount, calories and Add button for one food, drawn into panel. */
+function relogPanel(r, panel){
   const P    = splitPortion(r.portion);
   const cal0 = Math.max(0, Math.round(+r.cal || 0));
   const g0   = gramsOf(r);
@@ -5765,13 +5786,6 @@ function openRelog(r, row){
   const grams   = ()=> g0 > 0 ? g0 * (qty / qty0) : 0;
   const changed = ()=> Math.abs(qty - qty0) > 1e-9;
   const portion = ()=> changed() ? joinPortion(qty, P.named, grams(), foodUnit(), P.form) : (r.portion || '');
-
-  const panel = document.createElement('div');
-  panel.className = 'radj';
-  panel.__row = row;
-  row.classList.add('open');
-  row.querySelector('.rpick').setAttribute('aria-expanded', 'true');
-  row.after(panel);
 
   function draw(){
     const u = foodUnit(), g = grams();
@@ -5850,8 +5864,6 @@ function openRelog(r, row){
     sync();
   }
   draw();
-  // After the keyboard (if any) has gone, so "nearest" measures the real space.
-  setTimeout(()=>{ try { panel.scrollIntoView({block:'nearest', behavior:'smooth'}); } catch(e){} }, 260);
 }
 
 /* Shown with an empty box. Twelve is about a screenful; the rest are one tap
