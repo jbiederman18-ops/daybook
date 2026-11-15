@@ -576,7 +576,7 @@ header{padding:30px 0 4px}
 [data-glass="on"] .bar{ box-shadow:inset 0 1px 2px rgba(0,0,0,.25),inset 0 0 0 1px var(--rim-low) }
 
 /* ---- every control that drew a 1px --ink border ---- */
-[data-glass="on"] .arrow,[data-glass="on"] .chip,[data-glass="on"] .qchip,
+[data-glass="on"] .arrow,[data-glass="on"] .chip,[data-glass="on"] .sbtn,[data-glass="on"] .qchip,
 [data-glass="on"] .addbtn,[data-glass="on"] .savemeal,[data-glass="on"] .dot,
 [data-glass="on"] .tbar,[data-glass="on"] .tabs,[data-glass="on"] .camera,
 [data-glass="on"] .shot,[data-glass="on"] .themecard,[data-glass="on"] .swatch,
@@ -584,7 +584,7 @@ header{padding:30px 0 4px}
   border-color:var(--rim-low);
 }
 [data-glass="on"] .gear,[data-glass="on"] .addbtn .plus{ border-color:transparent }
-[data-glass="on"] .qchip,[data-glass="on"] .addbtn,[data-glass="on"] .chip,
+[data-glass="on"] .qchip,[data-glass="on"] .addbtn,[data-glass="on"] .chip,[data-glass="on"] .sbtn,
 [data-glass="on"] .savemeal,[data-glass="on"] .camera{
   -webkit-backdrop-filter:blur(8px) saturate(140%);
   backdrop-filter:blur(8px) saturate(140%);
@@ -758,6 +758,14 @@ html.kb-open[data-glass="on"] .sheet:has(.stickysave)::after{
 .radj .row{margin-bottom:4px}
 .radj .field{margin:0}
 .radj .note{margin:8px 0 2px;min-height:1.55em}
+.radj .wpick{flex-wrap:nowrap;overflow-x:auto;margin:0 -2px 12px;padding:2px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.radj .wpick::-webkit-scrollbar{display:none}
+.radj .wpick .chip{flex:0 0 auto;padding:7px 12px}
+.radj .field + .row{margin-top:10px}
+.stepper{display:flex;gap:6px;align-items:center;flex:1;min-width:0}
+.stepper input{flex:1;min-width:0;text-align:center}
+.sbtn{flex:0 0 40px;height:40px;border-radius:var(--pill);border:var(--border-w) solid var(--ink);background:var(--raised);color:var(--ink);font-size:20px;font-weight:600;line-height:1;box-shadow:var(--lift);-webkit-user-select:none;user-select:none}
+.sbtn:active{filter:var(--press)}
 .radj.solo{padding-bottom:4px;border-bottom:0;animation:none}
 @keyframes radjIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.radj{animation:none}}
@@ -910,7 +918,7 @@ html.kb-open[data-glass="on"] .sheet:has(.stickysave)::after{
 [data-theme][data-mode] .wrap,[data-theme][data-mode] input,[data-theme][data-mode] select,
 [data-theme][data-mode] textarea,[data-theme][data-mode] .arrow,[data-theme][data-mode] .gear,
 [data-theme][data-mode] .dot,[data-theme][data-mode] .addbtn,[data-theme][data-mode] .qchip,
-[data-theme][data-mode] .tbar,[data-theme][data-mode] .tabs,[data-theme][data-mode] .chip,
+[data-theme][data-mode] .tbar,[data-theme][data-mode] .tabs,[data-theme][data-mode] .chip,[data-theme][data-mode] .sbtn,
 [data-theme][data-mode] .toast,[data-theme][data-mode] .camera,[data-theme][data-mode] .shot,
 [data-theme][data-mode] .swatch,[data-theme][data-mode] .qadd,[data-theme][data-mode] .themecard.on{
   border-color:var(--edge);
@@ -1203,6 +1211,7 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
 :root[data-flat][data-theme][data-mode] .gear,
 :root[data-flat][data-theme][data-mode] .qchip,
 :root[data-flat][data-theme][data-mode] .chip,
+:root[data-flat][data-theme][data-mode] .sbtn,
 :root[data-flat][data-theme][data-mode] .addbtn,
 :root[data-flat][data-theme][data-mode] .camera,
 :root[data-flat][data-theme][data-mode] .qadd,
@@ -1491,6 +1500,7 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
 :root[data-tiles][data-flat][data-theme][data-mode] .sheet .camera,
 :root[data-tiles][data-flat][data-theme][data-mode] .sheet .qadd,
 :root[data-tiles][data-flat][data-theme][data-mode] .sheet .chip,
+:root[data-tiles][data-flat][data-theme][data-mode] .sheet .sbtn,
 :root[data-tiles][data-flat][data-theme][data-mode] .sheet .cta.ghost{background:var(--tile)}
 :root[data-tiles][data-flat][data-theme][data-mode] .cta{border-radius:18px}
 :root[data-tiles][data-flat][data-theme][data-mode] .sheet-head h2{font-family:var(--display);font-weight:800;text-transform:none;letter-spacing:-.02em;font-size:22px}
@@ -5696,6 +5706,8 @@ const CHECK_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" s
    correction, not a portion, so it re-bases the rate and leaves the label
    alone -- and a chip tapped afterwards scales the corrected number. */
 const RELOG_STEPS = [0.5, 1, 1.5, 2];
+const WEIGHT_PICKS = { oz:[1, 2, 3, 4, 5, 6, 8, 10, 12, 16], g:[25, 50, 75, 100, 150, 200, 250, 300] };
+const WEIGHT_STEP  = { oz:0.5, g:10 };
 function stepLabel(m){ return ({0.5:'\u00bd', 1.5:'1\u00bd'})[m] || String(m); }
 /* ---------- press and hold ----------
    Tap a chip and it logs, as it always has. Hold it and you get the same
@@ -5791,20 +5803,28 @@ function relogPanel(r, panel){
     const u = foodUnit(), g = grams();
     // Weight when there is one: it's the precise answer, and the chips cover
     // "two of them". A count only when a count is all there is.
+    /* A weighed food gets a row of set weights and -/+ beside the box, so
+       "about 4 oz" is one tap rather than a keyboard. */
+    const stepper = (id, val, step, label)=>
+      '<div class="stepper"><button class="sbtn" data-for="'+id+'" data-d="-1" aria-label="Less">\u2212</button>'+
+      '<input id="'+id+'" type="number" inputmode="decimal" step="'+step+'" min="0" value="'+val+'" aria-label="'+label+'">'+
+      '<button class="sbtn" data-for="'+id+'" data-d="1" aria-label="More">+</button></div>';
     const amount = g0 > 0
-      ? '<div class="field"><label>Weight</label><div class="row" style="gap:8px">'+
-          '<input id="rg" type="number" inputmode="decimal" step="'+(u==='oz'?'0.1':'1')+'" value="'+fmtAmt(toUnit(g,u),u)+'">'+
+      ? '<div class="chips wpick">'+WEIGHT_PICKS[u].map(v=>
+          '<button class="chip" data-w="'+v+'">'+v+' '+u+'</button>').join('')+'</div>'+
+        '<div class="field"><label>Weight</label><div class="row" style="gap:8px">'+
+          stepper('rg', fmtAmt(toUnit(g,u),u), WEIGHT_STEP[u], 'Weight')+
           '<select id="ru" style="flex:0 0 64px" aria-label="Weight unit">'+
             '<option value="g"'+(u==='g'?' selected':'')+'>g</option>'+
             '<option value="oz"'+(u==='oz'?' selected':'')+'>oz</option></select></div></div>'
       : P.named
-        ? '<div class="field"><label>How many</label>'+
-            '<input id="rq" type="number" inputmode="decimal" step="0.25" min="0" value="'+trimNum(qty)+'"></div>'
+        ? '<div class="field"><label>How many</label>'+stepper('rq', trimNum(qty), 0.5, 'How many')+'</div>'
         : '';
     panel.innerHTML =
       '<div class="chips">'+RELOG_STEPS.map(m=>
         '<button class="chip" data-m="'+m+'">'+stepLabel(m)+'\u00d7</button>').join('')+'</div>'+
-      '<div class="row">'+amount+
+      amount+
+      '<div class="row">'+
         '<div class="field"><label>Calories</label>'+
           '<input id="rc" type="number" inputmode="numeric" min="0"></div></div>'+
       '<p class="note" id="rPrev"></p>'+
@@ -5814,8 +5834,26 @@ function relogPanel(r, panel){
     const cEl = panel.querySelector('#rc'), uEl = panel.querySelector('#ru');
     const follow = ()=>{ cal = Math.round(rateCal * (rateQty > 0 ? qty / rateQty : 0)); };
 
-    panel.querySelectorAll('.chip').forEach(c=>c.onclick = ()=>{
+    panel.querySelectorAll('.chip[data-m]').forEach(c=>c.onclick = ()=>{
       qty = qty0 * Number(c.dataset.m); follow(); sync();
+    });
+    panel.querySelectorAll('.chip[data-w]').forEach(c=>c.onclick = ()=>{
+      qty = qty0 * (fromUnit(Number(c.dataset.w), foodUnit()) / g0); follow(); sync();
+    });
+    // -/+ moves to the next round step, so 3.3 oz goes to 3.5, not 3.8.
+    panel.querySelectorAll('.sbtn').forEach(b=>b.onclick = ()=>{
+      const d = Number(b.dataset.d);
+      if (b.dataset.for === 'rg'){
+        const uu = foodUnit(), st = WEIGHT_STEP[uu];
+        const cur = toUnit(grams(), uu);
+        let nxt = d > 0 ? Math.floor(cur/st + 1e-6)*st + st : Math.ceil(cur/st - 1e-6)*st - st;
+        nxt = Math.max(st, nxt);
+        qty = qty0 * (fromUnit(nxt, uu) / g0);
+      } else {
+        let nxt = d > 0 ? Math.floor(qty*2 + 1e-6)/2 + 0.5 : Math.ceil(qty*2 - 1e-6)/2 - 0.5;
+        qty = Math.max(0.5, nxt);
+      }
+      buzz(5); follow(); sync();
     });
     if (uEl) uEl.onchange = ev=>{
       // Same weight, same calories -- only the box changes, and it sticks.
@@ -5842,8 +5880,10 @@ function relogPanel(r, panel){
       if (gEl && from !== 'g') gEl.value = fmtAmt(toUnit(grams(), uu), uu);
       if (qEl && from !== 'q') qEl.value = trimNum(qty);
       if (from !== 'c') cEl.value = isFinite(cal) ? cal : '';
-      panel.querySelectorAll('.chip').forEach(c=>
+      panel.querySelectorAll('.chip[data-m]').forEach(c=>
         c.classList.toggle('on', Math.abs(qty - qty0 * Number(c.dataset.m)) < 1e-6));
+      panel.querySelectorAll('.chip[data-w]').forEach(c=>
+        c.classList.toggle('on', Math.abs(toUnit(grams(), uu) - Number(c.dataset.w)) < (uu === 'oz' ? 0.05 : 0.5)));
       const p = portion();
       const ms = macShort(macCopy(r, qty/qty0));
       panel.querySelector('#rPrev').textContent = (!changed()
