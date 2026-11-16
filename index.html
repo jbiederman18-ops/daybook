@@ -2,7 +2,7 @@
 <html lang="en" data-flat data-tiles>
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Daybook</title>
 <meta name="theme-color" content="#13161F">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -257,7 +257,12 @@
   --bar-gloss:none;
   --scrim:rgba(9,5,24,.7);
 }
-*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+/* iOS: no long-press callout / text selection on app chrome; fields stay editable */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+body{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+input,textarea,select,[contenteditable]{-webkit-user-select:text;user-select:text;-webkit-touch-callout:default}
+img{-webkit-user-drag:none}
 html,body{margin:0;padding:0}
 body.locked{overflow:hidden}
 html{background:var(--page)}
@@ -1686,6 +1691,9 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
 
 <script>
 "use strict";
+/* iOS ignores user-scalable=no for pinch; WebKit gesture events are the off switch. */
+['gesturestart','gesturechange','gestureend'].forEach(t=>
+  document.addEventListener(t, e=>e.preventDefault(), {passive:false}));
 
 /* ============================================================
    Storage — works both on your own site (localStorage) and
