@@ -1735,6 +1735,14 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
 :root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .logfield:active{box-shadow:2px 2px 0 #5FE3DC}
 :root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .camera:active{box-shadow:2px 2px 0 #FF7AB6}
 
+/* The two controls are the only big round shapes on the screen, so they read as
+   controls and not as two more tiles. Tiles fade out as they pass behind.
+   --cb-combo flips with the mode: a cream pill on dark, a dark one on light. */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock-in{padding-top:30px;background:linear-gradient(to bottom,color-mix(in srgb,var(--ground) 0%,transparent),var(--ground) 30px)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .logfield{border-radius:99px;padding:0 18px;background:var(--cb-combo)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .logfield svg,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .logfield span{color:var(--cb-combo-ink)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .camera{border-radius:50%}
+
 @media (max-width:360px){
   :root[data-tiles][data-flat][data-theme="ring"][data-mode] .htile .hl{padding-left:18px;padding-right:18px}
   :root[data-tiles][data-flat][data-theme="ring"][data-mode] .hmove{right:10px;font-size:12px}
