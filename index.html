@@ -1446,7 +1446,7 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
 :root[data-tiles] .htile .gauge{width:70px;height:70px}
 :root[data-tiles] .htile .gauge svg{width:70px;height:70px}
 :root[data-tiles] .htile .gauge .gpct{top:25px;font-size:13px}
-:root[data-tiles] .hstrip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) 32px;gap:6px;flex:1 0 100%}
+:root[data-tiles] .hstrip{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;flex:1 0 100%}
 :root[data-tiles] .hs{display:flex;flex-direction:column;gap:5px;min-width:0;padding:7px 9px 8px;border:0;border-radius:12px;
   background:var(--fill-2);color:var(--ink);text-align:left;font:inherit}
 :root[data-tiles] .hs:active{filter:var(--press)}
@@ -1746,6 +1746,7 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
   :root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk{padding-left:10px;padding-right:9px}
   :root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk .pn{padding-right:14px}
 }
+#macros:empty{display:none!important}
 </style>
 </head>
 <body>
@@ -1787,24 +1788,6 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
   <section class="picks" id="picks"></section>
 
   <section class="tiles" id="macros"></section>
-
-  <section class="tiles" id="moveSec">
-    <div class="tile mtile" id="moveTile">
-      <button class="tbtn" id="editActive">
-        <span class="tlab2"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg><span id="activeWord">Moved</span><span class="mvwhen" id="moveWhen"></span></span>
-        <span class="tnum num" id="activeNum">0</span>
-        <span class="tsub" id="moveSub"></span>
-      </button>
-      <button class="mvref" id="moveRefresh" aria-label="Update from Health" hidden><svg aria-hidden="true" width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 10-2.3 5.7"/><path d="M20 4v7h-7"/></svg></button>
-      <button class="tsubbtn" id="editBase">Base <b class="num" id="baseNum">—</b></button>
-    </div>
-    <button class="tile wtile" id="weekTile" aria-label="This week">
-      <span class="tlab2" id="weekLab">This week</span>
-      <span class="wbars" id="wbars"></span>
-      <span class="wmoves" id="wmoves" aria-hidden="true"></span>
-      <span class="tsub" id="wsum"></span>
-    </button>
-  </section>
 
   <main id="meals"></main>
 
@@ -3403,8 +3386,6 @@ function render(){
   const hl = document.getElementById('heroLab');
   if (hl) hl.textContent = left < 0 ? 'Over by' : 'Left to eat';
   paintColorBlockHero(left, ate, tgt);
-  document.getElementById('baseNum').textContent = dayBase(viewDate).toLocaleString();
-  paintMoved();
 
   /* The budget bar, split by where the calories came from rather than which
      meal they were in. Each entry's calories are shared out by its own
@@ -3549,11 +3530,8 @@ function renderRing(parts, denom, left, tgt){
 }
 
 /* ---------- moved ----------
-   The tile shows everything burned, then what it does to the day: with a
-   usual figure on, that much is already in the base and only the rest is
-   extra. The time is when the tracker's number last arrived, and the round
-   arrow runs the Health Shortcut straight from here -- today only, since
-   the Shortcut always writes today. */
+   What was burned, then what it does to the day: with a usual figure on,
+   that much is already in the base and only the rest is extra. */
 function movedLine(key){
   const b = burned(key), ty = typical(key), mv = moved(key), pct = movedPct();
   const s = ty > 0
@@ -3561,27 +3539,6 @@ function movedLine(key){
     : b.toLocaleString()+' burned · +'+mv.toLocaleString()+' to your day';
   return pct < 100 ? s+' · '+pct+'% counted' : s;
 }
-function paintMoved(){
-  const b = burned(viewDate), ty = typical(viewDate), mv = moved(viewDate);
-  const isToday = viewDate === todayKey();
-  document.getElementById('activeNum').textContent = b.toLocaleString();
-  const sub = document.getElementById('moveSub');
-  // The tile keeps it to what's added; the sheet has the full breakdown.
-  if (sub) sub.textContent = '+'+mv.toLocaleString()+(ty > 0 ? ' extra' : ' to your day');
-  const up = peek(viewDate).activeUp;
-  const when = document.getElementById('moveWhen');
-  if (when) when.textContent = isToday && up ? clockOf(up) : '';
-  const ref = document.getElementById('moveRefresh');
-  if (ref){
-    const show = healthReady() && isToday;
-    ref.hidden = !show;
-    document.getElementById('moveTile').classList.toggle('hasref', show);
-    let waiting = false;
-    try { waiting = !!healthWait; } catch(e){}
-    ref.classList.toggle('busy', waiting);
-  }
-}
-
 /* ---------- the gauge ----------
    The hero tile's dial: three quarters of a turn is today's target, filled
    clockwise from the lower left with the same protein, fat, carbs split as the
@@ -3613,22 +3570,15 @@ function renderGauge(parts, denom, left, tgt, ate){
   host.setAttribute('aria-label', pct+' percent of today’s target eaten');
 }
 
-/* ---------- protein, sugar, and the split ---------- */
+/* ---------- the split, macro gaps and the protein top-up ---------- */
 function renderMacros(){
   const host = document.getElementById('macros');
   if (!host) return;
   const mac = dayMacros(viewDate);
-  const pt = proteinTarget(), sc = sugarCap();
-  const pct = (v, of)=>Math.max(0, Math.min(100, of > 0 ? v/of*100 : 0));
+  const pt = proteinTarget();
   const kp = mac.p*4, kc = mac.c*4, kf = mac.f*9, ks = kp+kc+kf;
   const share = v => ks > 0 ? ' '+Math.round(v/ks*100)+'%' : '';
   const toGo = Math.max(0, pt - Math.round(mac.p));
-  const sOver = mac.s > sc;
-  const sHint = !mac.cal ? '' : sOver
-    ? 'over by '+Math.round(mac.s - sc)+' g'
-    : Math.max(0, sc - Math.round(mac.s))+' g left';
-  const hint = !mac.cal ? '' : toGo > 0 ? toGo+' g to go' : 'target hit';
-
   let cover = '';
   if (mac.missing){
     const canFill = S.settings.anthropicKey && online();
@@ -3637,19 +3587,7 @@ function renderMacros(){
       (canFill ? ' <button id="mFill">Fill in the rest</button>' : '')+'</p>';
   }
 
-  host.innerHTML =
-    '<button class="tile ptile" id="protTile" aria-label="Protein, targets">'+
-      '<span class="tlab2"><i class="mdot" style="background:var(--m-prot)"></i>Protein</span>'+
-      '<span class="tnum num" id="mProt"><b>'+Math.round(mac.p)+'</b><small> / '+pt+' g</small></span>'+
-      '<span class="mbar"><span class="mfill" style="width:'+pct(mac.p,pt)+'%;background:var(--m-prot)"></span></span>'+
-      '<span class="tsub">'+(hint || 'Target '+pt+' g')+'</span>'+
-    '</button>'+
-    '<button class="tile ptile" id="sugTile" aria-label="Sugar, targets">'+
-      '<span class="tlab2"><i class="mdot" style="background:var(--m-sug)"></i>Sugar</span>'+
-      '<span class="tnum num'+(sOver ? ' over' : '')+'" id="mSug"><b>'+Math.round(mac.s)+'</b><small> / '+sc+' g</small></span>'+
-      '<span class="mbar"><span class="mfill" style="width:'+pct(mac.s,sc)+'%;background:'+(sOver ? 'var(--over)' : 'var(--m-sug)')+'"></span></span>'+
-      '<span class="tsub'+(sOver ? ' over' : '')+'">'+(sHint || 'Cap '+sc+' g')+'</span>'+
-    '</button>'+cover;
+  host.innerHTML = cover;
 
   /* The key to the calorie bar's colours, directly under it. Protein's grams
      are already on its own bar, so here it's just its share. */
@@ -3660,8 +3598,6 @@ function renderMacros(){
       '<span><i class="mdot" style="background:var(--m-fat)"></i>F <b>'+Math.round(mac.f)+'g</b></span>'
     : '';
 
-  host.querySelector('#protTile').onclick = openTargets;
-  host.querySelector('#sugTile').onclick = openTargets;
   const fb = host.querySelector('#mFill');
   if (fb) fb.onclick = ()=>{ fb.disabled = true; fillMacros(viewDate); };
 
@@ -3927,10 +3863,6 @@ function focusWhenSettled(proxy){
     lastFocus = document.getElementById('logOpen');
     focusWhenSettled(proxy);
   };
-  document.getElementById('weekTile').onclick = ()=>{
-    const t = document.getElementById('trend');
-    if (t) t.scrollIntoView({behavior:'smooth', block:'center'});
-  };
   document.getElementById('dockCam').onclick = ()=>{
     openLog();
     let b = document.getElementById('cam');
@@ -4068,18 +4000,9 @@ function renderTrend(){
   const avg = done.length ? Math.round(done.reduce((a,x)=>a+x.v,0)/done.length) : 0;
   document.getElementById('avg7').textContent = done.length ? avg.toLocaleString() : '—';
   const diff = done.length ? Math.round(done.reduce((a,x)=>a+(x.v-x.t),0)/done.length) : 0;
-  /* The week tile: the same seven days, small. Today (or the day you're on)
-     in the accent, an over day in red, an empty day as a mark on the floor. */
-  const wb = document.getElementById('wbars');
-  if (wb){
-    wb.innerHTML = keys.map((k,i)=>{
-      const v = vals[i], cls = 'wbar'+(k === viewDate ? ' now' : '')+(v > tgts[i] ? ' over' : '')+(v === 0 ? ' none' : '');
-      return '<i class="'+cls+'" style="height:'+(v === 0 ? 3 : Math.max(4, v/peak*100))+'%"></i>';
-    }).join('');
-    /* Movement under the food: one mark per day, stronger the more you burned. */
+  /* Movement under the food in the trend card. */
+  {
     const burns = keys.map(k=>burned(k)), bpeak = Math.max(...burns, 1);
-    const wm = document.getElementById('wmoves');
-    if (wm) wm.innerHTML = burns.map(v=>'<i class="wmove" style="opacity:'+(v ? (0.25 + 0.75*v/bpeak).toFixed(2) : 0.12)+'"></i>').join('');
     const mr = document.getElementById('mvrow');
     if (mr) mr.innerHTML = burns.map((v,i)=>'<i class="mvbar" title="'+prettyDate(keys[i])+': '+v.toLocaleString()+' moved" style="height:'+
       (v ? Math.max(8, v/bpeak*100) : 4)+'%'+(v ? '' : ';opacity:.3')+'"></i>').join('');
@@ -4093,10 +4016,6 @@ function renderTrend(){
           '<span>Most <b>'+dow+' '+top.v.toLocaleString()+'</b></span>';
       } else mva.innerHTML = '';
     }
-    const ws = document.getElementById('wsum');
-    if (ws) ws.textContent = done.length
-      ? 'Avg '+avg.toLocaleString()+' \u00b7 '+(diff > 0 ? '+' : diff < 0 ? '\u2212' : '\u00b1')+Math.abs(diff).toLocaleString()
-      : 'Nothing to average yet';
   }
   /* Only days where most of the calories carry macros: a day that is mostly
      unknown would drag the average down and read as a protein problem. */
@@ -4550,19 +4469,7 @@ function agoLabel(dk){
   return Math.round(n/7)+' weeks ago';
 }
 
-/* The one-line summary inside the calorie card. Taps go where the full cards
-   would have taken you; the chevron brings those cards up above the tiles. */
-const HERO_OPEN_KEY = 'daybook-heroOpen';
-function heroOpen(){ if (colorBlock()) return false; try { return localStorage.getItem(HERO_OPEN_KEY) === '1'; } catch(e){ return false; } }
-function placeStats(){
-  const wrap = document.querySelector('.wrap'), picks = document.getElementById('picks');
-  const mac = document.getElementById('macros'), mv = document.getElementById('moveSec');
-  if (!wrap || !picks || !mac || !mv) return;
-  const open = heroOpen();
-  wrap.classList.toggle('heroOpen', open);
-  if (open){ if (picks.previousElementSibling !== mv){ picks.before(mac); picks.before(mv); } }
-  else if (picks.nextElementSibling !== mac){ picks.after(mv); picks.after(mac); }
-}
+/* The one-line summary inside the calorie card. */
 function renderStrip(){
   const host = document.getElementById('hStrip');
   if (!host) return;
@@ -4583,9 +4490,7 @@ function renderStrip(){
     cell('hsCarb', 'Carbs', shareText(mac.c*4),
       Math.round(mac.c)+'<small>g</small>', [share(mac.c*4), 'var(--m-carb)'],
       'g · sugar '+sugar+(sugar > sugarCap() ? ' !' : ''))+
-    cell('hsFat', 'Fat', shareText(mac.f*9), Math.round(mac.f)+'<small>g</small>', [share(mac.f*9), 'var(--m-fat)'], grams(mac.f*9))+
-    '<button class="hsx" id="hsMore" aria-label="'+(heroOpen() ? 'Show fewer stats' : 'Show all stats')+'" aria-expanded="'+heroOpen()+'">'+
-      '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>';
+    cell('hsFat', 'Fat', shareText(mac.f*9), Math.round(mac.f)+'<small>g</small>', [share(mac.f*9), 'var(--m-fat)'], grams(mac.f*9));
   host.querySelector('#hsProt').setAttribute('aria-label', 'Protein '+Math.round(mac.p)+' of '+pt+' grams. Targets.');
   host.querySelector('#hsCarb').setAttribute('aria-label', 'Carbs '+Math.round(mac.c)+' grams, sugar '+sugar+' grams'+(sugar > sugarCap() ? ', over your cap' : '')+'. Targets.');
   host.querySelector('#hsFat').setAttribute('aria-label', 'Fat '+Math.round(mac.f)+' grams. Targets.');
@@ -4597,13 +4502,7 @@ function renderStrip(){
     '<span>Moved <b>'+b.toLocaleString()+'</b> · +'+mv.toLocaleString()+'</span>';
   if (colorBlock()) pill.innerHTML = '<span>Moved <b>'+b.toLocaleString()+'</b> · +'+mv.toLocaleString()+'</span>';
   pill.setAttribute('aria-label', 'Moved '+b+' calories, '+mv+' added to your day.');
-  pill.onclick = ()=>document.getElementById('editActive').click();
-  host.querySelector('#hsMore').onclick = ()=>{
-    try { localStorage.setItem(HERO_OPEN_KEY, heroOpen() ? '0' : '1'); } catch(e){}
-    placeStats(); renderStrip();
-    if (heroOpen()) document.getElementById('macros').scrollIntoView({behavior:'smooth', block:'nearest'});
-  };
-  placeStats();
+  pill.onclick = ()=>openMoved();
 }
 
 /* ============================================================
@@ -7568,62 +7467,6 @@ function addEntry(e, opts){
   return made && made[0];
 }
 
-/* ---------- daily base ---------- */
-document.getElementById('editBase').onclick = ()=>{
-  const manual = S.settings.baseMode === 'manual';
-  openSheet(sheetHead('Daily base')+
-    '<div class="chips"><button class="chip'+(!manual?' on':'')+'" id="bCalc">Work it out for me</button>'+
-      '<button class="chip'+(manual?' on':'')+'" id="bMan">Set my own</button></div>'+
-    '<div id="baseBody"></div>');
-
-  function draw(){
-    const isMan = S.settings.baseMode === 'manual';
-    document.getElementById('bCalc').classList.toggle('on', !isMan);
-    document.getElementById('bMan').classList.toggle('on', isMan);
-    const host = document.getElementById('baseBody');
-
-    if (!isMan){
-      host.innerHTML =
-        '<div style="display:flex;align-items:baseline;gap:8px;margin:6px 0 10px">'+
-          '<span class="num" style="font-size:38px;font-weight:700">'+calcBase().toLocaleString()+'</span>'+
-          '<span style="color:var(--ink-dim);font-size:13px">calories a day</span></div>'+
-        '<p class="note">From your stats in Settings: resting burn '+Math.round(bmr()).toLocaleString()+
-          (baseFactor() > 1
-            ? ', a sedentary allowance for everyday movement, then your goal adjustment. Anything you log as moved is added on top.'
-            : ' plus your goal adjustment. Your tracker\u2019s active calories are added on top, and they already include everyday movement.')+'</p>'+
-        '<button class="cta" id="bDone" style="margin-top:16px">Done</button>';
-      host.querySelector('#bDone').onclick = ()=>{ save(); render(); closeSheet(); };
-    } else {
-      host.innerHTML =
-        '<div class="field"><label>Calories a day, before activity</label>'+
-        '<input id="mb" type="number" inputmode="numeric" value="'+(S.settings.manualBase||calcBase())+'"></div>'+
-        '<p class="note" id="mbNote"></p>'+
-        '<button class="cta" id="bSave" style="margin-top:12px">Save base</button>';
-      const inp = host.querySelector('#mb');
-      const note = host.querySelector('#mbNote');
-      const upd = ()=>{
-        const v = Number(inp.value)||0;
-        const rest = Math.round(bmr());
-        const diff = v - calcBase();
-        let txt = 'Your calculated figure is '+calcBase().toLocaleString()+
-          (diff ? ' ('+(diff>0?'+':'')+diff.toLocaleString()+')' : '')+'. '+
-          'Health\u2019s active calories still get added on top.';
-        if (v > 0 && v < rest) txt += ' Worth knowing: that\u2019s below your resting burn of '+rest.toLocaleString()+'.';
-        note.textContent = txt;
-      };
-      inp.oninput = upd; upd();
-      inp.focus(); inp.select();
-      host.querySelector('#bSave').onclick = ()=>{
-        S.settings.manualBase = Math.max(0, Math.round(Number(inp.value)||0));
-        touchProfile(); save(); render(); closeSheet(); toast('Base set to '+baseTarget().toLocaleString());
-      };
-    }
-  }
-  document.getElementById('bCalc').onclick = ()=>{ S.settings.baseMode='calculated'; touchProfile(); save(); render(); draw(); };
-  document.getElementById('bMan').onclick  = ()=>{ S.settings.baseMode='manual'; touchProfile(); save(); render(); draw(); };
-  draw();
-};
-
 /* ---------- active calories from Apple Health ----------
    A web app can't read Health, but it can start a Shortcut that does. The
    Shortcut sends the number to the worker, which writes it to Firebase. iOS
@@ -7765,11 +7608,6 @@ async function healthReturned(){
 document.addEventListener('visibilitychange', healthReturned);
 window.addEventListener('focus', healthReturned);
 
-document.getElementById('editActive').onclick = ()=>openMoved();
-document.getElementById('moveRefresh').onclick = ()=>{
-  document.getElementById('moveRefresh').classList.add('busy');
-  runHealthShortcut();
-};
 /* One short line for what the numbers do, the tracker's number, and the
    workouts it missed. Health is offered on today only: the Shortcut always
    writes today, so on any other day it would quietly change the wrong one. */
