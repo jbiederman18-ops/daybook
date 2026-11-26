@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Manrope:wght@500;600;700;800&family=Bebas+Neue&family=Cinzel:wght@500;700;900&family=Outfit:wght@500;600;700&family=Saira:wght@600;700;800&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Manrope:wght@500;600;700;800&family=Bebas+Neue&family=Cinzel:wght@500;700;900&family=Outfit:wght@500;600;700&family=Saira:wght@600;700;800&family=Sora:wght@400;600;700&family=Fugaz+One&family=Rubik:wght@500;600;700;800&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    Themes
@@ -1117,7 +1117,7 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
 [data-theme="ring"] .datenav h1{text-transform:none;font-size:20px;letter-spacing:-.01em;font-weight:600}
 [data-theme="ring"] .sheet-head h2{text-transform:none;font-size:19px;letter-spacing:-.01em}
 [data-theme="ring"] .cta{font-family:var(--display);letter-spacing:.01em}
-.swatch.t-ring i:nth-child(1){background:#12C971}.swatch.t-ring i:nth-child(2){background:#EE8B1B}.swatch.t-ring i:nth-child(3){background:#3B9EF5}
+.swatch.t-ring i:nth-child(1){background:#4B23B8}.swatch.t-ring i:nth-child(2){background:#FFD23F}.swatch.t-ring i:nth-child(3){background:#FF2E88}
 
 /* ---- the ring hero ---- */
 .ring{display:none}
@@ -1606,6 +1606,160 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
 .kcrow{display:flex;justify-content:space-between;gap:10px;padding:8px 12px;margin:6px 0;border-radius:12px;background:var(--tile,var(--fill));font-size:13.5px}
 .kcrow span{color:var(--ink-dim)}
 .kcrow b{text-align:right;word-break:break-all}
+
+/* ============================================================
+   Color Block
+   The Daybook theme's look: an 80s workout tape in flat blocks that run edge
+   to edge with 3px seams. Only data-theme="ring" is touched, so the other four
+   themes are as they were. Food tiles take their colour from their place in
+   the grid, not from the food, so a colour stays put as the list changes.
+   ============================================================ */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode]{
+  --cb-hero:#4B23B8; --cb-yellow:#FFE15A; --cb-pink:#C4125C; --cb-dark:#17132B;
+  --cb-prot:#12B5B0; --cb-prot-rib:#6FE0DA; --cb-carb:#FFD23F; --cb-carb-rib:#FFEB9C; --cb-fat:#FF7AB6; --cb-fat-rib:#FFB5D6;
+  --cb-t1:#FF8A3D; --cb-t2:#5B34C9; --cb-t3:#9BE15D; --cb-t4:#FF7AB6; --cb-t5:#12B5B0; --cb-t6:#FFD23F;
+  --cb-disp:'Fugaz One',Manrope,system-ui,sans-serif;
+  --body-font:Rubik,Manrope,system-ui,-apple-system,sans-serif;
+  --display:Rubik,Manrope,system-ui,sans-serif; --display-weight:800; --display-track:-.01em;
+  --tile-r:0px; --tile-lift:none; --move:#E0357F;
+}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode][data-mode="day"]{
+  --ground:#FFFFFF; --tile:#F1EDFD; --flat-page:#FFFFFF; --sheet:#FFFFFF; --cb-recent:#E4DCFC;
+  --ink:#17132B; --ink-dim:#4E4766; --ink-faint:#6B6485;
+  --accent:#5B34C9; --accent-ink:#4B23B8; --hot:#5B34C9; --hot-ink:#4B23B8; --ink-on:#FFFFFF; --cta-flat:#5B34C9; --cta-ink:#FFFFFF;
+  --good:#00938D; --over:#C8203C;
+  --m-prot:#00938D; --m-carb:#C98A00; --m-fat:#E0357F; --m-sug:#7B4DE0;
+}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode][data-mode="night"]{
+  --ground:#0F0B1F; --tile:#1D1736; --flat-page:#0F0B1F; --sheet:#0F0B1F; --cb-recent:#281F4A;
+  --ink:#F5F2FF; --ink-dim:#BDB4DD; --ink-faint:#968DBA;
+  --accent:#A78BFF; --accent-ink:#C4B0FF; --hot:#A78BFF; --hot-ink:#C4B0FF; --ink-on:#17132B; --cta-flat:#A78BFF; --cta-ink:#17132B;
+  --good:#2FD0C9; --over:#FF6B7D;
+  --m-prot:#2FD0C9; --m-carb:#F2C230; --m-fat:#FF6FAE; --m-sug:#A78BFF;
+  --cb-hero:#35188A; --cb-pink:#A80F4F; --cb-dark:#2A2150;
+  --cb-prot:#11A29E; --cb-prot-rib:#4CC8C2; --cb-carb:#E9BC2C; --cb-carb-rib:#F6D878; --cb-fat:#E868A4; --cb-fat-rib:#F29CC4;
+  --cb-t1:#E8772C; --cb-t3:#87C94F; --cb-t4:#E868A4; --cb-t5:#11A29E; --cb-t6:#E9BC2C;
+}
+
+/* ---- the header block ---- */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] body{padding-top:0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] header{margin:0 -16px;padding:0;background:var(--cb-hero);color:#fff}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .topline{margin:0;padding:calc(14px + env(safe-area-inset-top,0px)) 16px 0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] header .arrow,:root[data-tiles][data-flat][data-theme="ring"][data-mode] header .gear{background:rgba(255,255,255,.14);color:#fff;border-radius:14px 4px 14px 4px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] header .datenav h1{font-family:var(--cb-disp);font-weight:400;font-size:25px;letter-spacing:0;color:#fff}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hero.htile{margin:0;padding:0;gap:0;row-gap:0;background:transparent;border-radius:0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .htile .gauge,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .htile .hlab{display:none}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .htile .hl{position:relative;flex:1 0 100%;gap:0;padding:4px 20px 16px;min-height:186px;box-sizing:border-box}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .htile .remain{gap:0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .htile .remain .big{font-family:var(--cb-disp);font-weight:400;font-size:108px;line-height:1.02;letter-spacing:0;color:#fff;padding-right:6px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .htile .remain .big.long{font-size:84px;line-height:1.32}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .htile .remain.over .big{color:#FF9DB0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .htile .cbword{display:block;font-size:15px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;color:#fff}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .htile .remain .cap{margin-top:4px;font-size:14px;color:#fff}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .htile .msplit,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .wrap.heroOpen .htile .msplit{display:none}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cbeat{display:block;width:calc(100% - 128px);max-width:220px;height:8px;margin-top:9px;background:rgba(255,255,255,.22)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cbeat i{display:block;height:100%;background:var(--cb-yellow)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cbeat.over i{background:#FF9DB0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hmove{position:absolute;right:0;bottom:0;display:flex;flex-direction:column;align-items:flex-start;gap:0;margin:0;width:114px;
+  padding:13px 12px 14px 16px;border-radius:36px 0 0 0;background:var(--cb-pink);color:#fff;text-align:left;font-family:var(--body-font)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hmove[hidden]{display:none}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hmove::after{display:none}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hmove .mvl{font-size:11px;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hmove b{font-family:var(--cb-disp);font-weight:400;font-size:30px;line-height:1.2;color:#fff}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hmove .mvx{font-size:12px;font-weight:600}
+
+/* ---- stripe, then the three leg warmers ---- */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hstrip{grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;flex:1 0 100%;background:var(--ground);padding-bottom:3px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hstrip::before{content:'';grid-column:1/-1;height:12px;background:linear-gradient(180deg,#FF2E88 0 4px,#FF8A3D 4px 8px,#FFD23F 8px 12px)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hsx{display:none}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hs{position:relative;overflow:hidden;gap:0;height:132px;padding:8px 11px 0;border-radius:0;justify-content:flex-start;color:#17132B;background:var(--cb-bg)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] #hsProt{--cb-bg:var(--cb-prot);--cb-rib:var(--cb-prot-rib)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] #hsCarb{--cb-bg:var(--cb-carb);--cb-rib:var(--cb-carb-rib)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] #hsFat{--cb-bg:var(--cb-fat);--cb-rib:var(--cb-fat-rib)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hs .hsl{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#17132B}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hs .hsl span+span{display:none}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hs .hsv{font-family:var(--cb-disp);font-weight:400;font-size:34px;line-height:1.3;color:#17132B}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hs .hsv small{display:none}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hs .hsn{font-size:11.5px;font-weight:700;line-height:1.3;white-space:nowrap;color:#17132B}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hs .hsb{position:absolute;left:0;right:0;bottom:0;height:42px;border-radius:0;background:transparent;display:flex;align-items:flex-end}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hs .hsb i{width:100%!important;height:var(--cb-fill);box-sizing:border-box;border-radius:0;border-top:4px solid #17132B;
+  background:repeating-linear-gradient(90deg,var(--cb-rib) 0 7px,var(--cb-bg) 7px 11px)!important}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .hs .hsb i.cbzero{display:none}
+
+/* ---- one-tap foods ---- */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .picks{margin:0 -16px 3px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk-grid{grid-template-columns:repeat(6,minmax(0,1fr));grid-auto-rows:auto;grid-auto-flow:row dense;gap:3px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk-grid+.pk-head{margin-top:14px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk-head{margin:12px 16px 8px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk-head:first-child{display:none}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk-head:first-child.boosting{display:flex;margin:6px 16px 9px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk-head h2{font-family:var(--cb-disp);font-weight:400;font-size:17px;color:var(--accent-ink)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk{grid-column:span 2;min-height:84px;border-radius:0;padding:10px 12px;background:var(--tile);color:var(--ink)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk .pn{font-size:13px;font-weight:800}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk .pf{justify-content:flex-start;flex-wrap:wrap;column-gap:5px;row-gap:0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk .pc{font-family:var(--cb-disp);font-weight:400;font-size:21px;color:inherit}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk .pm{font-size:11px;font-weight:600;color:inherit;max-width:100%}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-pos]{color:#17132B}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-pos="1"]{background:var(--cb-t1)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-pos="2"]{background:var(--cb-t2);color:#fff}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-pos="3"]{background:var(--cb-t3)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-pos="4"]{background:var(--cb-t4)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-pos="5"]{background:var(--cb-t5)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-pos="6"]{background:var(--cb-t6)}
+/* the patchwork, for however many regulars there are */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-n="1"]{grid-column:span 6}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-n="2"]{grid-column:span 3}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-pos="1"]:not([data-n="1"]):not([data-n="2"]){grid-column:span 3;grid-row:span 2;padding:14px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-pos="2"]:not([data-n="2"]),:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-pos="3"]{grid-column:span 3}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-n="4"][data-pos="4"]{grid-column:span 6}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-n="5"][data-pos="4"],:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-n="5"][data-pos="5"]{grid-column:span 3}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-pos="1"]:not([data-n="2"]) .pn{font-size:22px;line-height:1.15;-webkit-line-clamp:3}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-pos="1"]:not([data-n="2"]) .pc{font-size:40px;line-height:1.1}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk[data-pos="1"]:not([data-n="2"]) .pm{font-size:13px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk .ptick{color:currentColor}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk.boost{box-shadow:inset 0 0 0 4px #17132B}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .freq .pk.boost[data-pos="2"]{box-shadow:inset 0 0 0 4px var(--cb-yellow)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk.boost .pc{color:inherit}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .recent .pk{grid-column:span 3;grid-row:auto;background:var(--cb-recent);min-height:60px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .recent .pk .pn{-webkit-line-clamp:1}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .recent .pk .pf{flex-wrap:nowrap}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .recent .pk:last-child:nth-child(odd){grid-column:span 6}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .recent .pk.boost{box-shadow:inset 0 0 0 3px var(--m-prot)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk.combo{grid-column:1/-1;min-height:56px;padding:9px 16px;background:var(--cb-dark);color:#fff}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk.combo .pic{display:none}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk.combo .pn{font-family:var(--cb-disp);font-weight:400;font-size:16px;color:var(--cb-yellow)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk.combo .pm{font-size:11px;white-space:normal;color:#fff}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk.combo .pc{font-size:21px;color:#fff}
+
+/* ---- everything below keeps the blocks and seams ---- */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .tiles{gap:3px;margin:0 -16px 3px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .tile{border-radius:0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] #macros .mcover,:root[data-tiles][data-flat][data-theme="ring"][data-mode] #macros .nudge{padding:6px 16px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .tnum{font-family:var(--cb-disp);font-weight:400;letter-spacing:0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .tnum b{font-weight:400}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .tile .mbar,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .tile .mfill,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .wbar,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .wmove,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .mvbar,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .tbar{border-radius:0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .meal.log,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .trend.tile{margin-left:-16px;margin-right:-16px;border-radius:0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .trend.tile{width:auto;margin-top:3px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .meal.log .meal-name,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .trend h2{font-family:var(--cb-disp);font-weight:400;font-size:18px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .mvref,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .savemeal,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .lgic{border-radius:12px 4px 12px 4px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet-head h2{font-family:var(--cb-disp);font-weight:400;letter-spacing:0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cta{border-radius:18px 5px 18px 5px;font-family:var(--body-font)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cta:not(.ghost){color:var(--cta-ink)}
+
+/* ---- the bar, solid to the bottom edge ---- */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock-in{padding:0 0 env(safe-area-inset-bottom,0px);background:#2B1670;border:0;border-radius:0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .logbar{gap:0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .logfield{min-height:68px;border:0;border-radius:0;background:transparent;box-shadow:none;color:#fff;padding:0 20px;font-size:16px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .logfield svg,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .logfield span{color:#fff}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .camera{width:86px;height:auto;min-height:68px;border:0;border-radius:32px 0 0 0;background:#D6156F;color:#fff;box-shadow:none}
+
+@media (max-width:360px){
+  :root[data-tiles][data-flat][data-theme="ring"][data-mode] .htile .remain .big{font-size:92px}
+  :root[data-tiles][data-flat][data-theme="ring"][data-mode] .htile .remain .big.long{font-size:66px;line-height:1.65}
+  :root[data-tiles][data-flat][data-theme="ring"][data-mode] .hs{padding-left:7px;padding-right:5px}
+  :root[data-tiles][data-flat][data-theme="ring"][data-mode] .hs .hsv{font-size:28px;line-height:1.58}
+  :root[data-tiles][data-flat][data-theme="ring"][data-mode] .hs .hsn{font-size:10px}
+}
 </style>
 </head>
 <body>
@@ -1634,6 +1788,7 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
           <span class="cap" id="remainCap">left</span>
         </div>
         <div class="msplit" id="mSplit"></div>
+        <span class="cbeat" id="cbEat" hidden><i></i></span>
         <button class="hmove num" id="hsMove" hidden></button>
       </div>
       <div class="gauge" id="gauge" role="img"></div>
@@ -1784,7 +1939,7 @@ let sheetState = null;
    there is exactly one place to look when a phrase reads wrong.
    ============================================================ */
 const THEMES = [
-  {id:'ring',  name:'Daybook',     blurb:'The icon. Paper glass, one green light.', chrome:'#FBFCFE'},
+  {id:'ring',  name:'Daybook',     blurb:'Color blocks, straight off an 80s workout tape.', chrome:'#4B23B8'},
   {id:'speed', name:'Speed Racer', blurb:'Neon telemetry on white. Hairline rules.', chrome:'#2E4FB0'},
   {id:'aqua',  name:'Aquaman',     blurb:'The trench looking up. Deep water, Atlantean gold.', chrome:'#072836'},
   {id:'wick',  name:'John Wick',   blurb:'The Continental after hours. Black, gold, one red.', chrome:'#0B0B0D'},
@@ -1869,7 +2024,7 @@ function modeId(){
 /* The browser chrome matches the top of the stage, so the status bar and
    the page meet without a seam. */
 const STAGE_TOP = {
-  ring:{night:'#171B26', day:'#FBFCFE'},
+  ring:{night:'#35188A', day:'#4B23B8'},
   mania:{night:'#16141D', day:'#FAF9FC'}, speed:{night:'#13161F', day:'#F9FAFD'},
   aqua:{night:'#10181C', day:'#F8FBFB'},  wick:{night:'#141414', day:'#FBFAF7'}
 };
@@ -3261,6 +3416,7 @@ function render(){
   document.getElementById('remainCap').textContent = ate.toLocaleString()+' eaten of '+tgt.toLocaleString();
   const hl = document.getElementById('heroLab');
   if (hl) hl.textContent = left < 0 ? 'Over by' : 'Left to eat';
+  paintColorBlockHero(left, ate, tgt);
   document.getElementById('baseNum').textContent = dayBase(viewDate).toLocaleString();
   paintMoved();
 
@@ -3300,6 +3456,26 @@ function render(){
   renderLog();
   renderDock();
   renderTrend();
+}
+
+/* ---------- Color Block ----------
+   The Daybook theme puts the label under the number and draws what's been
+   eaten as a level bar where the other themes have the little gauge. */
+const colorBlock = () => themeId() === 'ring';
+function paintColorBlockHero(left, ate, tgt){
+  const box = document.getElementById('remainBox'), num = document.getElementById('remainNum');
+  const bar = document.getElementById('cbEat');
+  let word = box.querySelector('.cbword');
+  num.classList.toggle('long', colorBlock() && num.textContent.length > 3);
+  bar.hidden = !colorBlock();
+  if (!colorBlock()){ if (word) word.remove(); return; }
+  if (!word){ word = document.createElement('span'); word.className = 'cbword'; num.after(word); }
+  word.textContent = left < 0 ? 'Over' : 'Left to eat';
+  const pct = tgt > 0 ? Math.max(0, Math.min(100, ate/tgt*100)) : 0;
+  bar.classList.toggle('over', left < 0);
+  bar.firstElementChild.style.width = pct+'%';
+  bar.setAttribute('role', 'img');
+  bar.setAttribute('aria-label', Math.round(tgt > 0 ? ate/tgt*100 : 0)+' percent of today’s target eaten');
 }
 
 /* ---------- the ring ----------
@@ -4391,7 +4567,7 @@ function agoLabel(dk){
 /* The one-line summary inside the calorie card. Taps go where the full cards
    would have taken you; the chevron brings those cards up above the tiles. */
 const HERO_OPEN_KEY = 'daybook-heroOpen';
-function heroOpen(){ try { return localStorage.getItem(HERO_OPEN_KEY) === '1'; } catch(e){ return false; } }
+function heroOpen(){ if (colorBlock()) return false; try { return localStorage.getItem(HERO_OPEN_KEY) === '1'; } catch(e){ return false; } }
 function placeStats(){
   const wrap = document.querySelector('.wrap'), picks = document.getElementById('picks');
   const mac = document.getElementById('macros'), mv = document.getElementById('moveSec');
@@ -4410,19 +4586,22 @@ function renderStrip(){
   const ks = mac.p*4 + mac.c*4 + mac.f*9;
   const share = kcal => ks > 0 ? Math.round(kcal/ks*100) : 0;
   const shareText = kcal => ks > 0 ? share(kcal)+'%' : '';
-  const cell = (id, label, right, val, bar)=>
+  const cell = (id, label, right, val, bar, note)=>
     '<button class="hs" id="'+id+'"><span class="hsl"><span>'+label+'</span><span>'+right+'</span></span>'+
     '<span class="hsv num">'+val+'</span>'+
-    (bar ? '<span class="hsb"><i style="width:'+bar[0]+'%;background:'+bar[1]+'"></i></span>' : '')+'</button>';
+    (colorBlock() ? '<span class="hsn num">'+note+'</span>' : '')+
+    (bar ? '<span class="hsb"><i'+(bar[0] > 0 ? '' : ' class="cbzero"')+' style="width:'+bar[0]+'%;--cb-fill:'+bar[0]+'%;background:'+bar[1]+'"></i></span>' : '')+'</button>';
+  const sugar = Math.round(mac.s), grams = kcal => ks > 0 ? 'g · '+share(kcal)+'%' : 'g';
   host.innerHTML =
-    cell('hsProt', 'Protein', '', Math.round(mac.p)+'<small> / '+pt+'g</small>', [pct(mac.p, pt), 'var(--m-prot)'])+
+    cell('hsProt', 'Protein', '', Math.round(mac.p)+'<small> / '+pt+'g</small>', [pct(mac.p, pt), 'var(--m-prot)'], 'of '+pt+' g')+
     cell('hsCarb', 'Carbs', shareText(mac.c*4),
-      Math.round(mac.c)+'<small>g</small>', [share(mac.c*4), 'var(--m-carb)'])+
-    cell('hsFat', 'Fat', shareText(mac.f*9), Math.round(mac.f)+'<small>g</small>', [share(mac.f*9), 'var(--m-fat)'])+
+      Math.round(mac.c)+'<small>g</small>', [share(mac.c*4), 'var(--m-carb)'],
+      'g · sugar '+sugar+(sugar > sugarCap() ? ' !' : ''))+
+    cell('hsFat', 'Fat', shareText(mac.f*9), Math.round(mac.f)+'<small>g</small>', [share(mac.f*9), 'var(--m-fat)'], grams(mac.f*9))+
     '<button class="hsx" id="hsMore" aria-label="'+(heroOpen() ? 'Show fewer stats' : 'Show all stats')+'" aria-expanded="'+heroOpen()+'">'+
       '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>';
   host.querySelector('#hsProt').setAttribute('aria-label', 'Protein '+Math.round(mac.p)+' of '+pt+' grams. Targets.');
-  host.querySelector('#hsCarb').setAttribute('aria-label', 'Carbs '+Math.round(mac.c)+' grams. Targets.');
+  host.querySelector('#hsCarb').setAttribute('aria-label', 'Carbs '+Math.round(mac.c)+' grams, sugar '+sugar+' grams'+(sugar > sugarCap() ? ', over your cap' : '')+'. Targets.');
   host.querySelector('#hsFat').setAttribute('aria-label', 'Fat '+Math.round(mac.f)+' grams. Targets.');
   ['#hsProt', '#hsCarb', '#hsFat'].forEach(id=>{ host.querySelector(id).onclick = openTargets; });
   /* Moved sits with the calories-left number, because that's what it changes. */
@@ -4430,6 +4609,8 @@ function renderStrip(){
   pill.hidden = false;
   pill.innerHTML = '<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>'+
     '<span>Moved <b>'+b.toLocaleString()+'</b> · +'+mv.toLocaleString()+'</span>';
+  if (colorBlock()) pill.innerHTML = '<span class="mvl">Moved</span><b>'+b.toLocaleString()+'</b>'+
+    '<span class="mvx">+'+mv.toLocaleString()+' extra</span>';
   pill.setAttribute('aria-label', 'Moved '+b+' calories, '+mv+' added to your day.');
   pill.onclick = ()=>document.getElementById('editActive').click();
   host.querySelector('#hsMore').onclick = ()=>{
@@ -4605,13 +4786,20 @@ function renderPicks(){
   if (P.combos.length || P.freq.length){
     const sub = boost.size ? gap+' g protein to go' : 'last 30 days';
     head(T('recentHead') || 'Your regulars', sub, boost.size ? 'prot' : '');
+    if (boost.size) host.lastElementChild.classList.add('boosting');
     const g = grid();
+    g.classList.add('freq');
     P.combos.forEach(c=>g.appendChild(comboTile(c, m)));
-    P.freq.forEach(t=>g.appendChild(foodTile(t, m, boost.has(t.ref.key))));
+    P.freq.forEach((t, i)=>{
+      const tile = foodTile(t, m, boost.has(t.ref.key));
+      tile.dataset.pos = i+1; tile.dataset.n = P.freq.length;
+      g.appendChild(tile);
+    });
   }
   if (P.recent.length){
     head('Recently logged', '');
     const g = grid();
+    g.classList.add('recent');
     P.recent.forEach(t=>g.appendChild(foodTile(t, m, boost.has(t.ref.key))));
   }
   host.hidden = !host.children.length;
