@@ -1433,7 +1433,7 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
 
 /* ---- compact header ----
    The calorie card shrinks to the number, a small gauge, and one strip of
-   protein / sugar / moved, so the tiles start above the fold. The full cards
+   protein / carbs / fat (moved is a pill by the number), so the tiles start above the fold. The full cards
    sit under the tiles; the chevron brings them up top instead. */
 .hstrip{display:none}
 :root[data-tiles][data-flat][data-theme][data-mode] .hero.htile{flex-wrap:wrap;padding:14px 16px 12px;margin:10px 0 4px;row-gap:12px}
@@ -1456,6 +1456,20 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
 :root[data-tiles] .hs .hsv.over{color:var(--over)}
 :root[data-tiles] .hs .hsb{height:4px;border-radius:2px;background:color-mix(in srgb,var(--ink) 11%,transparent);overflow:hidden}
 :root[data-tiles] .hs .hsb i{display:block;height:100%;border-radius:2px}
+@media (max-width:360px){
+  :root[data-tiles] .hs{padding-left:6px;padding-right:6px}
+  :root[data-tiles] .hs .hsl span+span{display:none}
+  :root[data-tiles] .hs .hsv{font-size:12.5px}
+  :root[data-tiles] .hs .hsv small{font-size:10px}
+}
+.hmove{display:none}
+:root[data-tiles] .hmove{position:relative;display:inline-flex;align-self:flex-start;align-items:center;gap:6px;margin-top:6px;padding:5px 10px;
+  border:0;border-radius:999px;background:var(--fill-2);color:var(--ink-dim);font:inherit;font-size:12px;font-weight:600;white-space:nowrap}
+:root[data-tiles] .hmove[hidden]{display:none}
+:root[data-tiles] .hmove::after{content:'';position:absolute;inset:-8px -4px}
+:root[data-tiles] .hmove svg{color:var(--move);flex:none}
+:root[data-tiles] .hmove b{color:var(--ink);font-weight:800}
+:root[data-tiles] .hmove:active{filter:var(--press)}
 :root[data-tiles] .hsx{display:grid;place-items:center;border:0;border-radius:12px;padding:0;color:var(--ink-dim);
   background:var(--fill-2)}
 :root[data-tiles] .hsx svg{transition:transform .2s}
@@ -1620,6 +1634,7 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
           <span class="cap" id="remainCap">left</span>
         </div>
         <div class="msplit" id="mSplit"></div>
+        <button class="hmove num" id="hsMove" hidden></button>
       </div>
       <div class="gauge" id="gauge" role="img"></div>
       <div class="ring" id="ring" role="img"></div>
@@ -4389,25 +4404,34 @@ function placeStats(){
 function renderStrip(){
   const host = document.getElementById('hStrip');
   if (!host) return;
-  const mac = dayMacros(viewDate), pt = proteinTarget(), sc = sugarCap();
+  const mac = dayMacros(viewDate), pt = proteinTarget();
   const pct = (v, of)=>Math.max(0, Math.min(100, of > 0 ? v/of*100 : 0));
-  const sOver = mac.s > sc, b = burned(viewDate), mv = moved(viewDate);
+  const b = burned(viewDate), mv = moved(viewDate);
+  const ks = mac.p*4 + mac.c*4 + mac.f*9;
+  const share = kcal => ks > 0 ? Math.round(kcal/ks*100) : 0;
+  const shareText = kcal => ks > 0 ? share(kcal)+'%' : '';
   const cell = (id, label, right, val, bar)=>
     '<button class="hs" id="'+id+'"><span class="hsl"><span>'+label+'</span><span>'+right+'</span></span>'+
-    '<span class="hsv num'+(id === 'hsSug' && sOver ? ' over' : '')+'">'+val+'</span>'+
+    '<span class="hsv num">'+val+'</span>'+
     (bar ? '<span class="hsb"><i style="width:'+bar[0]+'%;background:'+bar[1]+'"></i></span>' : '')+'</button>';
   host.innerHTML =
     cell('hsProt', 'Protein', '', Math.round(mac.p)+'<small> / '+pt+'g</small>', [pct(mac.p, pt), 'var(--m-prot)'])+
-    cell('hsSug', 'Sugar', '', Math.round(mac.s)+'<small> / '+sc+'g</small>', [pct(mac.s, sc), sOver ? 'var(--over)' : 'var(--m-sug)'])+
-    cell('hsMove', 'Moved', '', b.toLocaleString()+'<small> +'+mv.toLocaleString()+'</small>', [Math.min(100, b/6), 'var(--move)'])+
+    cell('hsCarb', 'Carbs', shareText(mac.c*4),
+      Math.round(mac.c)+'<small>g</small>', [share(mac.c*4), 'var(--m-carb)'])+
+    cell('hsFat', 'Fat', shareText(mac.f*9), Math.round(mac.f)+'<small>g</small>', [share(mac.f*9), 'var(--m-fat)'])+
     '<button class="hsx" id="hsMore" aria-label="'+(heroOpen() ? 'Show fewer stats' : 'Show all stats')+'" aria-expanded="'+heroOpen()+'">'+
       '<svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></button>';
   host.querySelector('#hsProt').setAttribute('aria-label', 'Protein '+Math.round(mac.p)+' of '+pt+' grams. Targets.');
-  host.querySelector('#hsSug').setAttribute('aria-label', 'Sugar '+Math.round(mac.s)+' of '+sc+' grams. Targets.');
-  host.querySelector('#hsMove').setAttribute('aria-label', 'Moved '+b+' calories, '+mv+' added to your day.');
-  host.querySelector('#hsProt').onclick = openTargets;
-  host.querySelector('#hsSug').onclick = openTargets;
-  host.querySelector('#hsMove').onclick = ()=>document.getElementById('editActive').click();
+  host.querySelector('#hsCarb').setAttribute('aria-label', 'Carbs '+Math.round(mac.c)+' grams. Targets.');
+  host.querySelector('#hsFat').setAttribute('aria-label', 'Fat '+Math.round(mac.f)+' grams. Targets.');
+  ['#hsProt', '#hsCarb', '#hsFat'].forEach(id=>{ host.querySelector(id).onclick = openTargets; });
+  /* Moved sits with the calories-left number, because that's what it changes. */
+  const pill = document.getElementById('hsMove');
+  pill.hidden = false;
+  pill.innerHTML = '<svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l3-7 4 14 3-7h4"/></svg>'+
+    '<span>Moved <b>'+b.toLocaleString()+'</b> · +'+mv.toLocaleString()+'</span>';
+  pill.setAttribute('aria-label', 'Moved '+b+' calories, '+mv+' added to your day.');
+  pill.onclick = ()=>document.getElementById('editActive').click();
   host.querySelector('#hsMore').onclick = ()=>{
     try { localStorage.setItem(HERO_OPEN_KEY, heroOpen() ? '0' : '1'); } catch(e){}
     placeStats(); renderStrip();
