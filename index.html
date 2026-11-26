@@ -1720,12 +1720,20 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
 :root[data-tiles][data-flat][data-theme="ring"][data-mode] .cta{border-radius:4px;font-family:var(--body-font)}
 :root[data-tiles][data-flat][data-theme="ring"][data-mode] .cta:not(.ghost){color:var(--cta-ink)}
 
-/* ---- the bar ---- */
-:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock-in{padding:11px 14px calc(12px + env(safe-area-inset-bottom,0px));background:var(--ground);border:0;border-radius:0}
-:root[data-tiles][data-flat][data-theme="ring"][data-mode] .logbar{gap:10px}
-:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .logfield{min-height:54px;padding:0 18px;border:0;border-radius:27px;background:var(--cb-field);box-shadow:none;color:#F5F1FF;font-size:15px}
+/* ---- the bar: the same hard-cornered blocks on offset shadows ----
+   Side padding matches the tile grid, so the edges line up. The bottom tucks
+   into the home-indicator inset (it only needs clearing, not stacking on),
+   and .dock::after keeps painting below in case an installed iOS web app
+   leaves the fixed bar a few points short of the screen edge. */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock-in{padding:10px 19px max(14px,calc(env(safe-area-inset-bottom,0px) - 6px)) 14px;background:var(--ground);border:0;border-radius:0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock::after{content:'';position:absolute;left:0;right:0;top:100%;height:100px;background:var(--ground)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .logbar{gap:17px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .logfield{min-height:54px;padding:0 16px;border:0;border-radius:4px;background:var(--cb-field);box-shadow:5px 5px 0 #5FE3DC;color:#F5F1FF;font-size:15px}
 :root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .logfield svg,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .logfield span{color:#F5F1FF}
-:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .camera{width:54px;height:54px;min-height:54px;border:0;border-radius:27px;background:#C4125C;color:#fff;box-shadow:none}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .camera{width:54px;height:54px;min-height:54px;border:0;border-radius:4px;background:#C4125C;color:#fff;box-shadow:5px 5px 0 #FF7AB6}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .logfield:active,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .camera:active{transform:translate(3px,3px)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .logfield:active{box-shadow:2px 2px 0 #5FE3DC}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .dock .camera:active{box-shadow:2px 2px 0 #FF7AB6}
 
 @media (max-width:360px){
   :root[data-tiles][data-flat][data-theme="ring"][data-mode] .htile .hl{padding-left:18px;padding-right:18px}
