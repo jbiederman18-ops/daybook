@@ -1793,6 +1793,21 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
 :root[data-tiles][data-flat][data-theme="ring"][data-mode] .kcrow,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .shot{border-radius:4px}
 :root[data-tiles][data-flat][data-theme="ring"][data-mode] .kcn{border-radius:4px;font-family:var(--cb-disp);font-weight:400}
 
+/* ---- the search row in the sheet: the dock's pill, opened ----
+   Tapping the bar opens this, so it keeps the bar's exact shape: the pill in
+   --cb-combo on the cyan offset shadow, and the round pink camera. It stays
+   the one round field in the app, so round always means "log something";
+   every other field keeps the hard corners above. */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet .logrow{gap:17px;margin:0 5px 18px 0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet .logrow #q{min-height:54px;padding:0 20px;border:0;border-radius:99px;background:var(--cb-combo);color:var(--cb-combo-ink);font-size:16px;box-shadow:5px 5px 0 var(--cb-cyan)}
+/* the dock's magnifier, inked to match --cb-combo-ink in each mode */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet .logrow #q{padding-left:47px;background:var(--cb-combo) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23F5F1FF' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='M20 20l-4.8-4.8'/%3E%3C/svg%3E") no-repeat 18px 50%/19px 19px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode][data-mode="night"] .sheet .logrow #q{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23130E2A' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='M20 20l-4.8-4.8'/%3E%3C/svg%3E")}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet .logrow #q::placeholder{color:var(--cb-combo-ink);opacity:.6}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet .logrow #q:focus{box-shadow:5px 5px 0 var(--cb-cyan)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet .logrow .camera{width:54px;height:54px;min-height:54px;align-self:center;border:0;border-radius:50%;background:#C4125C;color:#fff;box-shadow:5px 5px 0 #FF7AB6}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet .logrow .camera:active{transform:translate(3px,3px);box-shadow:2px 2px 0 #FF7AB6}
+
 /* ---- the main buttons: taller, in the display face, a hot shadow ---- */
 :root[data-tiles][data-flat][data-theme="ring"][data-mode] .cta{min-height:54px;font-family:var(--cb-disp);font-weight:400;font-size:17px;letter-spacing:.01em;box-shadow:5px 5px 0 var(--cb-pink);transition:transform .08s,box-shadow .08s}
 :root[data-tiles][data-flat][data-theme="ring"][data-mode] .cta.ghost{font-family:var(--body-font);font-weight:700;font-size:15px;min-height:50px;box-shadow:4px 4px 0 var(--cb-quiet)}
@@ -5888,8 +5903,8 @@ function tabSearch(){
     return;
   }
   body().innerHTML =
-    '<div class="searchrow">'+
-      '<div class="field" style="flex:1;margin:0"><input id="q" placeholder="Search, or describe what you ate" autocomplete="off" enterkeyhint="search"></div>'+
+    '<div class="searchrow logrow">'+
+      '<div class="field" style="flex:1;margin:0"><input id="q" placeholder="Search or describe a meal" autocomplete="off" enterkeyhint="search"></div>'+
       '<button class="camera" id="cam" aria-label="Estimate from a photo" title="Estimate from a photo">'+
         '<svg viewBox="0 0 24 24" width="21" height="21" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round">'+
         '<path d="M3 8.5h3.2l1.6-2.2h8.4l1.6 2.2H21v11H3z"/><circle cx="12" cy="13.6" r="3.4"/></svg>'+
