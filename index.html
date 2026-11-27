@@ -3336,6 +3336,7 @@ async function load(){
   }
   hydrate();
   await loadSeen();
+  await loadPicks();
 }
 
 /* Anything logged before syncing existed has no id or timestamp. Give it
@@ -4883,8 +4884,76 @@ function searchRank(list, partsOf, q, opts){
     const seen = new Set(hits.map(h=>h.rec));
     pass(true).forEach(h=>{ if (!seen.has(h.rec)) hits.push(h); });
   }
+  if (opts && opts.adjust) hits.forEach(h=>{ h.score += opts.adjust(h.rec, h.score) || 0; });
   hits.sort((a,b)=>a.score - b.score || a.i - b.i);
   return hits;
+}
+/* A tie-breaker, not a trump card: worth less than the gap between a whole
+   word and a half-typed one, so a common food can't outrank a better match. */
+function popBonus(id){
+  const n = POP.get(id) || 0;
+  return n > 0 ? -Math.min(0.45, 0.15 * Math.log10(1 + n)) : 0;
+}
+
+/* ---------- learning from what you pick ----------
+   When a search ends in a log, the food you picked is remembered against
+   what you typed. Next time the same words (or the start of them) put it
+   first. Kept on this device; it's small, and it's about how you type. */
+const PICKS_KEY = 'daybook-picks';
+let PICKS = {};
+function pickKey(q){ return searchQuery(q).map(s=>s.w).join(' '); }
+async function loadPicks(){
+  try { PICKS = JSON.parse(await Store.get(PICKS_KEY) || '{}') || {}; }
+  catch(e){ PICKS = {}; }
+  picksRev++;
+}
+let picksTimer = null;
+function persistPicks(){
+  clearTimeout(picksTimer);
+  picksTimer = setTimeout(()=>{ try { Store.set(PICKS_KEY, JSON.stringify(PICKS)); } catch(e){} }, 600);
+}
+/* target is 'f:<fdcId>' for a database food, 'r:<name>' for a row from your log. */
+function learnPick(q, target){
+  const k = pickKey(q || '');
+  if (!k || !target) return;
+  const row = PICKS[k] || (PICKS[k] = {});
+  const was = row[target] || {n:0};
+  row[target] = {n: Math.min(was.n + 1, 20), t: Date.now()};
+  picksRev++;
+  // Keep the eight most recent picks per search and the 400 most recent searches.
+  const ts = Object.entries(row).sort((a,b)=>b[1].t - a[1].t);
+  if (ts.length > 8) PICKS[k] = Object.fromEntries(ts.slice(0, 8));
+  const ks = Object.keys(PICKS);
+  if (ks.length > 400){
+    ks.map(x=>[x, Math.max(...Object.values(PICKS[x]).map(v=>v.t))])
+      .sort((a,b)=>a[1] - b[1]).slice(0, ks.length - 400).forEach(([x])=>delete PICKS[x]);
+  }
+  persistPicks();
+}
+/* The search box, if a search led here. */
+function learnFromSearch(target){
+  const el = document.getElementById('q');
+  const q = el && el.value.trim();
+  if (q && !firstURL(q)) learnPick(q, target);
+}
+/* Same words: a strong pull, growing with repeats. Still typing ("fr" on the
+   way to "fries"): three quarters of that. */
+let pickMemo = {q: null, rev: -1, map: null}, picksRev = 0;
+function pickBonus(q, target){
+  // Worked out once per search, not once per food.
+  if (pickMemo.q !== q || pickMemo.rev !== picksRev){
+    const k = pickKey(q || ''), map = new Map();
+    if (k) for (const [pk, row] of Object.entries(PICKS)){
+      const exact = pk === k;
+      if (!exact && !(k.length >= 2 && pk.startsWith(k))) continue;
+      for (const [t, hit] of Object.entries(row)){
+        const v = (0.8 + 0.35 * Math.min(hit.n, 4)) * (exact ? 1 : 0.75);
+        if (v > (map.get(t) || 0)) map.set(t, v);
+      }
+    }
+    pickMemo = {q, rev: picksRev, map};
+  }
+  return -(pickMemo.map.get(target) || 0);
 }
 
 /* The log, filtered by what you're typing. This is the thing that makes a
@@ -4896,7 +4965,8 @@ function searchRecents(q, mealId, limit){
   const all = recentFoods(mealId, 500);
   // Name first, then brand; the portion ("2 slices") last, so it can find a
   // food but never outranks one whose name matched.
-  return searchRank(all, r=>[r.name, r.brand, r.portion], q, {enough: 2})
+  return searchRank(all, r=>[r.name, r.brand, r.portion], q, {enough: 2,
+      adjust: r=>pickBonus(q, 'r:'+String(r.name||'').trim().toLowerCase())})
     // h.i is the habit rank; a small weight keeps "the one you always eat"
     // above an equally-good text match you had once.
     .map(h=>({r: h.rec, score: h.score + h.i / 25}))
@@ -5571,6 +5641,7 @@ const TYPE_NAMES = ['Foundation', 'SR Legacy', 'Survey (FNDDS)'];
 
 let PACK = null;                 // the bundled generic foods
 let PACK_INFO = {};
+let POP = new Map();             // fdcId -> people who reported eating it
 let packState = 'idle';          // idle | loading | ready | missing
 let SEEN = [];                   // branded and anything else you've searched
 
@@ -5612,8 +5683,14 @@ async function loadPack(force){
       // Optional fifth column, [protein, carbs, fat, sugar] per 100 g. A pack
       // built before macros existed simply doesn't have it.
       mac: Array.isArray(f[5]) && f[5].length >= 3
-        ? {p:+f[5][0], c:+f[5][1], f:+f[5][2], ...(f[5][3] != null ? {s:+f[5][3]} : {})} : null
+        ? {p:+f[5][0], c:+f[5][1], f:+f[5][2], ...(f[5][3] != null ? {s:+f[5][3]} : {})} : null,
+      // Optional seventh column: how many people in the national food survey
+      // (NHANES 2021-23, about 8,800 of them) reported eating this or a close
+      // variant. It's how "fries" knows you mean french fries.
+      pop: +f[6] || 0
     }));
+    POP = new Map();
+    PACK.forEach(f=>{ if (f.pop) POP.set(f.id, f.pop); });
     PACK_INFO = {built:d.built||'', count:PACK.length, sources:d.sources||[]};
     packState = 'ready';
   } catch(e){
@@ -5675,7 +5752,8 @@ function searchLocal(q, limit){
   SEEN.forEach(f=>{ if (f && !taken.has(f.id)){ taken.add(f.id); list.push(f); } });
   const mine = list.length;
   (PACK || []).forEach(f=>{ if (!taken.has(f.id)){ taken.add(f.id); list.push(f); } });
-  return searchRank(list, f=>[f.name, f.brand], q, {enough: Math.min(limit || 5, 5)})
+  return searchRank(list, f=>[f.name, f.brand], q, {enough: Math.min(limit || 5, 5),
+      adjust: f=>popBonus(f.id) + pickBonus(q, 'f:'+f.id)})
     .map(h=>({f: h.rec, score: h.score - (h.i < mine ? 0.15 : 0), i: h.i}))
     .sort((a,b)=>a.score - b.score || a.i - b.i)
     .slice(0, limit).map(h=>h.f);
@@ -6227,6 +6305,7 @@ function recentRow(r){
   qa.onclick = ()=>{
     /* g had been dropped here once, so re-logging from this list quietly
        produced an entry with no weight. gramsOf() matches the quick chips. */
+    learnFromSearch('r:'+String(r.name||'').trim().toLowerCase());
     addEntry({name:r.name, cal:r.cal, portion:r.portion,
               g:gramsOf(r)||undefined, src:r.src, ...brandOf(r), ...macCopy(r)}, {stay:true});
     qa.classList.add('done'); qa.innerHTML = CHECK_SVG;
@@ -6438,6 +6517,7 @@ function relogPanel(r, panel){
       if (!isFinite(v) || v < 0){ toast('Calories need a number'); return; }
       if (!(qty > 0)){ toast('Amount needs to be above zero'); return; }
       const g = grams();
+      learnFromSearch('r:'+String(r.name||'').trim().toLowerCase());
       addEntry({name:r.name, cal:v, portion:portion(),
                 g: g > 0 ? Math.round(g) : undefined, src:r.src, ...brandOf(r), ...macCopy(r, qty/qty0)});
     };
@@ -6715,7 +6795,8 @@ async function runSearch(q, force){
     // food. Ours goes first; anything it matched that we can't (it also
     // searches ingredients) keeps its place after.
     const ranked = new Map(searchRank(foods,
-      f=>[f.description, brandText(f.brandOwner, f.brandName)], q, {enough: 0})
+      f=>[f.description, brandText(f.brandOwner, f.brandName)], q, {enough: 0,
+        adjust: f=>popBonus(f.fdcId) + pickBonus(q, 'f:'+f.fdcId)})
       .map((h, n)=>[h.rec, n]));
     const fresh = foods.filter(f=>!skip.has(f.fdcId))
       .map((f, i)=>({f, k: ranked.has(f) ? ranked.get(f) : 1e6 + i}))
@@ -6877,6 +6958,7 @@ async function openPortion(food, per100, row){
       const neat = Math.abs(qty*4 - Math.round(qty*4)) < 0.02;
       const named = (options[pick].w || !neat) ? ''
         : (qty === 1 ? '' : trimNum(Math.round(qty*4)/4)+' \u00d7 ')+options[pick].label;
+      learnFromSearch('f:'+food.fdcId);
       addEntry({
         name, cal: Math.round(per100/100*g),
         portion: named ? named+' \u00b7 '+w : w,
