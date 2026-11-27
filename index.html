@@ -4468,7 +4468,9 @@ function renderStrip(){
 /* ============================================================
    Home picks
    What's on the home screen under the totals, so most logs are one tap with
-   nothing to remember. Three kinds, and no food appears twice:
+   nothing to remember. Three kinds, and each logged food counts toward only
+   one: something eaten as part of a combo on screen doesn't also earn its own
+   tile. It needs to be eaten outside the combo for that.
      combos   -- saved meals, plus groups you keep logging together
      frequent -- logged on the most days in the last 30. Not weighted by time
                  of day: logging often happens all at once in the afternoon,
@@ -4494,23 +4496,25 @@ function homePicks(dk){
   const today = todayKey(), cut30 = shiftKey(today, -(PICK_DAYS - 1)), cut = shiftKey(today, -RECENT_DAYS);
   const names = new Map();     // normName -> {days30:Set, rk, variants:Map(foodKey -> {n, rk})}
   const groups = [];           // [{day, names:[norm...]}] per day+meal in the last 30 days
+  const meals_ = [];           // [{day, list:[{n, fk, rk}]}] every day+meal in range
   Object.keys(S.days).forEach(k=>{
     if (k < cut || k > today) return;
     const meals = S.days[k].meals || {};
     MEALS.forEach(m=>{
-      const inGroup = new Set();
+      const inGroup = new Set(), list = [];
       (meals[m.id] || []).forEach(e=>{
         if (!e || !e.name) return;
         const n = normName(e.name), fk = foodKey(e);
         const rk = k+'|'+String(loggedAt(e)).padStart(15, '0');
         let rec = names.get(n);
-        if (!rec){ rec = {days30:new Set(), rk:'', variants:new Map()}; names.set(n, rec); }
-        if (rk > rec.rk) rec.rk = rk;
+        if (!rec){ rec = {variants:new Map()}; names.set(n, rec); }
         let v = rec.variants.get(fk);
         if (!v){ v = {key:fk, n:0, rk:''}; rec.variants.set(fk, v); }
         if (rk > v.rk) v.rk = rk;
-        if (k >= cut30){ rec.days30.add(k); v.n++; inGroup.add(n); }
+        if (k >= cut30){ v.n++; inGroup.add(n); }
+        list.push({n, fk, rk});
       });
+      if (list.length) meals_.push({day:k, list});
       if (inGroup.size >= 2) groups.push({day:k, names:[...inGroup].slice(0, 8)});
     });
   });
@@ -4523,15 +4527,27 @@ function homePicks(dk){
   const had = new Set();
   if (d && d.meals) MEALS.forEach(m=>(d.meals[m.id] || []).forEach(e=>{ if (e && e.name) had.add(normName(e.name)); }));
 
-  /* ---- combos ---- */
-  const combos = [];
-  const savedSets = S.combos.filter(c=>c.items && c.items.length).map(c=>new Set(c.items.map(i=>normName(i.name))));
-  S.combos.filter(c=>c.items && c.items.length)
-    .filter(c=>!c.items.every(i=>had.has(normName(i.name))))
-    .sort((a,b)=>(b.uses||0) - (a.uses||0))
-    .slice(0, COMBO_MAX)
-    .forEach(c=>combos.push({type:'combo', saved:c, name:c.name, items:c.items, cal:comboCal(c)}));
-  if (combos.length < COMBO_MAX){
+  /* ---- combos ----
+     Ranked without looking at what's been eaten today, so which foods count as
+     "part of a combo" holds still as you log through the day. Two groups that
+     are mostly the same food are one habit: the one you log most gets the
+     tile, and the others sit behind a long press on it. */
+  // How many day+meals contain the whole set, and on how many days.
+  const loggedAs = set=>{
+    const days = new Set();
+    groups.forEach(g=>{ if (set.every(n=>g.names.includes(n))) days.add(g.day); });
+    return days.size;
+  };
+  const similar = (a, b)=>a.filter(n=>b.includes(n)).length*2 > Math.min(a.length, b.length);
+  const cands = [];
+  S.combos.filter(c=>c.items && c.items.length).forEach(c=>{
+    const ns = [...new Set(c.items.map(i=>normName(i.name)))];
+    cands.push({type:'combo', saved:c, name:c.name, items:c.items, cal:comboCal(c),
+      names:ns, days:loggedAs(ns)});
+  });
+  cands.sort((a,b)=>b.days - a.days || (b.saved.uses||0) - (a.saved.uses||0));
+  const savedSets = cands.map(c=>new Set(c.names));
+  {
     // Every 2-4 item subset of each day+meal group, counted once per day.
     const sets = new Map();
     groups.forEach(g=>{
@@ -4551,29 +4567,67 @@ function homePicks(dk){
       }
     });
     const hidden = hiddenCombos();
-    let cands = [...sets.values()].filter(s=>s.days.size >= COMBO_MIN);
+    let found = [...sets.values()].filter(s=>s.days.size >= COMBO_MIN);
     // Keep the biggest version of a habit: drop a pair when the triple it's
     // part of happens nearly as often.
-    cands = cands.filter(s=>!cands.some(o=>o.names.length > s.names.length &&
+    found = found.filter(s=>!found.some(o=>o.names.length > s.names.length &&
       s.names.every(n=>o.names.includes(n)) && o.days.size >= Math.max(COMBO_MIN, 0.75*s.days.size)));
-    cands.sort((a,b)=>b.days.size - a.days.size || b.names.length - a.names.length);
-    const chosen = [];
-    for (const s of cands){
-      if (combos.length + chosen.length >= COMBO_MAX) break;
-      if (hidden.has(s.names.join('\u0001'))) continue;
-      if (savedSets.some(ss=>s.names.every(n=>ss.has(n)))) continue;          // already a saved meal
-      if (s.names.every(n=>had.has(n))) continue;                             // already logged
-      if (chosen.some(c=>c.names.filter(n=>s.names.includes(n)).length*2 >= s.names.length)) continue;
+    found.sort((a,b)=>b.days.size - a.days.size || b.names.length - a.names.length);
+    found.forEach(s=>{
+      if (hidden.has(s.names.join('\u0001'))) return;
+      if (savedSets.some(ss=>s.names.every(n=>ss.has(n)))) return;             // already a saved meal
       const items = s.names.map(n=>refOf(usual(names.get(n)).key)).filter(Boolean);
-      if (items.length !== s.names.length) continue;
-      chosen.push(s);
-      combos.push({type:'combo', saved:null, key:s.names.join('\u0001'), days:s.days.size,
-        name:items.map(i=>i.name).join(' + '), items, cal:items.reduce((a,i)=>a+(+i.cal||0), 0)});
-    }
+      if (items.length !== s.names.length) return;
+      cands.push({type:'combo', saved:null, key:s.names.join('\u0001'), days:s.days.size,
+        name:items.map(i=>i.name).join(' + '), names:s.names, items,
+        cal:items.reduce((a,i)=>a+(+i.cal||0), 0)});
+    });
   }
+  /* Saved meals still come first: you named them. A spotted group that is
+     mostly a saved meal becomes one of its other versions, however often. */
+  const clusters = [];
+  const within = (a, b)=>a.names.every(n=>b.names.includes(n));
+  cands.forEach(c=>{
+    // Part of a bigger version already listed: unticking covers that.
+    if (!c.saved && clusters.some(x=>[x, ...x.others].some(o=>within(c, o)))) return;
+    const home = clusters.find(x=>similar(x.names, c.names));
+    if (!home) clusters.push({...c, others:[]});
+    else if (home.others.length < 3) home.others.push(c);
+  });
+  const eatenAlready = c=>c.names.every(n=>had.has(n));
+  const combos = clusters.filter(c=>!eatenAlready(c)).slice(0, COMBO_MAX);
+  /* The habits that own their ingredients: the top ones, eaten today or not,
+     plus whatever has moved up into a free place on screen. */
+  const owners = [...new Set([...clusters.slice(0, COMBO_MAX), ...combos])];
+  const sets_ = owners.flatMap(c=>[c, ...c.others]).map(c=>c.names)
+    .sort((a,b)=>b.length - a.length);
+
+  /* ---- what's left once combos have taken theirs ----
+     Within each day+meal, every complete combo uses up one entry of each of
+     its foods. A second banana on top of the shake is still a banana. */
+  const solo = new Map();      // normName -> {days30:Set, rk, variants:Map}
+  meals_.forEach(g=>{
+    const left = g.list.slice();
+    sets_.forEach(ns=>{
+      for (;;){
+        const at = ns.map(n=>left.findIndex(x=>x.n === n));
+        if (at.some(i=>i < 0)) break;
+        at.sort((a,b)=>b - a).forEach(i=>left.splice(i, 1));
+      }
+    });
+    left.forEach(x=>{
+      let rec = solo.get(x.n);
+      if (!rec){ rec = {days30:new Set(), rk:'', variants:new Map()}; solo.set(x.n, rec); }
+      if (x.rk > rec.rk) rec.rk = x.rk;
+      let v = rec.variants.get(x.fk);
+      if (!v){ v = {key:x.fk, n:0, rk:''}; rec.variants.set(x.fk, v); }
+      if (x.rk > v.rk) v.rk = x.rk;
+      if (g.day >= cut30){ rec.days30.add(g.day); v.n++; }
+    });
+  });
 
   /* ---- frequent ---- */
-  const freq = [...names.entries()]
+  const freq = [...solo.entries()]
     .filter(([, r])=>r.days30.size >= 2)
     .sort((a,b)=>b[1].days30.size - a[1].days30.size || (a[1].rk < b[1].rk ? 1 : -1))
     .map(([n, r])=>({n, ref:refOf(usual(r).key), days:r.days30.size}))
@@ -4583,7 +4637,7 @@ function homePicks(dk){
   const shown = new Set(freq.map(f=>normName(f.name)));
 
   /* ---- recent ---- */
-  const recent = [...names.entries()]
+  const recent = [...solo.entries()]
     .filter(([n])=>!shown.has(n) && !had.has(n))
     .sort((a,b)=>a[1].rk < b[1].rk ? 1 : -1)
     .map(([n, r])=>({n, ref:refOf(latest(r).key)}))
@@ -4707,6 +4761,7 @@ function openComboPick(c, m){
     (c.saved ? '' : '<p class="note">You’ve logged these together on '+c.days+' days this month.</p>')+
     '<div id="cpList" style="margin:2px 0 6px"></div>'+
     '<button class="cta" id="cpGo"></button>'+
+    ((c.others || []).length ? '<div class="field" style="margin-top:14px"><label>Other versions</label></div><div id="cpAlt"></div>' : '')+
     (c.saved ? '' :
       '<div class="field" style="margin-top:14px"><label>Save as a meal called</label><input id="cpName" autocomplete="off"></div>'+
       '<button class="cta ghost" id="cpSave">Save as a meal</button>'+
@@ -4729,6 +4784,15 @@ function openComboPick(c, m){
     host.appendChild(row);
   });
   upd();
+  const alt = document.getElementById('cpAlt');
+  // Opening a version shows its own sheet, with the rest still one tap away.
+  if (alt) c.others.forEach((o, k)=>{
+    const row = document.createElement('button');
+    row.className = 'cta ghost cpver';
+    row.textContent = (o.saved ? o.name : o.items.map(i=>i.name).join(' + '))+' · '+Math.round(o.cal).toLocaleString();
+    row.onclick = ()=>openComboPick({...o, others:[{...c, others:[]}, ...c.others.filter((_, j)=>j !== k)]}, m);
+    alt.appendChild(row);
+  });
   go.onclick = ()=>{
     const it = picked();
     if (!it.length) return;
