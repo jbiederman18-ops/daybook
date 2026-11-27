@@ -1808,6 +1808,20 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
 :root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet .logrow .camera{width:54px;height:54px;min-height:54px;align-self:center;border:0;border-radius:50%;background:#C4125C;color:#fff;box-shadow:5px 5px 0 #FF7AB6}
 :root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet .logrow .camera:active{transform:translate(3px,3px);box-shadow:2px 2px 0 #FF7AB6}
 
+/* ---- the coach caption: a workout tape's on-screen super ---- */
+.cbcoach{display:none}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cbcoach{display:flex;align-items:stretch;width:max-content;max-width:calc(100% + 18px);margin:6px 0 10px -18px;line-height:1;transform:skewX(-10deg);transform-origin:left}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cbcoach .ck{display:flex;align-items:center;padding:7px 10px 6px 22px;background:#FFD25A;color:var(--cb-night);font-family:var(--cb-osd);font-size:19px;letter-spacing:.06em;text-transform:uppercase}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cbcoach .cv{display:flex;align-items:center;min-width:0;padding:7px 14px 6px;background:var(--cb-pink);color:var(--cb-cream);font-family:var(--cb-disp);font-size:17px;text-transform:uppercase;white-space:nowrap;box-shadow:4px 4px 0 var(--cb-cyan);text-shadow:2px 2px 0 #C4125C}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cbcoach .ck>span,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cbcoach .cv>span{display:inline-block;transform:skewX(10deg);overflow:hidden;text-overflow:ellipsis}
+@media (max-width:360px){ :root[data-tiles][data-flat][data-theme="ring"][data-mode] .cbcoach .cv{font-size:15px} }
+
+/* ---- track headings: a VCR-type kicker over the display heading ---- */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cbtrack{display:block}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cbtrack .tk{display:block;margin-bottom:3px;font-family:var(--cb-osd);font-size:17px;font-weight:400;line-height:1;letter-spacing:.14em;color:var(--cb-cyan);text-shadow:none}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode][data-mode="day"] .cbtrack .tk{color:#0B9B95}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cbtrack .tk em{font-style:normal;color:var(--cb-pink)}
+
 /* ---- the main buttons: taller, in the display face, a hot shadow ---- */
 :root[data-tiles][data-flat][data-theme="ring"][data-mode] .cta{min-height:54px;font-family:var(--cb-disp);font-weight:400;font-size:17px;letter-spacing:.01em;box-shadow:5px 5px 0 var(--cb-pink);transition:transform .08s,box-shadow .08s}
 :root[data-tiles][data-flat][data-theme="ring"][data-mode] .cta.ghost{font-family:var(--body-font);font-weight:700;font-size:15px;min-height:50px;box-shadow:4px 4px 0 var(--cb-quiet)}
@@ -2118,9 +2132,9 @@ const COPY = {
     saved:'Saved', unsaved:'Removed from saved',
     savedMeal:'Meal saved', addTo:m=>'Add to '+m,
     addFood:'Add food', saveMeal:'Save meal', savedMealsHead:'Save this meal',
-    logHead:'Logged', recentHead:'Your regulars', recentEmpty:'Log something and it turns up here next time.',
+    logHead:'Today\u2019s set', recentHead:'Your regulars', recentEmpty:'Log something and it turns up here next time.',
     noMeals:'No saved meals yet.', noFoods:'Nothing saved yet.',
-    synced:'Synced', trend:'Last 7 days'
+    synced:'Synced', trend:'The week'
   },
   speed: {
     left:'left of', over:'over budget',
@@ -3633,9 +3647,11 @@ function paintColorBlockHero(left, ate, tgt){
   let word = box.querySelector('.cbword');
   num.classList.toggle('long', colorBlock() && num.textContent.length > 3);
   bar.hidden = !colorBlock();
-  if (!colorBlock()){ if (word) word.remove(); const o = document.querySelector('.cbosd'); if (o) o.remove(); return; }
+  if (!colorBlock()){ if (word) word.remove(); const o = document.querySelector('.cbosd'); if (o) o.remove();
+    const c = box.querySelector('.cbcoach'); if (c) c.remove(); return; }
   if (!word){ word = document.createElement('span'); word.className = 'cbword'; num.after(word); }
   word.textContent = left < 0 ? 'Over' : 'Left to eat';
+  paintCoach(box, left);
   paintTapeOSD();
   tapeMotion(left);
   const pct = tgt > 0 ? Math.max(0, Math.min(100, ate/tgt*100)) : 0;
@@ -3643,6 +3659,39 @@ function paintColorBlockHero(left, ate, tgt){
   bar.firstElementChild.style.width = pct+'%';
   bar.setAttribute('role', 'img');
   bar.setAttribute('aria-label', Math.round(tgt > 0 ? ate/tgt*100 : 0)+' percent of today’s target eaten');
+}
+
+/* ---------- the coach ----------
+   The caption a workout tape puts on screen, carrying the one thing worth
+   saying about the day, most urgent first: over the target, over or near the
+   sugar cap, nothing logged yet, protein still to go, protein done. A past
+   day gets the same read in the past tense. */
+function coachLine(left){
+  const mac = dayMacros(viewDate), pt = proteinTarget(), cap = sugarCap();
+  const today = viewDate === todayKey(), sug = Math.round(mac.s), toGo = Math.max(0, pt - Math.round(mac.p));
+  if (!mac.cal) return today ? ['Warm up', 'Log your first bite!'] : null;
+  if (left < 0) return ['Cool down', (today ? 'Over by ' : 'Finished over by ')+Math.abs(left).toLocaleString()];
+  if (cap > 0 && sug > cap) return ['Easy now', 'Sugar over the cap'];
+  if (cap > 0 && today && sug >= cap*0.85) return ['Easy now', 'Sugar cap close'];
+  if (toGo > 0) return ['Coach', today ? toGo+' g protein to go!' : 'Protein '+toGo+' g short'];
+  return ['Coach', today ? 'Protein goal hit \u2014 nice!' : 'Protein goal hit!'];
+}
+function paintCoach(box, left){
+  const line = coachLine(left);
+  let c = box.querySelector('.cbcoach');
+  if (!line){ if (c) c.remove(); return; }
+  if (!c){
+    c = document.createElement('div'); c.className = 'cbcoach';
+    box.insertBefore(c, document.getElementById('remainCap'));
+  }
+  c.innerHTML = '<span class="ck"><span>'+escapeHTML(line[0])+' \u25b8</span></span>'+
+                '<span class="cv"><span>'+escapeHTML(line[1])+'</span></span>';
+}
+/* Section headings read like a tape's track list in the Daybook theme. */
+function trackHead(n, text){
+  return colorBlock()
+    ? '<span class="cbtrack"><span class="tk">TRACK 0'+n+' <em>\u25b8</em></span>'+escapeHTML(text)+'</span>'
+    : escapeHTML(text);
 }
 
 /* ---------- the tape ----------
@@ -3984,7 +4033,7 @@ function renderLog(){
   sec.className = 'meal log';
   const tot = eaten(viewDate);
   sec.innerHTML =
-    '<div class="meal-head"><div class="meal-name">'+escapeHTML(T('logHead'))+'</div>'+
+    '<div class="meal-head"><div class="meal-name">'+trackHead(1, T('logHead'))+'</div>'+
     '<div style="display:flex;align-items:center;gap:10px">'+
     (list.length ? '<button class="savemeal">'+escapeHTML(T('saveMeal'))+'</button>' : '')+
     '<div class="meal-total">'+(tot ? tot.toLocaleString() : '')+'</div></div></div>';
@@ -4209,7 +4258,7 @@ async function fillMacros(dk){
 
 function renderTrend(){
   const head = document.getElementById('trendHead');
-  if (head) head.textContent = T('trend');
+  if (head) head.innerHTML = trackHead(2, T('trend'));
   const host = document.getElementById('bars');
   host.innerHTML = '';
   const keys = [];
