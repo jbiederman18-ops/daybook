@@ -13,7 +13,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Manrope:wght@500;600;700;800&family=Bebas+Neue&family=Cinzel:wght@500;700;900&family=Outfit:wght@500;600;700&family=Saira:wght@600;700;800&family=Sora:wght@400;600;700&family=Fugaz+One&family=Rubik:wght@500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Manrope:wght@500;600;700;800&family=Bebas+Neue&family=Cinzel:wght@500;700;900&family=Outfit:wght@500;600;700&family=Saira:wght@600;700;800&family=Sora:wght@400;600;700&family=Fugaz+One&family=Rubik:wght@500;600;700;800&family=VT323&display=swap" rel="stylesheet">
 <style>
 /* ============================================================
    Themes
@@ -1754,6 +1754,121 @@ body.locked .toast{bottom:calc(26px + var(--kb,0px) + env(safe-area-inset-bottom
   :root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk{padding-left:10px;padding-right:9px}
   :root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk .pn{padding-right:14px}
 }
+/* ============================================================
+   The whole tape
+   The Daybook look, carried past the home screen: sheets get the dark band
+   and rising stripe, every control is a hard-cornered block on an offset
+   shadow, and the small print reads like a VCR's on-screen display. Motion
+   is short, and all of it stops under Reduce Motion.
+   ============================================================ */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode]{--cb-osd:'VT323',ui-monospace,Menlo,monospace;--cb-pink:#FF4FA0;--cb-orange:#FF9A5A;--cb-cyan:#5FE3DC;--cb-night:#130E2A;--cb-cream:#F5F1FF;
+  --cb-stripe:linear-gradient(180deg,var(--cb-pink) 0 4px,transparent 4px 7px,var(--cb-orange) 7px 11px)}
+
+/* ---- sheets: the header band and stripe from the home screen ---- */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet{border-radius:6px 6px 0 0;box-shadow:0 -12px 40px rgba(0,0,0,.28)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .griparea{background:var(--cb-night)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .grip{background:rgba(245,241,255,.45);border-radius:0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet-head{margin:0 -18px 22px;padding:4px 18px 16px;background:var(--cb-night);color:var(--cb-cream)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet-head::after{content:'';position:absolute;left:0;right:0;top:100%;height:11px;background:var(--cb-stripe)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet-head h2{font-size:24px;color:var(--cb-cream);text-shadow:3px 3px 0 #C4125C}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet-head .iconbtn{width:36px;height:36px;border-radius:4px;color:var(--cb-cream);background:rgba(245,241,255,.1)}
+
+/* ---- fields: dark-edged blocks, a cyan shadow while you type ---- */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet input:not([type=checkbox]):not([type=radio]):not([type=range]),:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet select,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet textarea{border-radius:4px;box-shadow:4px 4px 0 var(--cb-quiet);transition:box-shadow .12s,transform .12s}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet input:not([type=checkbox]):not([type=radio]):not([type=range]):focus,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet select:focus,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet textarea:focus{outline:0;box-shadow:4px 4px 0 var(--cb-cyan)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode][data-mode="day"] .sheet input:not([type=checkbox]):not([type=radio]):not([type=range]):focus,:root[data-tiles][data-flat][data-theme="ring"][data-mode][data-mode="day"] .sheet select:focus,:root[data-tiles][data-flat][data-theme="ring"][data-mode][data-mode="day"] .sheet textarea:focus{box-shadow:4px 4px 0 #0B9B95}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .field label,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .unitcap{font-weight:700}
+
+/* ---- chips, tabs, small buttons: blocks that press into their shadow ---- */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .chip,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .tabs.chiptabs .tab,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet .sbtn,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet .qadd,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet .camera,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .themecard,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .savemeal{border-radius:4px;box-shadow:3px 3px 0 var(--cb-quiet)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .chip,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .tabs.chiptabs .tab{font-weight:700}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .tabs.chiptabs{padding:0 4px 4px 0}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .chip.on,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .tabs.chiptabs .tab.on{background:var(--accent);color:var(--ink-on);box-shadow:3px 3px 0 var(--cb-pink)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .themecard.on{box-shadow:3px 3px 0 var(--cb-pink),inset 0 0 0 2px var(--accent)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .chip:active,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .tabs.chiptabs .tab:active,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet .sbtn:active,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet .qadd:active,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet .camera:active,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .themecard:active,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .savemeal:active{transform:translate(2px,2px);box-shadow:1px 1px 0 var(--cb-quiet)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .tabs:not(.chiptabs){border-radius:4px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .tabs:not(.chiptabs) .tab{border-radius:3px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .sheet .iconbtn{border-radius:4px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .warn{border-radius:4px;box-shadow:4px 4px 0 color-mix(in srgb,var(--over) 45%,transparent)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .kcrow,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .shot{border-radius:4px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .kcn{border-radius:4px;font-family:var(--cb-disp);font-weight:400}
+
+/* ---- the main buttons: taller, in the display face, a hot shadow ---- */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cta{min-height:54px;font-family:var(--cb-disp);font-weight:400;font-size:17px;letter-spacing:.01em;box-shadow:5px 5px 0 var(--cb-pink);transition:transform .08s,box-shadow .08s}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cta.ghost{font-family:var(--body-font);font-weight:700;font-size:15px;min-height:50px;box-shadow:4px 4px 0 var(--cb-quiet)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cta.inl{min-height:0;font-size:15px;box-shadow:3px 3px 0 var(--cb-pink)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cta:active{transform:translate(4px,4px);box-shadow:1px 1px 0 var(--cb-pink)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cta.ghost:active{box-shadow:1px 1px 0 var(--cb-quiet)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cta:disabled{box-shadow:none;transform:none}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .stickysave{padding-right:5px}
+
+/* ---- swipe to remove: a hot block, square cut ---- */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] #meals .swipe-del{background:#C4125C;font-family:var(--cb-disp);font-weight:400;font-size:15px}
+
+/* ---- small print in the on-screen-display face ---- */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .divider{border-top:0;position:relative;padding-top:11px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .divider::before{content:'';position:absolute;left:0;right:0;top:0;height:11px;background:var(--cb-stripe)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .divider h3{font-family:var(--cb-osd);font-weight:400;font-size:20px;letter-spacing:.06em;color:var(--accent-ink);margin-top:14px}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk-head h2::before{content:'\25B6\00A0';font-size:.7em;vertical-align:.12em;color:var(--cb-pink)}
+
+/* ---- the spinner: a tracking bar rather than a ring ---- */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .spin{width:64px;height:10px;border:0;border-radius:0;animation:cbtrack 1s steps(8) infinite;
+  background:repeating-linear-gradient(90deg,var(--cb-pink) 0 8px,var(--cb-orange) 8px 16px,var(--cb-cyan) 16px 24px,transparent 24px 32px) 0 0/64px 100%}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .spin.small,:root[data-tiles][data-flat][data-theme="ring"][data-mode] button .spin{width:32px;height:6px;margin:0 auto}
+@keyframes cbtrack{to{background-position:64px 0}}
+
+/* ---- toast: the VCR's own readout, dropped in from the top ---- */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .toast{top:calc(env(safe-area-inset-top,0px) + 10px);bottom:auto;transform:translate(-50%,-140%);border-radius:4px;padding:8px 14px 8px 12px;
+  background:#05030F;color:var(--cb-cream);box-shadow:4px 4px 0 var(--cb-pink);font-family:var(--cb-osd);font-weight:400;font-size:21px;line-height:1.1;letter-spacing:.02em;
+  width:max-content;max-width:calc(100vw - 32px);box-sizing:border-box;
+  transition:transform .22s cubic-bezier(.2,.9,.3,1.2),opacity .18s}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .toast.on{transform:translate(-50%,0)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .toast::before{content:'\25B6\00A0PLAY';flex:none;color:var(--cb-cyan)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .toast.act::before{content:'\25CF\00A0REC';color:#FF3B5C;animation:cbblink 1s steps(2) infinite}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .toast button{font-family:var(--cb-osd);font-weight:400;font-size:21px;text-decoration:none;color:#05030F;background:var(--cb-cyan);padding:2px 9px;border-radius:2px}
+@keyframes cbblink{50%{opacity:.25}}
+
+/* ---- the header: scanlines and a horizon grid behind the number ---- */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] header{background:repeating-linear-gradient(180deg,transparent 0 2px,rgba(245,241,255,.04) 2px 3px),var(--cb-night)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .htile .hl{isolation:isolate}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .htile .hl::before{content:'';position:absolute;left:0;right:0;bottom:-8px;height:96px;z-index:-1;pointer-events:none;opacity:.4;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 390 96' preserveAspectRatio='none' fill='none' stroke='%237B4DE0' stroke-width='1'%3E%3Cpath d='M195 0L-405 96M195 0L-255 96M195 0L-105 96M195 0L45 96M195 0L195 96M195 0L345 96M195 0L495 96M195 0L645 96M195 0L795 96'/%3E%3Cpath d='M0 4H390M0 10H390M0 19H390M0 31H390M0 47H390M0 68H390'/%3E%3C/svg%3E") 0 0/100% 100% no-repeat;
+  -webkit-mask:linear-gradient(180deg,transparent,#000 70%);mask:linear-gradient(180deg,transparent,#000 70%)}
+
+/* ---- the on-screen readout beside "left to eat" ---- */
+.cbosd{display:none}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cbosd{position:absolute;top:6px;right:22px;display:flex;gap:10px;font-family:var(--cb-osd);font-size:19px;line-height:1;letter-spacing:.04em;color:var(--cb-cyan);pointer-events:none;white-space:nowrap}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cbosd b{font-weight:400;color:var(--cb-cream)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .cbosd.rew{color:var(--cb-orange)}
+
+/* ---- the stripe above the log ---- */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] #meals::before{content:'';display:block;height:11px;margin:24px 3px 0 -2px;background:var(--cb-stripe)}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] #meals:empty::before{display:none}
+
+/* ---- motion ---- */
+/* Changing days: the picture rolls and splits for a beat, like tracking. */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] header.cbroll .datenav h1,:root[data-tiles][data-flat][data-theme="ring"][data-mode] header.cbroll .remain .big,:root[data-tiles][data-flat][data-theme="ring"][data-mode] header.cbroll .cbosd{animation:cbroll .24s steps(4) 1}
+@keyframes cbroll{
+  0%{transform:translateX(-6px) skewX(-8deg);text-shadow:-3px 0 0 #FF3B5C,3px 0 0 #2FD0C9;opacity:.6}
+  50%{transform:translateX(5px) skewX(6deg);text-shadow:3px 0 0 #FF3B5C,-3px 0 0 #2FD0C9;opacity:.85}
+  100%{transform:none}}
+/* A food logged from a tile lands: down into its shadow, then back. */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk.cbland{animation:cbland .32s ease-out 1}
+@keyframes cbland{0%,30%{transform:translate(5px,5px);box-shadow:0 0 0 var(--cb-shade)}100%{transform:none}}
+/* Protein reached: the stripes sweep across its box once. */
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] #hsProt.cbwin::after{content:'';position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(100deg,transparent 0 30%,#FF4FA0 30% 40%,#FF9A5A 40% 50%,#FFE15A 50% 60%,transparent 60%) no-repeat;
+  background-size:260% 100%;animation:cbsweep .7s ease-in-out 1 both}
+@keyframes cbsweep{from{background-position:120% 0}to{background-position:-20% 0}}
+:root[data-tiles][data-flat][data-theme="ring"][data-mode] #hsProt.cbwin{animation:cbpop .7s ease-out 1}
+@keyframes cbpop{0%{transform:none}25%{transform:translate(-2px,-2px);box-shadow:8px 8px 0 var(--cb-shade)}100%{transform:none}}
+
+@media (prefers-reduced-motion:reduce){
+  :root[data-tiles][data-flat][data-theme="ring"][data-mode] header.cbroll .datenav h1,:root[data-tiles][data-flat][data-theme="ring"][data-mode] header.cbroll .remain .big,:root[data-tiles][data-flat][data-theme="ring"][data-mode] header.cbroll .cbosd,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .pk.cbland,:root[data-tiles][data-flat][data-theme="ring"][data-mode] #hsProt.cbwin,:root[data-tiles][data-flat][data-theme="ring"][data-mode] .toast.act::before{animation:none}
+  :root[data-tiles][data-flat][data-theme="ring"][data-mode] #hsProt.cbwin::after{display:none}
+  :root[data-tiles][data-flat][data-theme="ring"][data-mode] .toast{transition:opacity .18s}
+  :root[data-tiles][data-flat][data-theme="ring"][data-mode] .spin{animation:none}
+}
 #macros:empty{display:none!important}
 </style>
 </head>
@@ -3443,15 +3558,74 @@ function paintColorBlockHero(left, ate, tgt){
   let word = box.querySelector('.cbword');
   num.classList.toggle('long', colorBlock() && num.textContent.length > 3);
   bar.hidden = !colorBlock();
-  if (!colorBlock()){ if (word) word.remove(); return; }
+  if (!colorBlock()){ if (word) word.remove(); const o = document.querySelector('.cbosd'); if (o) o.remove(); return; }
   if (!word){ word = document.createElement('span'); word.className = 'cbword'; num.after(word); }
   word.textContent = left < 0 ? 'Over' : 'Left to eat';
+  paintTapeOSD();
+  tapeMotion(left);
   const pct = tgt > 0 ? Math.max(0, Math.min(100, ate/tgt*100)) : 0;
   bar.classList.toggle('over', left < 0);
   bar.firstElementChild.style.width = pct+'%';
   bar.setAttribute('role', 'img');
   bar.setAttribute('aria-label', Math.round(tgt > 0 ? ate/tgt*100 : 0)+' percent of today’s target eaten');
 }
+
+/* ---------- the tape ----------
+   A VCR readout beside "left to eat": today plays, with the day's counter
+   running from midnight; an earlier day is rewound, with how far back. And
+   the motion: changing days rolls the picture like tracking, a change to the
+   number counts to it, protein reaching its target sweeps its box. Reduce
+   Motion turns every one of them off. */
+const tapeCalm = () => { try { return matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e){ return false; } };
+function tapeCounter(){
+  const d = new Date(), p = n => String(n).padStart(2, '0');
+  return d.getHours()+':'+p(d.getMinutes())+':'+p(d.getSeconds());
+}
+function paintTapeOSD(){
+  const hl = document.querySelector('.htile .hl');
+  if (!hl) return;
+  let o = hl.querySelector('.cbosd');
+  if (!o){ o = document.createElement('span'); o.className = 'cbosd'; o.setAttribute('aria-hidden', 'true'); hl.appendChild(o); }
+  const back = Math.round((new Date(todayKey()+'T12:00') - new Date(viewDate+'T12:00'))/864e5);
+  o.classList.toggle('rew', back > 0);
+  o.innerHTML = back > 0
+    ? '<span>◀◀ REW</span><b>'+(back === 1 ? 'YESTERDAY' : back+' DAYS')+'</b>'
+    : '<span>▶ PLAY</span><span>SP</span><b>'+tapeCounter()+'</b>';
+}
+setInterval(()=>{
+  if (!colorBlock() || document.hidden || viewDate !== todayKey()) return;
+  const b = document.querySelector('.cbosd b');
+  if (b) b.textContent = tapeCounter();
+}, 1000);
+let tapeLast = null, tapeRun = 0;
+function tapeMotion(left){
+  const was = tapeLast;
+  tapeLast = {dk:viewDate, left};
+  if (!was || tapeCalm()) return;
+  if (was.dk !== viewDate){
+    const h = document.querySelector('header');
+    h.classList.remove('cbroll'); void h.offsetWidth; h.classList.add('cbroll');
+    clearTimeout(h.__roll); h.__roll = setTimeout(()=>h.classList.remove('cbroll'), 300);
+    return;
+  }
+  if (was.left === left) return;
+  const num = document.getElementById('remainNum'), from = was.left, run = ++tapeRun, t0 = performance.now();
+  const step = now=>{
+    if (run !== tapeRun) return;
+    const k = Math.min(1, (now - t0)/520), v = Math.round(from + (left - from)*(1 - Math.pow(1 - k, 3)));
+    num.textContent = Math.abs(v).toLocaleString();
+    if (k < 1) requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+/* A tile you just tapped lands in its shadow, if it's still there after the
+   redraw (a recent tile moves out of the list once it's in the day). */
+function tapeLand(key){
+  if (!colorBlock() || tapeCalm() || !key) return;
+  const t = [...document.querySelectorAll('#picks .pk')].find(x=>x.dataset.key === key);
+  if (t) t.classList.add('cbland');
+}
+let tapeProt = null;
 
 /* ---------- the ring ----------
    The icon, live. A full turn is today's target; the day's calories fill it
@@ -3821,7 +3995,7 @@ function logChip(q, m){
   const e = stampNew({name:r.name, cal:r.cal, portion:r.portion, g:gramsOf(r)||undefined, src:r.src, ...brandOf(r), ...macCopy(r)});
   day(dk).meals[m.id].push(e);
   bumpUse(r, m.id);
-  buzz(10); save(); render();
+  buzz(10); save(); render(); tapeLand(r.key);
   toast(T('added', (+r.cal||0).toLocaleString(), dayWord()), {label:'Undo', run(){
     const list = day(dk).meals[m.id];
     const at = list.indexOf(e);
@@ -4503,6 +4677,11 @@ function renderStrip(){
   host.querySelector('#hsCarb').setAttribute('aria-label', 'Carbs '+Math.round(mac.c)+' grams, sugar '+sugar+' grams'+(sugar > sugarCap() ? ', over your cap' : '')+'. Targets.');
   host.querySelector('#hsFat').setAttribute('aria-label', 'Fat '+Math.round(mac.f)+' grams. Targets.');
   ['#hsProt', '#hsCarb', '#hsFat'].forEach(id=>{ host.querySelector(id).onclick = openTargets; });
+  /* Crossing the protein target, on the same day, while you watch. */
+  const was = tapeProt;
+  tapeProt = {dk:viewDate, p:mac.p};
+  if (colorBlock() && !tapeCalm() && was && was.dk === viewDate && pt > 0 && was.p < pt && mac.p >= pt)
+    host.querySelector('#hsProt').classList.add('cbwin');
   /* Moved sits with the calories-left number, because that's what it changes. */
   const pill = document.getElementById('hsMove');
   pill.hidden = false;
