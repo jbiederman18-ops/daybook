@@ -4686,16 +4686,205 @@ function guessBrand(r){
 function termsOf(q){
   return String(q||'').toLowerCase().split(/\s+/).filter(Boolean);
 }
-/* Same ranking idea as searchLocal: earlier matches and shorter names win,
-   so "bread" finds Bread before Breaded Chicken. Returns null for no match. */
-function termScore(key, terms){
-  let score = 0;
-  for (const t of terms){
-    const at = key.indexOf(t);
-    if (at < 0) return null;
-    score += at;
+/* ---------- matching ----------
+   One matcher behind every search surface (your log, the device cache, the
+   bundled pack, and the order USDA's own results are shown in).
+
+   Names and queries are both reduced to whole words: accents dropped
+   (jalapeño = jalapeno), punctuation split (hard-boiled = hard boiled),
+   apostrophes gone (farmer's = farmers), & read as "and", and a light
+   plural fold on both sides so eggs = egg, berries = berry, tomatoes =
+   tomato. A term then matches a word exactly, as the start of a word (you
+   are still typing), inside a compound (burger in cheeseburger), or — only
+   when nothing better turns up — as a near-miss spelling (chiken, brocoli).
+
+   Ranking, lowest score first:
+     - how well each term matched (exact beats prefix beats compound beats typo)
+     - where it matched. USDA names lead with a category ("Fish, salmon, raw"),
+       so a later comma section costs little; a later word inside a section
+       costs more
+     - a term that is only describing a different food is pushed down:
+       "bacon" in "Bacon bits", "steak" in "Steak sauce", "cheese" in
+       "Cheese dip". The food is the last word of its section
+     - extra words, so the plain food beats the elaborate one
+     - a small nudge for raw / plain / NFS forms you didn't ask to avoid
+   ---------------------------------------------------------------------- */
+const SEARCH_STOP = new Set(['a','an','the','of','with','w','and','or','in','on','for','some','my']);
+/* Everyday words USDA doesn't use. Each is an extra way to satisfy the term;
+   the word itself still counts too. */
+const SEARCH_ALIAS = {
+  coke:['cola'], cola:['cola'], pepsi:['cola'], soda:['soft drink','carbonated'], pop:['soft drink'],
+  fri:['french fry'], chip:['potato chip'], oj:['orange juice'], pbj:['peanut butter and jelly'],
+  evoo:['olive oil'], oreo:['cookie chocolate sandwich'], toast:['bread toasted'],
+  hardboiled:['hard boiled'], 'hard-boiled':['hard boiled'], spaghetti:['pasta'], pasta:['spaghetti','macaroni'],
+  ketchup:['catsup'], catsup:['ketchup'], yoghurt:['yogurt'], doughnut:['donut'], donut:['doughnut'],
+  hamburger:['burger'], burger:['hamburger'], omelette:['omelet'], whey:['protein powder'],
+  steak:['beef steak'], shake:['milkshake','milk shake']
+};
+const PLAIN_WORDS = new Set(['raw','nfs','plain','brewed']);
+/* Stand-ins you'd only want by asking for them. */
+const ODD_WORDS = new Set(['meatless','imitation','babyfood','infant','substitute','toddler']);
+
+function searchNorm(s){
+  return String(s == null ? '' : s).toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')
+    .replace(/&/g, ' and ')
+    .replace(/['‘’`]/g, '')
+    .replace(/(\d)\s*%/g, '$1pct')        // 2% and 2 % read the same
+    .replace(/[^a-z0-9,()]+/g, ' ');
+}
+/* Plural fold, applied to both sides, so the two only need to agree with
+   each other: berry and berries both become berri, cookie and cookies
+   cooki, tomato and tomatoes tomato. */
+function searchStem(w){
+  if (w.length <= 2 || /^\d/.test(w)) return w;
+  if (/ies$/.test(w) && w.length > 4) return w.slice(0, -3)+'i';
+  if (/[^aeiou]y$/.test(w)) return w.slice(0, -1)+'i';
+  if (/ie$/.test(w)) return w.slice(0, -2)+'i';
+  if (w.length <= 3) return w;
+  if (/oes$/.test(w)) return w.slice(0, -2);
+  if (/(ch|sh|x|ss|z)es$/.test(w)) return w.slice(0, -2);
+  if (/s$/.test(w) && !/(ss|us|is)$/.test(w)) return w.slice(0, -1);
+  return w;
+}
+/* A name as comma sections of stemmed words. Kept off the record itself so
+   nothing derived ends up persisted with the device cache. */
+const SEARCH_INDEX = new WeakMap();
+function searchIndex(rec, parts){
+  let ix = SEARCH_INDEX.get(rec);
+  if (ix) return ix;
+  const words = [];      // {w, seg, at, last, main}
+  parts.forEach((p, pi)=>{
+    if (!p) return;
+    searchNorm(p).split(/[,()]/).forEach(seg=>{
+      const ws = seg.split(' ').filter(Boolean).map(searchStem);
+      const segId = words.length ? words[words.length-1].seg + 1 : 0;
+      // FNDDS's "NS as to type of meat" means unspecified, which is a plus,
+      // not a list of extra detail.
+      const ns = ws[0] === 'ns';
+      ws.forEach((w, at)=>words.push({w, seg:segId, at, last: at === ws.length-1, main: pi === 0, ns}));
+    });
+  });
+  ix = {words, mainCount: words.filter(x=>x.main).length,
+        plain: words.some(x=>PLAIN_WORDS.has(x.w)),
+        odd: words.filter(x=>x.main && ODD_WORDS.has(x.w)).map(x=>x.w)};
+  SEARCH_INDEX.set(rec, ix);
+  return ix;
+}
+/* The query as slots; each slot is a list of alternatives, each one a list
+   of words that must all match. */
+function searchQuery(q){
+  const raw = searchNorm(q).replace(/[,()]/g, ' ')
+    .replace(/\bpb ?(and|n)? ?j\b/g, 'peanut butter and jelly').split(' ').filter(Boolean);
+  const words = raw.filter(w=>!SEARCH_STOP.has(w));
+  const use = words.length ? words : raw;
+  const typing = !/\s$/.test(String(q || ''));
+  return use.map((w, i)=>{
+    const st = searchStem(w);
+    const alts = [[st]];
+    (SEARCH_ALIAS[st] || SEARCH_ALIAS[w] || []).forEach(a=>
+      alts.push(searchNorm(a).split(' ').filter(x=>x && !SEARCH_STOP.has(x)).map(searchStem)));
+    // A plural you typed out is a finished word: "fries" shouldn't find Fritter.
+    return {alts, last: typing && i === use.length-1 && st === w, whole: st !== w, w: st};
+  });
+}
+/* Edit distance with swaps, given up on as soon as it passes max. */
+function nearMiss(a, b, max){
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let p2 = null, p = Array.from({length:b.length+1}, (_, j)=>j);
+  for (let i = 1; i <= a.length; i++){
+    const c = [i];
+    let low = i;
+    for (let j = 1; j <= b.length; j++){
+      let v = Math.min(p[j] + 1, c[j-1] + 1, p[j-1] + (a[i-1] === b[j-1] ? 0 : 1));
+      if (p2 && i > 1 && j > 1 && a[i-1] === b[j-2] && a[i-2] === b[j-1]) v = Math.min(v, p2[j-2] + 1);
+      c.push(v);
+      if (v < low) low = v;
+    }
+    if (low > max) return max + 1;
+    p2 = p; p = c;
   }
-  return score + key.length / 40;
+  return p[b.length];
+}
+function wordCost(t, w, last, fuzzy, whole){
+  if (w === t) return 0;
+  if (!whole && t.length >= 2 && w.startsWith(t)) return (last ? 0.4 : 0.8) + Math.min(0.8, (w.length - t.length) * 0.08);
+  if (t.length >= 4 && w.includes(t)) return 2.2;
+  if (fuzzy && t.length >= 4 && w[0] === t[0]){
+    const max = t.length >= 7 ? 2 : 1;
+    const d = nearMiss(t, w, max);
+    if (d <= max) return 2 + d;
+  }
+  return null;
+}
+/* Score one record against a parsed query; null when any slot is missing. */
+function searchScore(rec, parts, slots, fuzzy){
+  const ix = searchIndex(rec, parts), W = ix.words;
+  if (!W.length) return null;
+  let score = 0;
+  const used = new Set();
+  for (const slot of slots){
+    let best = null, bestUsed = null;
+    for (const alt of slot.alts){
+      let sum = 0, got = [];
+      for (let k = 0; k < alt.length; k++){
+        const t = alt[k], lastT = slot.last && k === alt.length - 1, whole = slot.whole && k === 0 && alt.length === 1;
+        let b = null, bi = -1;
+        for (let i = 0; i < W.length; i++){
+          const c = wordCost(t, W[i].w, lastT, fuzzy, whole);
+          if (c == null) continue;
+          const x = W[i];
+          const pos = x.seg * 0.25 + x.at * 0.35 + (x.main ? 0 : 0.6);
+          if (b == null || c + pos < b){ b = c + pos; bi = i; }
+        }
+        if (b == null){ sum = null; break; }
+        sum += b; got.push(bi);
+      }
+      if (sum == null) continue;
+      if (alt !== slot.alts[0]) sum += 0.1;      // the word you typed, first
+      if (best == null || sum < best){ best = sum; bestUsed = got; }
+    }
+    if (best == null) return null;
+    score += best;
+    bestUsed.forEach(i=>used.add(i));
+  }
+  // Describing a different food: a matched word with an unmatched word after
+  // it in the same section ("Bacon bits", "Steak sauce").
+  used.forEach(i=>{
+    const x = W[i];
+    if (!x.last && x.main && !used.has(i+1)) score += 0.9;
+    // ...or a different kind of it: "French toast", "Chocolate milk".
+    if (x.at > 0 && x.main && !used.has(i-1)) score += 0.4;
+  });
+  const asked = new Set(slots.map(s=>s.w));
+  if (ix.odd.some(w=>!asked.has(w))) score += 0.8;
+  let extra = 0;
+  W.forEach((x, i)=>{ if (x.main && !x.ns && !used.has(i)) extra++; });
+  score += extra * 0.12;
+  if (ix.plain) score -= 0.3;
+  return score;
+}
+/* Returns [{rec, score}] sorted, best first. Typo tolerance only runs when
+   the exact pass comes back thin, so it can't crowd out real matches. */
+function searchRank(list, partsOf, q, opts){
+  const slots = searchQuery(q);
+  if (!slots.length) return [];
+  const want = (opts && opts.enough) || 5;
+  const pass = fuzzy => {
+    const out = [];
+    list.forEach((rec, i)=>{
+      const s = searchScore(rec, partsOf(rec), slots, fuzzy);
+      if (s != null) out.push({rec, score: s, i});
+    });
+    return out;
+  };
+  let hits = pass(false);
+  if (hits.length < want){
+    const seen = new Set(hits.map(h=>h.rec));
+    pass(true).forEach(h=>{ if (!seen.has(h.rec)) hits.push(h); });
+  }
+  hits.sort((a,b)=>a.score - b.score || a.i - b.i);
+  return hits;
 }
 
 /* The log, filtered by what you're typing. This is the thing that makes a
@@ -4703,20 +4892,16 @@ function termScore(key, terms){
    settled, so the row is one tap and no network call happens at all. Recency
    still breaks ties, but a text match outranks a strong habit that doesn't. */
 function searchRecents(q, mealId, limit){
-  const terms = termsOf(q);
-  if (!terms.length) return [];
+  if (!termsOf(q).length) return [];
   const all = recentFoods(mealId, 500);
-  const hits = [];
-  all.forEach((r, i)=>{
-    const key = [r.name, r.portion, r.brand].filter(Boolean).join(' ').toLowerCase();
-    const sc = termScore(key, terms);
-    if (sc == null) return;
-    // i is the habit rank; a small weight keeps "the one you always eat"
+  // Name first, then brand; the portion ("2 slices") last, so it can find a
+  // food but never outranks one whose name matched.
+  return searchRank(all, r=>[r.name, r.brand, r.portion], q, {enough: 2})
+    // h.i is the habit rank; a small weight keeps "the one you always eat"
     // above an equally-good text match you had once.
-    hits.push({r, score: sc + i / 25});
-  });
-  hits.sort((a,b)=>a.score - b.score);
-  return hits.slice(0, limit || 6).map(h=>h.r);
+    .map(h=>({r: h.rec, score: h.score + h.i / 25}))
+    .sort((a,b)=>a.score - b.score)
+    .slice(0, limit || 6).map(h=>h.r);
 }
 
 function agoLabel(dk){
@@ -5481,33 +5666,19 @@ function rememberPortions(id, portions){
   persistSeen();
 }
 
-/* Every search term has to appear somewhere in the name. Ranked by how early
-   the matches land and how short the name is, so "milk" finds Milk before
-   Buttermilk Pancake Mix. */
+/* Every search term has to turn up in the name or brand (see the matcher).
+   The device cache and the pack are ranked together; something you've
+   looked up before gets a slight edge, and wins outright on a tie. */
 function searchLocal(q, limit){
-  const terms = String(q).toLowerCase().split(/\s+/).filter(Boolean);
-  if (!terms.length) return [];
-  const hits = [], taken = new Set();
-
-  const scan = list => {
-    for (const f of list){
-      if (taken.has(f.id)) continue;
-      const key = f.key || (f.key = [f.name, f.brand, f.brandName].filter(Boolean).join(' ').toLowerCase());
-      let score = 0, ok = true;
-      for (const t of terms){
-        const at = key.indexOf(t);
-        if (at < 0){ ok = false; break; }
-        score += at;
-      }
-      if (!ok) continue;
-      taken.add(f.id);
-      hits.push({f, score: score + key.length / 40});
-    }
-  };
-  scan(SEEN);            // your own history first
-  scan(PACK || []);
-  hits.sort((a,b)=>a.score - b.score);
-  return hits.slice(0, limit).map(h=>h.f);
+  if (!termsOf(q).length) return [];
+  const taken = new Set(), list = [];
+  SEEN.forEach(f=>{ if (f && !taken.has(f.id)){ taken.add(f.id); list.push(f); } });
+  const mine = list.length;
+  (PACK || []).forEach(f=>{ if (!taken.has(f.id)){ taken.add(f.id); list.push(f); } });
+  return searchRank(list, f=>[f.name, f.brand], q, {enough: Math.min(limit || 5, 5)})
+    .map(h=>({f: h.rec, score: h.score - (h.i < mine ? 0.15 : 0), i: h.i}))
+    .sort((a,b)=>a.score - b.score || a.i - b.i)
+    .slice(0, limit).map(h=>h.f);
 }
 
 /* A local record dressed up to look like a USDA API result, so the portion
@@ -6540,7 +6711,15 @@ async function runSearch(q, force){
       mac: macPer100(f)
     })));
     const skip = out.__localIds || new Set();
-    const fresh = foods.filter(f=>!skip.has(f.fdcId));
+    // USDA's relevance order lets long branded names crowd out the plain
+    // food. Ours goes first; anything it matched that we can't (it also
+    // searches ingredients) keeps its place after.
+    const ranked = new Map(searchRank(foods,
+      f=>[f.description, brandText(f.brandOwner, f.brandName)], q, {enough: 0})
+      .map((h, n)=>[h.rec, n]));
+    const fresh = foods.filter(f=>!skip.has(f.fdcId))
+      .map((f, i)=>({f, k: ranked.has(f) ? ranked.get(f) : 1e6 + i}))
+      .sort((a,b)=>a.k - b.k).map(x=>x.f);
     if (!fresh.length){
       net.innerHTML = localRows
         ? '<p class="note">The database had nothing to add to that.</p>'
