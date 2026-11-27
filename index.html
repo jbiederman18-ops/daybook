@@ -4478,7 +4478,7 @@ function renderStrip(){
      recent   -- the latest things logged that aren't already up there, and
                  aren't already in the day you're looking at.
    ============================================================ */
-const PICK_DAYS = 30, PICK_N = 6, COMBO_MIN = 3, COMBO_MAX = 2;
+const PICK_DAYS = 30, PICK_N = 6, COMBO_MIN = 3, COMBO_MAX = 2, COMBO_SHARE = 0.6;
 let pickCache = null, pickStamp = '';
 const normName = n => String(n || '').trim().toLowerCase();
 const comboKey = names => names.map(normName).sort().join('\u0001');
@@ -4586,12 +4586,49 @@ function homePicks(dk){
   /* Saved meals still come first: you named them. A spotted group that is
      mostly a saved meal becomes one of its other versions, however often. */
   const clusters = [];
+  // Each complete combo uses up one entry of each of its foods.
+  const leftAfter = (list, sets)=>{
+    const left = list.slice();
+    sets.forEach(ns=>{
+      for (;;){
+        const at = ns.map(n=>left.findIndex(x=>x.n === n));
+        if (at.some(i=>i < 0)) break;
+        at.sort((a,b)=>b - a).forEach(i=>left.splice(i, 1));
+      }
+    });
+    return left;
+  };
   const within = (a, b)=>a.names.every(n=>b.names.includes(n));
+  /* Three shared days can be chance: two things you eat often will land in
+     the same stretch now and then. So a spotted group also has to be how you
+     usually have EACH of its foods -- 60% of that food's days -- counted
+     after higher combos have taken theirs. Days it was eaten in another
+     version of this same group don't count against it. */
+  const holds = (list, ns)=>ns.every(n=>list.some(x=>x.n === n));
+  const consistent = c=>{
+    const taken = clusters.flatMap(x=>[x, ...x.others]).map(x=>x.names)
+      .sort((a,b)=>b.length - a.length);
+    const family = cands.filter(o=>o !== c && similar(o.names, c.names));
+    const together = new Set(), apart = c.names.map(()=>new Set());
+    meals_.forEach(g=>{
+      if (g.day < cut30) return;
+      const left = leftAfter(g.list, taken);
+      if (holds(left, c.names)) together.add(g.day);
+      else c.names.forEach((n, i)=>{
+        if (left.some(x=>x.n === n) &&
+            !family.some(o=>o.names.includes(n) && holds(left, o.names))) apart[i].add(g.day);
+      });
+    });
+    return together.size >= COMBO_MIN && apart.every(a=>{
+      const alone = [...a].filter(d=>!together.has(d)).length;
+      return together.size >= COMBO_SHARE*(together.size + alone);
+    });
+  };
   cands.forEach(c=>{
     // Part of a bigger version already listed: unticking covers that.
     if (!c.saved && clusters.some(x=>[x, ...x.others].some(o=>within(c, o)))) return;
     const home = clusters.find(x=>similar(x.names, c.names));
-    if (!home) clusters.push({...c, others:[]});
+    if (!home){ if (c.saved || consistent(c)) clusters.push({...c, others:[]}); }
     else if (home.others.length < 3) home.others.push(c);
   });
   const eatenAlready = c=>c.names.every(n=>had.has(n));
@@ -4607,15 +4644,7 @@ function homePicks(dk){
      its foods. A second banana on top of the shake is still a banana. */
   const solo = new Map();      // normName -> {days30:Set, rk, variants:Map}
   meals_.forEach(g=>{
-    const left = g.list.slice();
-    sets_.forEach(ns=>{
-      for (;;){
-        const at = ns.map(n=>left.findIndex(x=>x.n === n));
-        if (at.some(i=>i < 0)) break;
-        at.sort((a,b)=>b - a).forEach(i=>left.splice(i, 1));
-      }
-    });
-    left.forEach(x=>{
+    leftAfter(g.list, sets_).forEach(x=>{
       let rec = solo.get(x.n);
       if (!rec){ rec = {days30:new Set(), rk:'', variants:new Map()}; solo.set(x.n, rec); }
       if (x.rk > rec.rk) rec.rk = x.rk;
