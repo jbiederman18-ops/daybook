@@ -2,13 +2,13 @@
  *
  * Two jobs: keep the app itself openable with no connection, and hold the
  * offline food pack. It deliberately never touches USDA, Anthropic or your
- * Apps Script relay — those are live data and a stale cached answer would be
+ * Firebase log — those are live data and a stale cached answer would be
  * worse than an honest failure.
  *
  * Bump VERSION whenever you change this file or index.html and want every
  * device to drop what it has cached.
  */
-const VERSION = '2026-11-27d';
+const VERSION = '2026-11-27e';
 const PREFIX  = 'daybook-';
 const SHELL   = PREFIX + 'shell-' + VERSION;
 const FONTS   = PREFIX + 'fonts-' + VERSION;
@@ -16,9 +16,7 @@ const FONTS   = PREFIX + 'fonts-' + VERSION;
 // Live endpoints. Requests to these are passed straight through, uncached.
 const LIVE = [
   'api.nal.usda.gov',
-  'api.anthropic.com',
-  'script.google.com',
-  'script.googleusercontent.com'
+  'api.anthropic.com'
 ];
 
 self.addEventListener('install', event => {
